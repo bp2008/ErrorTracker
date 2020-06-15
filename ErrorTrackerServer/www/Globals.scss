@@ -1,0 +1,17 @@
+﻿a[role="button"],
+a[role="menuitem"]
+{
+	cursor: pointer;
+}
+code.inline
+{
+	border: 1px solid #CCCCCC;
+	background-color: #e2e2e2;
+	padding: 0px 2px;
+}
+.v-context > li > a,
+.v-context ul > li > a
+{
+	display: flex;
+	align-items: center;
+}

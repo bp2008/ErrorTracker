@@ -1,0 +1,51 @@
+﻿using BPUtil;
+using BPUtil.MVC;
+using BPUtil.SimpleHttp;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ErrorTrackerServer
+{
+	/// <summary>
+	/// A base class for API Requests that defines a [projectName] parameter and provides a [Validate] method.
+	/// </summary>
+	public class ProjectRequestBase : ApiRequestBase
+	{
+		/// <summary>
+		/// Project name provided by the client.
+		/// </summary>
+		public string projectName;
+
+		/// <summary>
+		/// <para>Validates the request from the client, returning true if okay and setting the [project] parameter.</para>
+		/// <para>If the project is not found or is not allowed for the user, returns false and sets the [apiError] parameter.</para>
+		/// </summary>
+		/// <returns></returns>
+		public bool Validate(out Project project, out ApiResponseBase apiError)
+		{
+			Project p = Settings.data.GetProject(projectName);
+			if (p == null)
+			{
+				project = null;
+				apiError = new ApiResponseBase(false, "Project not found");
+				return false;
+			}
+			else if (!GetSession().GetUser().IsProjectAllowed(p.Name))
+			{
+				project = null;
+				apiError = new ApiResponseBase(false, "Project not accessible to your user account");
+				return false;
+			}
+			else
+			{
+				project = p;
+				apiError = null;
+				return true;
+			}
+		}
+	}
+}

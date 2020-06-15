@@ -1,0 +1,376 @@
+﻿<template>
+	<div class="folderBrowser">
+		<div v-if="error" class="error">
+			{{error}}
+			<div class="tryAgain"><input type="button" value="Try Again" @click="loadFolders" /></div>
+		</div>
+		<div v-else-if="filters_error" class="error">
+			Failed to load filter list. {{filters_error}}
+			<div class="tryAgain"><input type="button" value="Try Again" @click="loadFilters" /></div>
+		</div>
+		<div v-else-if="rootFolder">
+			<FolderNode :projectName="projectName"
+						:folder="rootFolder"
+						:selectedFolderId="selectedFolderId"
+						@menu="onMenu"
+						@moveInto="onMoveInto" />
+			<div v-if="loading || filters_loading" class="loadingOverlay">
+				<div class="loading"><ScaleLoader /> Updating…</div>
+			</div>
+		</div>
+		<div v-else-if="loading || filters_loading" class="loading"><ScaleLoader /> Loading…</div>
+		<div v-else>
+			Root folder not found.
+			<div class="tryAgain"><input type="button" value="Try Again" @click="loadFolders" /></div>
+		</div>
+		<!-- Folder Context Menu -->
+		<vue-context ref="menu">
+			<template slot-scope="folder">
+				<li v-if="folder.data">
+					<span class="menuComment">{{folder.data.AbsolutePath}}</span>
+				</li>
+				<li>
+					<a role="button" @click.prevent="newFolder(folder.data)">New Folder</a>
+				</li>
+				<li v-show="folder.data && folder.data.FolderId !== 0">
+					<a role="button" @click.prevent="beginMoveFolder(folder.data)">Move</a>
+				</li>
+				<li v-show="folder.data && folder.data.FolderId !== 0">
+					<a role="button" @click.prevent="renameFolder(folder.data)">Rename</a>
+				</li>
+				<li v-show="folder.data && folder.data.FolderId !== 0">
+					<a role="button" @click.prevent="deleteFolder(folder.data)">Delete</a>
+				</li>
+				<li class="v-context__sub">
+					<a role="button">Run Filter</a>
+					<ul class="v-context">
+						<li v-for="f in filters" :key="f.filter.FilterId" v-if="f.NumActions > 0">
+							<a role="button" @click.prevent="runFilter(f.filter, folder.data)">{{f.filter.Name}}</a>
+						</li>
+					</ul>
+				</li>
+			</template>
+		</vue-context>
+	</div>
+</template>
+
+<script>
+	import { GetFolderStructure, AddFolder, RenameFolder, MoveFolder, DeleteFolder, RunFilterOnFolder } from 'appRoot/api/FolderData';
+	import { MoveEvents } from 'appRoot/api/EventData';
+	import { GetAllFilters } from 'appRoot/api/FilterData';
+	import { VueContext } from 'vue-context';
+	import { TextInputDialog, ModalConfirmDialog } from 'appRoot/scripts/ModalDialog';
+	import EventBus from 'appRoot/scripts/EventBus';
+	import { ParseDraggingItems } from 'appRoot/scripts/Util';
+
+	export default {
+		components: { VueContext },
+		props:
+		{
+			projectName: { // pre-validated
+				type: String,
+				required: true
+			},
+			selectedFolderId: {
+				type: Number,
+				default: 0
+			}
+		},
+		data()
+		{
+			return {
+				error: null,
+				loading: false,
+				rootFolder: null,
+				filters_error: null,
+				filters_loading: false,
+				filters: null
+			};
+		},
+		created()
+		{
+			this.loadFilters();
+			this.loadFolders();
+		},
+		beforeDestroy()
+		{
+			EventBus.stopMovingItem();
+		},
+		computed:
+		{
+		},
+		methods:
+		{
+			loadFolders()
+			{
+				this.loading = true;
+				this.error = null;
+				EventBus.stopMovingItem();
+
+				GetFolderStructure(this.projectName)
+					.then(data =>
+					{
+						if (data.success)
+							this.rootFolder = data.root;
+						else
+						{
+							this.error = data.error;
+							this.rootFolder = null;
+						}
+					})
+					.catch(err =>
+					{
+						this.error = err.message;
+						this.rootFolder = null;
+					})
+					.finally(() =>
+					{
+						this.loading = false;
+					});
+			},
+			newFolder(folder)
+			{
+				TextInputDialog("Name new folder", "Enter a name for the new folder.", "Name")
+					.then(result =>
+					{
+						if (result)
+						{
+							this.handleAsyncFolderOp(AddFolder(this.projectName, result.value, folder.FolderId));
+						}
+					});
+			},
+			beginMoveFolder(folder)
+			{
+				EventBus.movingItem = "f" + folder.FolderId;
+				EventBus.tooltipHtml = 'Carrying folder <b>' + folder.Name + '</b>.\n\nClick another folder to drop it into.';
+			},
+			renameFolder(folder)
+			{
+				TextInputDialog("Rename", 'Rename "' + folder.Name + '"', "New Name", folder.Name)
+					.then(result =>
+					{
+						if (result)
+						{
+							this.handleAsyncFolderOp(RenameFolder(this.projectName, folder.FolderId, result.value));
+						}
+					});
+			},
+			deleteFolder(folder)
+			{
+				ModalConfirmDialog('Are you sure you want to delete the folder "' + folder.Name + '"?', "Confirm Deletion")
+					.then(result =>
+					{
+						if (result)
+						{
+							this.handleAsyncFolderOp(DeleteFolder(this.projectName, folder.FolderId));
+						}
+					});
+			},
+			moveFolder(folderId, newParentFolderId)
+			{
+				if (folderId === newParentFolderId)
+				{
+					toaster.warning("Cannot move folder into itself.");
+					return;
+				}
+				this.handleAsyncFolderOp(MoveFolder(this.projectName, folderId, newParentFolderId));
+			},
+			onMenu({ e, folder })
+			{
+				if (EventBus.movingItem)
+					EventBus.stopMovingItem();
+				else
+					this.$refs.menu.open(e, folder);
+			},
+			handleAsyncFolderOp(promise)
+			{
+				this.loading = true;
+				promise
+					.then(data =>
+					{
+						if (data.success)
+							this.loadFolders();
+						else
+						{
+							toaster.error(data.error);
+							this.loading = false;
+						}
+					})
+					.catch(err =>
+					{
+						toaster.error(err);
+						this.loading = false;
+					})
+			},
+			onMoveInto(args)
+			{
+				if (!args.target)
+				{
+					toaster.error("received invalid onMoveInto event from a folder");
+					return; // Unknown target;
+				}
+				if (args.source)
+				{
+					// This is an HTML5 drag and drop operation. The source could be folders or events.
+					let eventIds = [];
+					for (let i = 0; i < args.source.length; i++)
+					{
+						let item = args.source[i];
+						if (item.type === "f")
+							this.moveFolder(item.id, args.target.FolderId);
+						else if (item.type === "e")
+							eventIds.push(item.id);
+						else
+							toaster.error("FolderBrowser does not implement a move operation for item of type \"" + item.type + "\"");
+					}
+					if (eventIds.length > 0)
+						this.moveEvents(eventIds, args.target.FolderId);
+				}
+				else
+				{
+					// This must be a dragless move operation triggered by context menu.
+					args.source = ParseDraggingItems(EventBus.movingItem);
+					if (args.source)
+						this.onMoveInto(args);
+					else
+						toaster.error("Application Error. Unable to complete move operation.");
+					EventBus.stopMovingItem();
+				}
+			},
+			moveEvents(eventIds, newFolderId)
+			{
+				MoveEvents(this.projectName, eventIds, newFolderId)
+					.then(data =>
+					{
+						if (data.success)
+						{
+							toaster.success("Successfully moved " + eventIds.length + " event" + (eventIds.length == 1 ? "" : "s"));
+							EventBus.externalChangesToVisibleEvents++;
+						}
+						else
+						{
+							toaster.error(data.error);
+							EventBus.externalChangesToVisibleEvents++;
+						}
+					})
+					.catch(err =>
+					{
+						toaster.error(err);
+					});
+			},
+			loadFilters()
+			{
+				this.filters_error = null;
+				this.filters_loading = true;
+				this.filters = null;
+
+				GetAllFilters(this.projectName)
+					.then(data =>
+					{
+						if (data.success)
+							this.filters = data.filters;
+						else
+							this.filters_error = data.error;
+					})
+					.catch(err =>
+					{
+						this.filters_error = err.message;
+					})
+					.finally(() =>
+					{
+						this.filters_loading = false;
+					});
+			},
+			runFilter(filter, folder)
+			{
+				RunFilterOnFolder(this.projectName, filter.FilterId, folder.FolderId)
+					.then(data =>
+					{
+						if (data.success)
+						{
+							toaster.success("Filter execution completed");
+							EventBus.externalChangesToVisibleEvents++;
+						}
+						else
+							toaster.error(data.error);
+					})
+					.catch(err =>
+					{
+						toaster.error(err);
+					});
+			}
+		},
+		watch:
+		{
+			projectName()
+			{
+				this.loadFilters();
+				this.loadFolders();
+			}
+		}
+	}
+</script>
+
+<style scoped>
+	.folderBrowser
+	{
+		position: relative;
+		width: 100%;
+		height: 100%;
+	}
+
+	.loading
+	{
+		margin-top: 80px;
+		text-align: center;
+	}
+
+	.loadingOverlay
+	{
+		position: absolute;
+		top: 0px;
+		left: 0px;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0,0,0,0.25);
+		z-index: 10;
+		user-select: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+		.loadingOverlay .loading
+		{
+			margin-top: 0px;
+			background-color: rgba(255,255,255,0.95);
+			padding: 4px;
+			border-radius: 4px;
+		}
+
+	.error
+	{
+		color: #FF0000;
+		font-weight: bold;
+		padding: 20px 5px;
+		text-align: center;
+	}
+
+	.tryAgain
+	{
+		margin-top: 10px;
+	}
+
+	.menuComment
+	{
+		display: block;
+		padding: .5rem 1.5rem;
+		font-weight: 400;
+		color: #999999;
+		font-style: italic;
+		text-decoration: none;
+		white-space: nowrap;
+		background-color: transparent;
+		border: 0;
+	}
+</style>

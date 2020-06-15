@@ -1,0 +1,84 @@
+﻿body
+{
+	margin: 0px;
+	font-family: Consolas, monospace;
+	font-size: 0px;
+	overflow: hidden;
+}
+
+#layout_top
+{
+	width: 100%;
+	height: 50px;
+	background-color: #000000;
+	color: #bbbbbb;
+}
+
+.textIcon
+{
+	display: inline-block;
+	overflow: hidden;
+	background-color: rgba(255,255,255,0);
+	border: 1px solid rgba(255,255,255,0.2);
+	border-radius: 4px;
+	margin-right: 5px;
+	cursor: pointer;
+	text-align: center;
+	font-size: 12px;
+	padding: 0px 4px;
+	/*width: 48px;*/
+	height: 48px;
+	line-height: 48px;
+	user-select: none;
+}
+
+	.textIcon:hover
+	{
+		background-color: rgba(255,255,255,0.1);
+		border-color: rgba(255,255,255,0.4);
+	}
+
+	.textIcon:active
+	{
+		border-color: Highlight;
+	}
+
+#layout_main
+{
+	position: relative;
+	overflow: auto;
+	background-color: #000000;
+}
+
+#videoFrame
+{
+	position: relative;
+}
+
+.videoFrameChild
+{
+}
+
+#qualityDialog
+{
+	width: 320px;
+	height: 200px;
+}
+
+	#qualityDialog .clientSettingsLabel
+	{
+		margin: 10px 10px 0px 10px;
+	}
+
+	#qualityDialog .clientSettingsInput
+	{
+		width: 256px;
+		margin: 0px 10px 0px 10px;
+		vertical-align: middle;
+	}
+
+	#qualityDialog label
+	{
+		font-size: 12pt;
+		vertical-align: middle;
+	}

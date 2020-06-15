@@ -1,0 +1,262 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{E63FF98F-8AC0-4866-AD15-470E569AD78C}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ErrorTrackerServer</RootNamespace>
+    <AssemblyName>ErrorTrackerServer</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="SQLite-net, Version=1.7.335.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\sqlite-net-pcl.1.7.335\lib\netstandard2.0\SQLite-net.dll</HintPath>
+    </Reference>
+    <Reference Include="SQLitePCLRaw.batteries_v2, Version=2.0.3.851, Culture=neutral, PublicKeyToken=8226ea5df37bcae9, processorArchitecture=MSIL">
+      <HintPath>..\packages\SQLitePCLRaw.bundle_green.2.0.3\lib\net461\SQLitePCLRaw.batteries_v2.dll</HintPath>
+    </Reference>
+    <Reference Include="SQLitePCLRaw.core, Version=2.0.3.851, Culture=neutral, PublicKeyToken=1488e028ca7ab535, processorArchitecture=MSIL">
+      <HintPath>..\packages\SQLitePCLRaw.core.2.0.3\lib\netstandard2.0\SQLitePCLRaw.core.dll</HintPath>
+    </Reference>
+    <Reference Include="SQLitePCLRaw.nativelibrary, Version=2.0.3.851, Culture=neutral, PublicKeyToken=502ed628492ab262, processorArchitecture=MSIL">
+      <HintPath>..\packages\SQLitePCLRaw.bundle_green.2.0.3\lib\net461\SQLitePCLRaw.nativelibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SQLitePCLRaw.provider.dynamic_cdecl, Version=2.0.3.851, Culture=neutral, PublicKeyToken=b68184102cba0b3b, processorArchitecture=MSIL">
+      <HintPath>..\packages\SQLitePCLRaw.provider.dynamic_cdecl.2.0.3\lib\netstandard2.0\SQLitePCLRaw.provider.dynamic_cdecl.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.6.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.7.1\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="API\ProjectRequestBase.cs" />
+    <Compile Include="API\ApiRequestBase.cs" />
+    <Compile Include="API\ApiResponseBase.cs" />
+    <Compile Include="Authentication\ServerSession.cs" />
+    <Compile Include="Authentication\SessionManager.cs" />
+    <Compile Include="Authentication\User.cs" />
+    <Compile Include="BCrypt\BCrypt.cs" />
+    <Compile Include="BCrypt\SaltParseException.cs" />
+    <Compile Include="Config\Settings.cs" />
+    <Compile Include="Config\Project.cs" />
+    <Compile Include="Controllers\Auth.cs" />
+    <Compile Include="Controllers\BaseControllers\UserController.cs" />
+    <Compile Include="Controllers\BaseControllers\AdminController.cs" />
+    <Compile Include="Controllers\BaseControllers\ETController.cs" />
+    <Compile Include="Controllers\FilterData.cs" />
+    <Compile Include="Filtering\FilterEngine.cs" />
+    <Compile Include="Controllers\FolderData.cs" />
+    <Compile Include="Controllers\EventData.cs" />
+    <Compile Include="Controllers\ProjectList.cs" />
+    <Compile Include="Controllers\Submit.cs" />
+    <Compile Include="Controllers\Default.cs" />
+    <Compile Include="Controllers\ProjectData.cs" />
+    <Compile Include="Controllers\UserData.cs" />
+    <Compile Include="Controllers\SettingsData.cs" />
+    <Compile Include="Controllers\Wallpaper.cs" />
+    <Compile Include="Database\DB.cs" />
+    <Compile Include="Database\FolderStructure.cs" />
+    <Compile Include="Database\HexStringJsonConverter.cs" />
+    <Compile Include="Database\Model\DbVersion.cs" />
+    <Compile Include="Database\Model\Event.cs" />
+    <Compile Include="Database\Model\Filter.cs" />
+    <Compile Include="Database\Model\FilterAction.cs" />
+    <Compile Include="Database\Model\FilterCondition.cs" />
+    <Compile Include="Database\Model\Folder.cs" />
+    <Compile Include="Database\Model\Tag.cs" />
+    <Compile Include="EditSpec\FieldEditSpec.cs" />
+    <Compile Include="Code\ErrorServer.cs" />
+    <Compile Include="Code\ErrorTrackerSvc.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Code\ErrorTrackerSvc.Designer.cs">
+      <DependentUpon>ErrorTrackerSvc.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Code\Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Code\Util.cs" />
+    <Compile Include="Code\WebServer.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\Source\Repos\BPUtil\BPUtil\BPUtil.csproj">
+      <Project>{A4981D8D-DEBF-4B34-B9CE-FF25520A02B7}</Project>
+      <Name>BPUtil</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".babelrc" />
+    <None Include="app.config" />
+    <None Include="package-lock.json" />
+    <None Include="package.json" />
+    <None Include="packages.config" />
+    <None Include="www\Globals.scss" />
+    <None Include="www\jsconfig.json" />
+    <None Include="www\vues\admin\controls\AddProject.vue" />
+    <None Include="www\vues\admin\controls\EditProject.vue" />
+    <None Include="www\vues\admin\controls\EditUser.vue" />
+    <None Include="www\vues\App.vue" />
+    <None Include="www\vues\admin\AdminHome.vue" />
+    <None Include="www\vues\admin\AdminLayout.vue" />
+    <None Include="www\vues\admin\AdminMenu.vue" />
+    <None Include="www\vues\admin\AdminProjects.vue" />
+    <None Include="www\vues\admin\AdminSettings.vue" />
+    <None Include="www\vues\admin\AdminUsers.vue" />
+    <None Include="www\vues\client\filters\ClientFiltersHome.vue" />
+    <None Include="www\vues\client\filters\FilterAction.vue" />
+    <None Include="www\vues\client\filters\FilterCondition.vue" />
+    <None Include="www\vues\client\filters\FilterDetails.vue" />
+    <None Include="www\vues\client\filters\FilterList.vue" />
+    <None Include="www\vues\client\ClientHome.vue" />
+    <None Include="www\vues\client\ClientLayout.vue" />
+    <None Include="www\vues\client\ClientMenu.vue" />
+    <None Include="www\vues\client\projectdisplay\event\EventDetails.vue" />
+    <None Include="www\vues\client\projectdisplay\event\EventBrowser.vue" />
+    <None Include="www\vues\client\projectdisplay\event\EventNode.vue" />
+    <None Include="www\vues\client\projectdisplay\folder\FolderLink.vue" />
+    <None Include="www\vues\client\projectdisplay\folder\FolderNode.vue" />
+    <None Include="www\vues\client\projectdisplay\folder\FolderBrowser.vue" />
+    <None Include="www\vues\client\projectdisplay\ResizeBar.vue" />
+    <None Include="www\vues\client\projectdisplay\ProjectDisplay.vue" />
+    <None Include="www\vues\common\controls\ConfirmPopup.vue" />
+    <None Include="www\vues\common\controls\ModalDialog.vue" />
+    <None Include="www\vues\common\controls\ModalDialogContainer.vue" />
+    <None Include="www\vues\common\controls\ColorInputPopup.vue" />
+    <None Include="www\vues\common\controls\TextInputPopup.vue" />
+    <None Include="www\vues\common\controls\VSvg.vue" />
+    <None Include="www\vues\common\controls\SvgButton.vue" />
+    <None Include="www\vues\common\editor\Editor.vue" />
+    <None Include="www\vues\common\editor\PropEdit.vue" />
+    <None Include="www\vues\common\Footer.vue" />
+    <None Include="www\vues\common\ScaleLoader.vue" />
+    <None Include="www\vues\common\Template.vue" />
+    <None Include="www\vues\Login.vue" />
+    <None Include="www\vues\public\PublicHome.vue" />
+    <None Include="www\vues\public\PublicLayout.vue" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="webpack.config.js" />
+    <Content Include="www\404.html" />
+    <Content Include="www\api\FilterData.js" />
+    <Content Include="www\api\FolderData.js" />
+    <Content Include="www\api\EventData.js" />
+    <Content Include="www\api\ProjectList.js" />
+    <Content Include="www\api\ProjectData.js" />
+    <Content Include="www\api\UserData.js" />
+    <Content Include="www\api\SettingsData.js" />
+    <Content Include="www\api\api.js" />
+    <Content Include="www\Default.html" />
+    <Content Include="www\favicon.ico" />
+    <Content Include="www\images\ajax-loader.gif" />
+    <Content Include="www\images\sprite\add.svg" />
+    <Content Include="www\images\sprite\add_computer.svg" />
+    <Content Include="www\images\sprite\add_group.svg" />
+    <Content Include="www\images\sprite\add_user.svg" />
+    <Content Include="www\images\sprite\chart.svg" />
+    <Content Include="www\images\sprite\computer.svg" />
+    <Content Include="www\images\sprite\create_new_folder.svg" />
+    <Content Include="www\images\sprite\delete.svg" />
+    <Content Include="www\images\sprite\expand_more.svg" />
+    <Content Include="www\images\sprite\filter_alt.svg" />
+    <Content Include="www\images\sprite\folder.svg" />
+    <Content Include="www\images\sprite\folder_open.svg" />
+    <Content Include="www\images\sprite\fullscreen.svg" />
+    <Content Include="www\images\sprite\fullscreen_exit.svg" />
+    <Content Include="www\images\sprite\group.svg" />
+    <Content Include="www\images\sprite\input.svg" />
+    <Content Include="www\images\sprite\network.svg" />
+    <Content Include="www\images\sprite\remove.svg" />
+    <Content Include="www\images\sprite\remove_computer.svg" />
+    <Content Include="www\images\sprite\settings.svg" />
+    <Content Include="www\images\sprite\settings_network.svg" />
+    <Content Include="www\images\sprite\user.svg" />
+    <Content Include="www\images\sprite\view_column.svg" />
+    <Content Include="www\images\sprite\view_compact.svg" />
+    <Content Include="www\images\sprite\zoom_fit.svg" />
+    <Content Include="www\images\sprite\zoom_in.svg" />
+    <Content Include="www\images\sprite\zoom_out.svg" />
+    <Content Include="www\main.js" />
+    <Content Include="www\router\index.js" />
+    <Content Include="www\scripts\bcrypt.min.js" />
+    <Content Include="www\scripts\EventBus.js" />
+    <Content Include="www\scripts\ModalDialog.js" />
+    <Content Include="www\scripts\ModalDialogAccessibilityMixin.js" />
+    <Content Include="www\scripts\sha512.js" />
+    <Content Include="www\scripts\ToasterHelper.js" />
+    <Content Include="www\scripts\Util.js" />
+    <Content Include="www\store\store.js" />
+    <Content Include="www\styles\admin.css" />
+    <Content Include="www\styles\Client.css" />
+    <Content Include="www\styles\Dialog.css" />
+    <Content Include="www\styles\theme.green.css" />
+    <Content Include="www\styles\toastr.min.css" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="www\vues\client\controls\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>echo *****************
+echo If the following build fails, you may need to run "npm install" from the ErrorTrackerServer project directory.
+echo *****************
+xcopy "$(ProjectDir)www\*.*" "$(TargetDir)www\*.*" /E /C /R /Y /I
+cd "$(ProjectDir)"
+node "$(ProjectDir)node_modules\webpack\bin\webpack" --env=$(ConfigurationName)</PostBuildEvent>
+  </PropertyGroup>
+  <Import Project="..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets" Condition="Exists('..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets'))" />
+  </Target>
+</Project>

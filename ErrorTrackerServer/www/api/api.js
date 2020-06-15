@@ -1,0 +1,88 @@
+﻿import { CloseAllDialogs } from 'appRoot/scripts/ModalDialog';
+
+/**
+ * Executes an API call to the specified method, using the specified arguments.  Returns a promise which resolves with any graceful response from the server.  Rejects if an error occurred that prevents the normal functioning of the API (e.g. the server was unreachable or returned an entirely unexpected response such as HTTP 500).
+ * @param {String} method Server route, e.g. "Auth/Login"
+ * @param {Object} args arguments
+ * @returns {Promise} A promise which resolves with any graceful response from the server.
+ */
+export default function ExecAPI(method, args)
+{
+	if (!args)
+		args = {};
+	if (!args.sid)
+		args.sid = window.myApp.$store.getters.sid;
+	return fetch(appContext.appPath + method, {
+		method: 'POST',
+		headers: {
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify(args)
+	})
+		.then(response =>
+		{
+			if (response.status === 200)
+				return response.json();
+			else if (response.status === 403)
+			{
+				toaster.error("Your session was lost.");
+				CloseAllDialogs();
+				window.myApp.$store.commit("SessionLost");
+				window.myApp.$router.push({ name: "login", query: { path: window.myApp.$route.fullPath } });
+				return new Promise((resolve, reject) => { });
+			}
+			else if (response.status === 418)
+			{
+				toaster.error("Your session does not have sufficient privilege to access the requested resource.");
+				CloseAllDialogs();
+				window.myApp.$router.replace({ name: "login" });
+				return new Promise((resolve, reject) => { });
+			}
+			else
+			{
+				let errText = "API response was " + response.status + " " + response.statusText;
+				console.error(errText);
+				return Promise.reject(new ApiError(errText));
+			}
+		})
+		.then(data =>
+		{
+			return Promise.resolve(data);
+		})
+		.catch(err =>
+		{
+			console.error(err);
+			return Promise.reject(err);
+		});
+}
+///**
+// * Executes an API call to the specified method, using the specified arguments.  Returns a promise which resolves only if the response indicated success.  THIS FUNCTION DOES NOT REJECT.  If an error occurs, a message is shown in an error toast.
+// * @param {String} method Server route, e.g. "Auth/Login"
+// * @param {Object} args arguments
+// * @returns {Promise} A promise which resolves upon success and never rejects.
+// */
+//export function ExecAPIToast(method, args)
+//{
+//	ExecAPI(method, args)
+//		.then(data =>
+//		{
+//			if (data.success)
+//				return data;
+//			else
+//				Promise.Reject(new ApiError(data.error, data));
+//		})
+//		.catch(err =>
+//		{
+//			toaster.error(err);
+//		});
+//}
+export class ApiError extends Error
+{
+	constructor(message, data)
+	{
+		super(message);
+		this.name = "ApiError";
+		this.data = data;
+	}
+}
