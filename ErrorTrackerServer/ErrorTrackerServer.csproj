@@ -115,7 +115,6 @@
     <Compile Include="Database\Model\Folder.cs" />
     <Compile Include="Database\Model\Tag.cs" />
     <Compile Include="EditSpec\FieldEditSpec.cs" />
-    <Compile Include="Code\ErrorServer.cs" />
     <Compile Include="Code\ErrorTrackerSvc.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -126,12 +125,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Code\Util.cs" />
     <Compile Include="Code\WebServer.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\Source\Repos\BPUtil\BPUtil\BPUtil.csproj">
-      <Project>{A4981D8D-DEBF-4B34-B9CE-FF25520A02B7}</Project>
-      <Name>BPUtil</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include=".babelrc" />
@@ -242,6 +235,16 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="www\vues\client\controls\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\BPUtil\BPUtil\BPUtil.csproj">
+      <Project>{a4981d8d-debf-4b34-b9ce-ff25520a02b7}</Project>
+      <Name>BPUtil</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ErrorTrackerClient\ErrorTrackerClient.csproj">
+      <Project>{1c89beef-fd4d-41d0-b636-7f24b46cbfad}</Project>
+      <Name>ErrorTrackerClient</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

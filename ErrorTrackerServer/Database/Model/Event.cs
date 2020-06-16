@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using BPUtil;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using SQLite;
 using System;
@@ -10,6 +11,9 @@ using System.Threading.Tasks;
 
 namespace ErrorTrackerServer.Database.Model
 {
+	/// <summary>
+	/// Represents one Event.  Do not deserialize untrusted data directly to this, as the Tag keys will not have been validated.
+	/// </summary>
 	public class Event
 	{
 		/// <summary>
@@ -48,31 +52,106 @@ namespace ErrorTrackerServer.Database.Model
 		[JsonConverter(typeof(HexStringJsonConverter), 3)]
 		public uint Color { get; set; } = 0xEBEBEB;
 		/// <summary>
-		/// A list of tags associated with the event. Initialized to an empty list.
+		/// Tags associated with the event. Keys must be non-null and contain at least one alphanumeric character. Keys must not exactly match any of the reserved Key values "EventType", "SubType", "Message", "Date", "Folder", "Color".
 		/// </summary>
 		[Ignore]
-		public List<Tag> Tags { get; set; } = new List<Tag>();
-		/// <summary>
-		/// Private lazy-loaded dictionary of Tag.Key -> Tag.
-		/// </summary>
-		[JsonIgnore]
-		private Dictionary<string, Tag> _tagLookup;
-		/// <summary>
-		/// Looks up a tag by its lower-case key string. The key argument must be all lower-case. The first time you call this method on an event, a Dictionary is created from all the Tags in the event.  This method is thread safe but not efficient if it results in creation of multiple dictionaries.
-		/// </summary>
-		/// <param name="keyLower"></param>
-		/// <returns></returns>
-		public Tag TagLookup(string keyLower)
-		{
-			if (_tagLookup == null)
-				_tagLookup = Tags.ToDictionary(t => t.Key.ToLower());
-			if (_tagLookup.TryGetValue(keyLower, out Tag tag))
-				return tag;
-			return null;
-		}
+		[JsonProperty("Tags")]
+		private Dictionary<string, Tag> _tags { get; set; }
 		public override string ToString()
 		{
 			return EventType + ": " + SubType + ": " + Message;
+		}
+
+		/// <summary>
+		/// Sets a tag. (not thread-safe)
+		/// </summary>
+		/// <param name="Key">
+		/// <para>Key string.</para>
+		/// <para>Must be non-null and contain at least one alphanumeric character.</para>
+		/// <para>Must not exactly match any of the reserved Key values "EventType", "SubType", "Message", "Date", "Folder", "Color".</para>
+		/// <para>If any of these rules is violated, the Key string will be changed automatically.</para>
+		/// </param>
+		/// <param name="Value">Value of the tag.</param>
+		public void SetTag(string Key, string Value)
+		{
+			if (_tags == null)
+				_tags = new Dictionary<string, Tag>();
+			Key = ValidateTagKey(Key);
+			_tags[Key.ToLower()] = new Tag(Key, Value);
+		}
+
+		/// <summary>
+		/// Gets the value of the specified tag, returning true if successful. (not thread-safe)
+		/// </summary>
+		/// <param name="Key">Key of the tag to retrieve. Not case-sensitive.</param>
+		/// <param name="Value">Value of the tag, if the tag exists.</param>
+		/// <returns></returns>
+		public bool TryGetTag(string Key, out string Value)
+		{
+			if (_tags != null)
+			{
+				Key = ValidateTagKey(Key);
+				if (_tags.TryGetValue(Key.ToLower(), out Tag t))
+				{
+					Value = t.Value;
+					return true;
+				}
+			}
+			Value = null;
+			return false;
+		}
+		/// <summary>
+		/// Tries to remove the specified tag, returning true if successful. (not thread-safe)
+		/// </summary>
+		/// <param name="key">Key of the tag to remove. Not case-sensitive.</param>
+		/// <returns></returns>
+		public bool TryRemoveTag(string Key)
+		{
+			if (_tags == null)
+				return false;
+			Key = ValidateTagKey(Key);
+			return _tags.Remove(Key.ToLower());
+		}
+		/// <summary>
+		/// Builds a list of Tag instances from the tags in this event.  The tags will have their EventId fields pre-populated to match this event, but the TagId fields may be unset. (not thread-safe)
+		/// </summary>
+		/// <returns></returns>
+		public List<Tag> GetAllTags()
+		{
+			if (_tags == null)
+				return new List<Tag>(0);
+			List<Tag> allTags = _tags.Values.ToList();
+			foreach (Tag t in allTags)
+				t.EventId = this.EventId;
+			return allTags;
+		}
+
+		/// <summary>
+		/// Checks a tag key for validity and always returns a valid tag key.
+		/// </summary>
+		/// <param name="Key"></param>
+		/// <returns></returns>
+		private static string ValidateTagKey(string Key)
+		{
+			if (Key == null)
+				Key = "null";
+			Key = Key.Trim();
+			if (!StringUtil.IsPrintableName(Key))
+				Key = "Undefined";
+			if (Key.Equals("EventType", StringComparison.OrdinalIgnoreCase)
+				|| Key.Equals("SubType", StringComparison.OrdinalIgnoreCase)
+				|| Key.Equals("Message", StringComparison.OrdinalIgnoreCase)
+				|| Key.Equals("Date", StringComparison.OrdinalIgnoreCase)
+				|| Key.Equals("Folder", StringComparison.OrdinalIgnoreCase)
+				|| Key.Equals("Color", StringComparison.OrdinalIgnoreCase))
+				Key = "Tag_" + Key;
+			return Key;
+		}
+		public int GetTagCount()
+		{
+			if (_tags == null)
+				return 0;
+			return this._tags.Count;
 		}
 	}
 

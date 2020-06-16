@@ -182,8 +182,8 @@ namespace ErrorTrackerServer.Filtering
 				valueToTest = e.Color.ToString("X").PadLeft(8, '0').Substring(2); // Converts to hex color value (6 chars)
 			else
 			{
-				Tag tag = e.TagLookup(keyLower);
-				valueToTest = tag?.Value;
+				if (e.TryGetTag(keyLower, out string value))
+					valueToTest = value;
 			}
 
 			bool result;

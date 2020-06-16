@@ -92,19 +92,11 @@ namespace ErrorTrackerServer
 		/// <param name="e">Event to add.  Any Tags attached to this event are also added.</param>
 		public void AddEvent(Event e)
 		{
-			if (e.Tags != null)
-				foreach (Tag t in e.Tags)
-					t.ValidateKey();
-
 			conn.Value.RunInTransaction(() =>
 			{
 				conn.Value.Insert(e);
-				if (e.Tags != null)
-				{
-					foreach (Tag t in e.Tags)
-						t.EventId = e.EventId;
-					conn.Value.InsertAll(e.Tags);
-				}
+				IEnumerable<Tag> tags = e.GetAllTags();
+				conn.Value.InsertAll(tags);
 			});
 		}
 
@@ -192,24 +184,14 @@ namespace ErrorTrackerServer
 		{
 			if (events.Count > 0)
 			{
-				foreach (Event e in events)
-					if (e.Tags != null)
-						foreach (Tag t in e.Tags)
-							t.ValidateKey();
 				conn.Value.RunInTransaction(() =>
 				{
 					conn.Value.InsertAll(events, false);
 					List<Tag> allTags = new List<Tag>();
 					foreach (Event e in events)
 					{
-						if (e.Tags != null)
-						{
-							foreach (Tag t in e.Tags)
-							{
-								t.EventId = e.EventId;
-								allTags.Add(t);
-							}
-						}
+						IEnumerable<Tag> tags = e.GetAllTags();
+						allTags.AddRange(tags);
 					}
 					if (allTags.Count > 0)
 						conn.Value.InsertAll(allTags, false);
@@ -323,7 +305,7 @@ namespace ErrorTrackerServer
 				eventDict[e.EventId] = e;
 
 			foreach (Tag t in tags)
-				eventDict[t.EventId].Tags.Add(t);
+				eventDict[t.EventId].SetTag(t.Key, t.Value);
 		}
 
 		public long CountEventsInFolder(int folderId)

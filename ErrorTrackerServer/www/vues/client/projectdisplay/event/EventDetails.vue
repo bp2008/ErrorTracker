@@ -34,7 +34,7 @@
 			<div class="tagContainer">
 				<table class="tagTable">
 					<tbody>
-						<tr class="tagRow" v-for="(tag, index) in event.Tags" :key="index">
+						<tr class="tagRow" v-for="(tag, index) in event.TagList" :key="index">
 							<td class="tagKey" v-text="tag.Key"></td>
 							<td class="tagValue" v-text="tag.Value"></td>
 						</tr>
@@ -131,10 +131,17 @@
 					{
 						if (data.success)
 						{
-							data.ev.Tags.sort((a, b) =>
+							let tagList = [];
+							for (let key in data.ev.Tags)
+								if (data.ev.Tags.hasOwnProperty(key))
+									tagList.push(data.ev.Tags[key]);
+
+							tagList.sort((a, b) =>
 							{
 								return a.Key.localeCompare(b.Key);
 							});
+							data.ev.TagList = tagList;
+
 							this.event = data.ev;
 						}
 						else
@@ -337,6 +344,7 @@
 	{
 		flex: 1 1 auto;
 		padding: 7px 10px 7px 5px;
+		white-space: pre-wrap;
 	}
 
 	.tagKey,

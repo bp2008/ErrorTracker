@@ -3505,9 +3505,14 @@ exports.default = {
 
 			(0, _EventData.GetEvent)(this.projectName, this.loadingEventId).then(function (data) {
 				if (data.success) {
-					data.ev.Tags.sort(function (a, b) {
+					var tagList = [];
+					for (var key in data.ev.Tags) {
+						if (data.ev.Tags.hasOwnProperty(key)) tagList.push(data.ev.Tags[key]);
+					}tagList.sort(function (a, b) {
 						return a.Key.localeCompare(b.Key);
 					});
+					data.ev.TagList = tagList;
+
 					_this.event = data.ev;
 				} else _this.error = data.error;
 			}).catch(function (err) {
@@ -16027,7 +16032,7 @@ module.exports = exports;
 var ___CSS_LOADER_API_IMPORT___ = __webpack_require__(/*! ../../../../../node_modules/css-loader/dist/runtime/api.js */ "./node_modules/css-loader/dist/runtime/api.js");
 exports = ___CSS_LOADER_API_IMPORT___(false);
 // Module
-exports.push([module.i, "\n.eventDetails[data-v-17a46c4b]\n{\n\twidth: 100%;\n\tbox-sizing: border-box;\n}\n.loading[data-v-17a46c4b]\n{\n\tpadding-top: 80px;\n\ttext-align: center;\n\tanimation: fadeIn-data-v-17a46c4b linear 5s;\n}\n@keyframes fadeIn-data-v-17a46c4b\n{\n0%\n\t{\n\t\topacity: 0;\n}\n15%\n\t{\n\t\topacity: 0;\n}\n100%\n\t{\n\t\topacity: 1;\n}\n}\n.error[data-v-17a46c4b]\n{\n\tcolor: #FF0000;\n\tfont-weight: bold;\n\ttext-align: center;\n\tmargin-top: 20px;\n}\n.tryAgain[data-v-17a46c4b]\n{\n\tmargin-top: 10px;\n}\n.noEvent[data-v-17a46c4b]\n{\n\tcolor: #777777;\n\ttext-align: center;\n\tpadding-top: 20px;\n}\n.eventBody > *[data-v-17a46c4b]\n{\n\tpadding: 7px 10px;\n\tborder-bottom: 1px solid #e4e4e4;\n\tfont-size: 16px;\n}\n.buttonBar[data-v-17a46c4b]\n{\n\tfont-size: 0px;\n\tline-height: 0px;\n\tmargin: 0px;\n\tpadding: 0px;\n\tfloat: right;\n\tbackground-color: #FFFFFF;\n}\n.buttonBar[data-v-17a46c4b] svg\n\t{\n\t\tfill: #0088FF;\n}\n.eventBodyBelow.isBelow[data-v-17a46c4b]\n{\n\ttransform: scaleY(-1);\n}\n.title[data-v-17a46c4b]\n{\n\tfont-size: 18px;\n\tfont-weight: bold;\n\toverflow: hidden;\n\twhite-space: nowrap;\n\ttext-overflow: ellipsis;\n\tpadding: 10px 10px 7px 10px;\n\tbackground-color: #F6F6F6;\n}\n.colorBorder[data-v-17a46c4b]\n{\n\twidth: 1px;\n\tbackground-color: #000000;\n}\n.subTitle[data-v-17a46c4b]\n{\n\tfont-size: 16px;\n}\n.eventType[data-v-17a46c4b],\n.dateHeading[data-v-17a46c4b],\n.dateValue[data-v-17a46c4b]\n{\n\tfont-weight: bold;\n}\n.messageContainer[data-v-17a46c4b]\n{\n}\n.messageHeading[data-v-17a46c4b]\n{\n\tfont-weight: bold;\n\tcolor: #777777;\n\ttext-transform: uppercase;\n\tpadding: 10px 0px 10px 0px;\n}\n.messageBody[data-v-17a46c4b]\n{\n\twhite-space: pre-wrap;\n\tpadding-bottom: 12px;\n}\n.tagContainer[data-v-17a46c4b]\n{\n\tdisplay: flex;\n\tpadding: 0px;\n}\n.tagTable[data-v-17a46c4b]\n{\n\tborder-collapse: collapse;\n\twidth: 100%;\n}\n.tagKey[data-v-17a46c4b]\n{\n\twidth: 150px;\n\tflex: 0 0 auto;\n\tfont-weight: bold;\n\tcolor: #777777;\n\tpadding: 7px 5px 7px 10px;\n}\n.tagValue[data-v-17a46c4b]\n{\n\tflex: 1 1 auto;\n\tpadding: 7px 10px 7px 5px;\n}\n.tagKey[data-v-17a46c4b],\n.tagValue[data-v-17a46c4b]\n{\n\tborder-bottom: 1px solid #e4e4e4;\n}\n", ""]);
+exports.push([module.i, "\n.eventDetails[data-v-17a46c4b]\n{\n\twidth: 100%;\n\tbox-sizing: border-box;\n}\n.loading[data-v-17a46c4b]\n{\n\tpadding-top: 80px;\n\ttext-align: center;\n\tanimation: fadeIn-data-v-17a46c4b linear 5s;\n}\n@keyframes fadeIn-data-v-17a46c4b\n{\n0%\n\t{\n\t\topacity: 0;\n}\n15%\n\t{\n\t\topacity: 0;\n}\n100%\n\t{\n\t\topacity: 1;\n}\n}\n.error[data-v-17a46c4b]\n{\n\tcolor: #FF0000;\n\tfont-weight: bold;\n\ttext-align: center;\n\tmargin-top: 20px;\n}\n.tryAgain[data-v-17a46c4b]\n{\n\tmargin-top: 10px;\n}\n.noEvent[data-v-17a46c4b]\n{\n\tcolor: #777777;\n\ttext-align: center;\n\tpadding-top: 20px;\n}\n.eventBody > *[data-v-17a46c4b]\n{\n\tpadding: 7px 10px;\n\tborder-bottom: 1px solid #e4e4e4;\n\tfont-size: 16px;\n}\n.buttonBar[data-v-17a46c4b]\n{\n\tfont-size: 0px;\n\tline-height: 0px;\n\tmargin: 0px;\n\tpadding: 0px;\n\tfloat: right;\n\tbackground-color: #FFFFFF;\n}\n.buttonBar[data-v-17a46c4b] svg\n\t{\n\t\tfill: #0088FF;\n}\n.eventBodyBelow.isBelow[data-v-17a46c4b]\n{\n\ttransform: scaleY(-1);\n}\n.title[data-v-17a46c4b]\n{\n\tfont-size: 18px;\n\tfont-weight: bold;\n\toverflow: hidden;\n\twhite-space: nowrap;\n\ttext-overflow: ellipsis;\n\tpadding: 10px 10px 7px 10px;\n\tbackground-color: #F6F6F6;\n}\n.colorBorder[data-v-17a46c4b]\n{\n\twidth: 1px;\n\tbackground-color: #000000;\n}\n.subTitle[data-v-17a46c4b]\n{\n\tfont-size: 16px;\n}\n.eventType[data-v-17a46c4b],\n.dateHeading[data-v-17a46c4b],\n.dateValue[data-v-17a46c4b]\n{\n\tfont-weight: bold;\n}\n.messageContainer[data-v-17a46c4b]\n{\n}\n.messageHeading[data-v-17a46c4b]\n{\n\tfont-weight: bold;\n\tcolor: #777777;\n\ttext-transform: uppercase;\n\tpadding: 10px 0px 10px 0px;\n}\n.messageBody[data-v-17a46c4b]\n{\n\twhite-space: pre-wrap;\n\tpadding-bottom: 12px;\n}\n.tagContainer[data-v-17a46c4b]\n{\n\tdisplay: flex;\n\tpadding: 0px;\n}\n.tagTable[data-v-17a46c4b]\n{\n\tborder-collapse: collapse;\n\twidth: 100%;\n}\n.tagKey[data-v-17a46c4b]\n{\n\twidth: 150px;\n\tflex: 0 0 auto;\n\tfont-weight: bold;\n\tcolor: #777777;\n\tpadding: 7px 5px 7px 10px;\n}\n.tagValue[data-v-17a46c4b]\n{\n\tflex: 1 1 auto;\n\tpadding: 7px 10px 7px 5px;\n\twhite-space: pre-wrap;\n}\n.tagKey[data-v-17a46c4b],\n.tagValue[data-v-17a46c4b]\n{\n\tborder-bottom: 1px solid #e4e4e4;\n}\n", ""]);
 // Exports
 module.exports = exports;
 
@@ -16045,7 +16050,7 @@ module.exports = exports;
 var ___CSS_LOADER_API_IMPORT___ = __webpack_require__(/*! ../../../../../node_modules/css-loader/dist/runtime/api.js */ "./node_modules/css-loader/dist/runtime/api.js");
 exports = ___CSS_LOADER_API_IMPORT___(false);
 // Module
-exports.push([module.i, "\n.eventNode[data-v-8fa1d66e]\n{\n\tdisplay: block;\n\tcolor: #000000;\n\ttext-decoration: none;\n\twidth: 100%;\n\tpadding: 2px 3px 2px 5px;\n\tbox-sizing: border-box;\n\tborder-bottom: 1px solid #b7b7b7;\n\tborder-left: 8px solid transparent;\n}\n.firstLine[data-v-8fa1d66e]\n{\n\twidth: 100%;\n\tdisplay: flex;\n\tflex-wrap: nowrap;\n\tjustify-content: space-between;\n\toverflow: hidden;\n}\n.types[data-v-8fa1d66e]\n{\n\tfont-size: 14px;\n\tflex: 1 1 auto;\n}\n.subType[data-v-8fa1d66e]\n{\n}\n.date[data-v-8fa1d66e]\n{\n\tmargin-left: 5px;\n\tfont-size: 14px;\n\tfont-weight: bold;\n\tflex: 0 0 auto;\n}\n.secondLine[data-v-8fa1d66e]\n{\n\tmargin-top: 2px;\n\tfont-size: 12px;\n\tcolor: #888888;\n}\n.types[data-v-8fa1d66e],\n.secondLine[data-v-8fa1d66e]\n{\n\toverflow: hidden;\n\twhite-space: nowrap;\n\ttext-overflow: ellipsis;\n}\n.json[data-v-8fa1d66e]\n{\n\twhite-space: pre-wrap;\n\tdisplay: none;\n}\n.eventNode[data-v-8fa1d66e]:hover\n{\n\tbackground-color: #E5F3FF;\n}\n.eventNode[data-v-8fa1d66e]:focus\n{\n\toutline: 2px solid #7BC3FF;\n\tborder-bottom-color: transparent;\n}\n.eventNode.selected[data-v-8fa1d66e]\n{\n\tbackground-color: #CDE8FF;\n}\n", ""]);
+exports.push([module.i, "\n.eventNode[data-v-8fa1d66e]\n{\n\tdisplay: block;\n\tcolor: #000000;\n\ttext-decoration: none;\n\twidth: 100%;\n\theight: 37px;\n\toverflow: hidden;\n\tpadding: 2px 3px 2px 5px;\n\tbox-sizing: border-box;\n\tborder-bottom: 1px solid #b7b7b7;\n\tborder-left: 8px solid transparent;\n}\n.firstLine[data-v-8fa1d66e]\n{\n\twidth: 100%;\n\tdisplay: flex;\n\tflex-wrap: nowrap;\n\tjustify-content: space-between;\n\toverflow: hidden;\n}\n.types[data-v-8fa1d66e]\n{\n\tfont-size: 14px;\n\tflex: 1 1 auto;\n}\n.subType[data-v-8fa1d66e]\n{\n}\n.date[data-v-8fa1d66e]\n{\n\tmargin-left: 5px;\n\tfont-size: 14px;\n\tfont-weight: bold;\n\tflex: 0 0 auto;\n}\n.secondLine[data-v-8fa1d66e]\n{\n\tmargin-top: 2px;\n\tfont-size: 12px;\n\tcolor: #888888;\n}\n.types[data-v-8fa1d66e],\n.secondLine[data-v-8fa1d66e]\n{\n\toverflow: hidden;\n\twhite-space: nowrap;\n\ttext-overflow: ellipsis;\n}\n.json[data-v-8fa1d66e]\n{\n\twhite-space: pre-wrap;\n\tdisplay: none;\n}\n.eventNode[data-v-8fa1d66e]:hover\n{\n\tbackground-color: #E5F3FF;\n}\n.eventNode[data-v-8fa1d66e]:focus\n{\n\toutline: 2px solid #7BC3FF;\n\tborder-bottom-color: transparent;\n}\n.eventNode.selected[data-v-8fa1d66e]\n{\n\tbackground-color: #CDE8FF;\n}\n", ""]);
 // Exports
 module.exports = exports;
 
@@ -41995,7 +42000,7 @@ var render = function() {
                 staticClass: "eventList",
                 attrs: {
                   items: _vm.events,
-                  "item-size": 15,
+                  "item-size": 37,
                   "key-field": "EventId"
                 },
                 scopedSlots: _vm._u([
@@ -42009,8 +42014,7 @@ var render = function() {
                             projectName: _vm.projectName,
                             event: item,
                             selected: _vm.isEventSelected(item),
-                            selectionState:
-                              _vm.extraEventNodeProps.selectionState
+                            selectionState: _vm.selectionState
                           },
                           on: { menu: _vm.onMenu }
                         })
@@ -42228,7 +42232,7 @@ var render = function() {
             _c("table", { staticClass: "tagTable" }, [
               _c(
                 "tbody",
-                _vm._l(_vm.event.Tags, function(tag, index) {
+                _vm._l(_vm.event.TagList, function(tag, index) {
                   return _c("tr", { key: index, staticClass: "tagRow" }, [
                     _c("td", {
                       staticClass: "tagKey",

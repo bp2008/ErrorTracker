@@ -1,4 +1,5 @@
-﻿using BPUtil.SimpleHttp;
+﻿using BPUtil;
+using BPUtil.SimpleHttp;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -46,6 +47,7 @@ namespace ErrorTrackerServer
 					cert = new X509Certificate2(Settings.data.certificatePath);
 				certSelector = SimpleCertificateSelector.FromCertificate(cert);
 			}
+			SimpleHttpLogger.RegisterLogger(Logger.httpLogger);
 			srv = new WebServer(Settings.data.port_http, Settings.data.port_https, certSelector, IPAddress.Any);
 		}
 

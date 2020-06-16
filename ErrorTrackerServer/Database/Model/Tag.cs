@@ -27,7 +27,6 @@ namespace ErrorTrackerServer.Database.Model
 		/// <summary>
 		/// Key string. Case-insensitive for matching purposes.
 		/// </summary>
-		//[Indexed]
 		[NotNull]
 		public string Key { get; set; }
 		/// <summary>
@@ -41,34 +40,12 @@ namespace ErrorTrackerServer.Database.Model
 		/// <summary>
 		/// Constructs a new Tag.
 		/// </summary>
-		/// <param name="Key">
-		/// <para>Key string.</para>
-		/// <para>Must be non-null and contain at least one alphanumeric character.</para></param>
-		/// <para>Must not exactly match any of the reserved Key values "EventType", "SubType", "Message", "Date", "Folder", "Color".</para>
-		/// <para>If any of these rules is violated, the Key string will be changed automatically.</para>
-		/// <param name="Value">Value of the key.</param>
+		/// <param name="Key">Tag Key</param>
+		/// <param name="Value">Value of the tag.</param>
 		public Tag(string Key, string Value)
 		{
 			this.Key = Key;
 			this.Value = Value;
-		}
-		/// <summary>
-		/// Trims and validates the [Key] field, replacing invalid Keys with valid ones.  Call this before inserting the Tag into the database.
-		/// </summary>
-		internal void ValidateKey()
-		{
-			if (Key == null)
-				Key = "null";
-			Key = Key.Trim();
-			if (!StringUtil.IsPrintableName(Key))
-				Key = "Undefined";
-			if (Key.Equals("EventType", StringComparison.OrdinalIgnoreCase)
-				|| Key.Equals("SubType", StringComparison.OrdinalIgnoreCase)
-				|| Key.Equals("Message", StringComparison.OrdinalIgnoreCase)
-				|| Key.Equals("Date", StringComparison.OrdinalIgnoreCase)
-				|| Key.Equals("Folder", StringComparison.OrdinalIgnoreCase)
-				|| Key.Equals("Color", StringComparison.OrdinalIgnoreCase))
-				Key = "Tag_" + Key;
 		}
 	}
 }

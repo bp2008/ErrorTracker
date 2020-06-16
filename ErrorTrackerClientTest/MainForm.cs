@@ -1,5 +1,4 @@
 ﻿using ErrorTrackerClient;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -7,11 +6,15 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Security;
 using System.Runtime.Remoting.Messaging;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Newtonsoft.Json;
 
 namespace ErrorTrackerClientTest
 {
@@ -27,7 +30,12 @@ namespace ErrorTrackerClientTest
 		private ErrorClient client;
 		public MainForm()
 		{
+			ServicePointManager.ServerCertificateValidationCallback = UnsafeAcceptAnyCert;
 			InitializeComponent();
+		}
+		private static bool UnsafeAcceptAnyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+		{
+			return true;
 		}
 		private void Reset()
 		{
@@ -55,7 +63,7 @@ namespace ErrorTrackerClientTest
 				return;
 			}
 			if (client == null)
-				client = new ErrorClient(JsonConvert.SerializeObject, () => submitUrl, () => new FileInfo(Application.ExecutablePath).Directory.FullName, true);
+				client = new ErrorClient(JsonConvert.SerializeObject, () => submitUrl, () => new FileInfo(Application.ExecutablePath).Directory.FullName);
 
 			btnStart.Text = "Abort";
 			txtSubmitUrl.Enabled = false;
@@ -151,17 +159,16 @@ namespace ErrorTrackerClientTest
 			new string[] { "Red", "Green", "Blue" },
 			new string[] { "Apple", "Banana", "Cherry" }
 		};
+		private int eventCounter = 0;
 		private Event BuildRandomEvent()
 		{
-			Event ev = new Event();
 			int eventTypeIdx = StaticRandom.Next(0, 3);
 			int typeIdx = StaticRandom.Next(0, 3);
 			int messageIdx = StaticRandom.Next(0, 3);
-			ev.EventType = (EventType)eventTypeIdx;
-			ev.SubType = _subTypes[typeIdx];
-			ev.Message = _messages[typeIdx][messageIdx];
-			ev.Tags.Add(new Tag("Event Structure", eventTypeIdx + ":" + typeIdx + ":" + messageIdx));
-			ev.Tags.Add(new Tag("Random 0-100", StaticRandom.Next(0, 101).ToString()));
+			Event ev = new Event((EventType)eventTypeIdx, _subTypes[typeIdx], _messages[typeIdx][messageIdx]);
+			ev.SetTag("Event Structure", eventTypeIdx + ":" + typeIdx + ":" + messageIdx);
+			ev.SetTag("Random 0-100", StaticRandom.Next(0, 101).ToString());
+			ev.SetTag("Counter", Interlocked.Increment(ref eventCounter).ToString());
 			return ev;
 		}
 	}

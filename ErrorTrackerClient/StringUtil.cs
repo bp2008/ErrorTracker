@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace ErrorTrackerClient
 {
-	public class StringUtil
+	/// <summary>
+	/// Provides utilities for working with strings.
+	/// </summary>
+	public static class StringUtil
 	{
 		/// <summary>
 		/// Returns true if the string meets minimum reasonable criteria for a printable display name, meaning it consists of at least one alphanumeric character among any number of spaces or other ASCII-printable characters.

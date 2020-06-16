@@ -10,16 +10,26 @@ using System.Threading.Tasks;
 
 namespace ErrorTrackerClient
 {
+	/// <summary>
+	/// Create only one of these per application.
+	/// </summary>
 	public class ErrorClient
 	{
-		private Func<string> submitUrl;
 		private Func<object, string> serializeJson;
+		private Func<string> submitUrl;
 		private Func<string> pathToSaveFailedSubmissions;
 
-		private HttpClient client;
-		private HttpClientHandler httpClientHandler;
 		private UTF8Encoding UTF8NoBOM = new UTF8Encoding(false);
 		private Thread backgroundResendThread;
+
+		/// <summary>
+		/// Gets the HttpClient in use by this class.
+		/// </summary>
+		public HttpClient httpClient { get; private set; }
+		/// <summary>
+		/// Gets the HttpClientHandler in use by this class.
+		/// </summary>
+		public HttpClientHandler httpClientHandler { get; private set; }
 
 		/// <summary>
 		/// <para>Initializes the ErrorClient. Create only one of these per application.</para>
@@ -27,18 +37,17 @@ namespace ErrorTrackerClient
 		/// As such, only one instance should be created at the start of your app and stored in a static field to be used each time an event is to be submitted.
 		/// DO NOT create additional instances of ErrorClient unless they use different [submitUrl] and [pathToSaveFailedSubmissions] arguments.</para>
 		/// </summary>
-		/// <param name="serializeJson">A Func which serializes an object as JSON (e.g. JsonConvert.SerializeObject)</param>
+		/// <param name="serializeJson">Provide "JsonConvert.SerializeObject" or an equivalent JSON serializing method.</param>
 		/// <param name="submitUrl">A Func which returns the submit URL for the error tracker server.</param>
 		/// <param name="pathToSaveFailedSubmissions">
 		/// <para>A Func which returns a directory path which can be used to save events for later submission if realtime submission fails.</para>
 		/// <para>If this path ever changes, items previously saved in it may not ever be successfully submitted to the server.</para>
 		/// <para>If you use multiple Error Tracker services or multiple ErrorClient instances for any reason, this path must be unique for each one.</para>
 		/// </param>
-		/// <param name="acceptAnyCert">If true, this instance will accept untrusted server certificates.</param>
-		public ErrorClient(Func<object, string> serializeJson, Func<string> submitUrl, Func<string> pathToSaveFailedSubmissions, bool acceptAnyCert)
+		public ErrorClient(Func<object, string> serializeJson, Func<string> submitUrl, Func<string> pathToSaveFailedSubmissions)
 		{
-			this.submitUrl = submitUrl;
 			this.serializeJson = serializeJson;
+			this.submitUrl = submitUrl;
 			this.pathToSaveFailedSubmissions = pathToSaveFailedSubmissions;
 
 			if (!ServicePointManager.SecurityProtocol.HasFlag(SecurityProtocolType.Tls12))
@@ -47,11 +56,9 @@ namespace ErrorTrackerClient
 				ServicePointManager.DefaultConnectionLimit = 16;
 
 			httpClientHandler = new HttpClientHandler();
-			if (acceptAnyCert)
-				httpClientHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-			client = new HttpClient(httpClientHandler);
-			client.DefaultRequestHeaders.ExpectContinue = false;
-			client.Timeout = TimeSpan.FromSeconds(15);
+			httpClient = new HttpClient(httpClientHandler);
+			httpClient.DefaultRequestHeaders.ExpectContinue = false;
+			httpClient.Timeout = TimeSpan.FromSeconds(15);
 
 			backgroundResendThread = new Thread(backgroundResendWorker);
 			backgroundResendThread.Name = "Error Client Background Resend";
@@ -75,6 +82,9 @@ namespace ErrorTrackerClient
 				if (!string.IsNullOrWhiteSpace(dirPath))
 				{
 					string failurePath = Path.Combine(dirPath, TimeUtil.GetTimeInMsSinceEpoch() + "-" + Guid.NewGuid().ToString() + ".json");
+					FileInfo fi = new FileInfo(failurePath);
+					if (!fi.Directory.Exists)
+						Directory.CreateDirectory(fi.Directory.FullName);
 					File.WriteAllBytes(failurePath, JSON);
 				}
 			}
@@ -103,7 +113,7 @@ namespace ErrorTrackerClient
 
 		private async Task<HttpResponseMessage> Send(HttpRequestMessage request)
 		{
-			HttpResponseMessage httpResponse = await client.SendAsync(request).ConfigureAwait(false);
+			HttpResponseMessage httpResponse = await httpClient.SendAsync(request).ConfigureAwait(false);
 			return httpResponse;
 		}
 
@@ -125,16 +135,21 @@ namespace ErrorTrackerClient
 							filesFound = existingFiles.Length;
 							foreach (FileInfo fi in existingFiles)
 							{
-								byte[] data = File.ReadAllBytes(fi.FullName);
-								string JSON = UTF8NoBOM.GetString(data);
-								if (JSON.Contains("\"EventType\"") && JSON.Contains("\"SubType\"") && JSON.Contains("\"Message\"") && JSON.Contains("\"Date\""))
+								try
 								{
-									if (SubmitSerialized(data))
+									byte[] data = File.ReadAllBytes(fi.FullName);
+									string JSON = UTF8NoBOM.GetString(data);
+									if (JSON.Contains("\"EventType\"") && JSON.Contains("\"SubType\"") && JSON.Contains("\"Message\"") && JSON.Contains("\"Date\""))
 									{
-										fi.Delete();
-										filesSubmitted++;
+										if (SubmitSerialized(data))
+										{
+											fi.Delete();
+											filesSubmitted++;
+										}
 									}
+
 								}
+								catch { }
 							}
 						}
 					}

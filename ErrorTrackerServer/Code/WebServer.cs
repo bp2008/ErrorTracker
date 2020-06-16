@@ -14,12 +14,10 @@ namespace ErrorTrackerServer
 {
 	public class WebServer : HttpServer
 	{
-		ErrorServer esrv;
 		private WebpackProxy webpackProxy = null;
 		private MVCMain mvcMain;
 		public WebServer(int port, int httpsPort, ICertificateSelector certificateSelector, IPAddress bindAddr) : base(port, httpsPort, certificateSelector, bindAddr)
 		{
-			esrv = new ErrorServer();
 #if DEBUG
 			if (Debugger.IsAttached)
 				webpackProxy = new WebpackProxy(9000, Globals.ApplicationDirectoryBase + "../../");
@@ -109,7 +107,6 @@ namespace ErrorTrackerServer
 
 		protected override void stopServer()
 		{
-			esrv.Dispose();
 		}
 	}
 }

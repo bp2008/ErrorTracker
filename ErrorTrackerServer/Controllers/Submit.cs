@@ -40,16 +40,26 @@ namespace ErrorTrackerServer.Controllers
 			if (p.SubmitKey != submitKey)
 				return StatusCode("404 Not Found");
 
-			// After this point, the request is trusted.
+			// After this point, the request is allowed.
 			byte[] data = Context.httpProcessor.PostBodyStream.ToArray();
 			string str = ByteUtil.Utf8NoBOM.GetString(data);
-			Event ev = JsonConvert.DeserializeObject<Event>(str);
-			if (ev == null || (ev.Date == 0 && string.IsNullOrEmpty(ev.Message)))
+			ErrorTrackerClient.Event clientEvent = JsonConvert.DeserializeObject<ErrorTrackerClient.Event>(str);
+			if (string.IsNullOrEmpty(clientEvent?.Message))
 				return StatusCode("400 Bad Request");
+
+			// Convert from client library Event to database Event.
+			// During this conversion, each tag key will be validated and changed if necessary.
+			Event ev = new Event();
+			ev.EventType = (EventType)clientEvent.EventType;
+			ev.SubType = clientEvent.SubType;
+			ev.Message = clientEvent.Message;
+			ev.Date = clientEvent.Date;
+			foreach (ErrorTrackerClient.ReadOnlyTag tag in clientEvent.GetAllTags())
+				ev.SetTag(tag.Key, tag.Value);
 
 			using (FilterEngine fe = new FilterEngine(p.Name))
 			{
-				// If our response is not received by the client, they will most likely submit again.
+				// If our response is not received by the client, they will most likely submit again, causing a duplicate to be received.
 				// Check for duplicate submissions.
 				List<Event> events = fe.db.GetEventsByDate(ev.Date, ev.Date);
 				bool anyDupe = events.Any(existing =>
@@ -58,16 +68,13 @@ namespace ErrorTrackerServer.Controllers
 					&& existing.EventType == ev.EventType
 					&& existing.SubType == ev.SubType
 					&& existing.Message == ev.Message
-					&& existing.Tags.Count == ev.Tags.Count)
+					&& existing.GetTagCount() == ev.GetTagCount())
 					{
 						// All else is the same. Compare tags.
-						foreach (Tag t in ev.Tags)
-							t.ValidateKey();
-
-						List<Tag> existingTags = new List<Tag>(existing.Tags);
+						List<Tag> existingTags = existing.GetAllTags();
 						existingTags.Sort(CompareTags);
 
-						List<Tag> newTags = new List<Tag>(ev.Tags);
+						List<Tag> newTags = ev.GetAllTags();
 						newTags.Sort(CompareTags);
 
 						for (int i = 0; i < existingTags.Count; i++)
@@ -79,11 +86,14 @@ namespace ErrorTrackerServer.Controllers
 					return false;
 				});
 
+				// Skip adding the event if it is a duplicate.
 				if (anyDupe)
 					return this.PlainText("OK");
 
+				// Add the event to the database.
 				fe.db.AddEvent(ev);
 
+				// Run Filters
 				try
 				{
 					fe.RunEnabledFiltersAgainstEvent(ev);
