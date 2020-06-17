@@ -36,4 +36,5 @@
 				* Consider: With user setting to disable notification. Could be shown in user-filtered login history lists.
 			* Optional integration with GeolocationService
 
-* When deleting a project, remove it from all user access lists.
+* Automatic Event deletion after certain age.
+	* Max age in days to be set in Admin > Projects.

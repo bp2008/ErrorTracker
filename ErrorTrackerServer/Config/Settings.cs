@@ -79,7 +79,14 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public Project TryRemoveProject(string projectName)
 		{
-			return _TryRemoveListItem(projectName, Internal_Projects, p => p.Name, projectsLock);
+			Project project = _TryRemoveListItem(projectName, Internal_Projects, p => p.Name, projectsLock);
+			if (project != null)
+			{
+				foreach (User user in GetAllUsers())
+					user.DisallowProject(projectName);
+				return project;
+			}
+			return project;
 		}
 		/// <summary>
 		/// Gets the number of projects.

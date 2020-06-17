@@ -144,7 +144,7 @@
 					this.selectionState.lastSelectedEventId = this.event.EventId;
 					query.e = this.event.EventId;
 					query.se = this.event.EventId.toString();
-					this.$router.push({ name: this.$route.name, query }).catch(() => { });
+					this.$router.replace({ name: this.$route.name, query }).catch(() => { });
 				}
 
 				e.preventDefault();

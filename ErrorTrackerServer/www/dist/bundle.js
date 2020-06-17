@@ -2148,6 +2148,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 //
 //
 //
+//
+//
+//
+//
+//
+//
 
 exports.default = {
 	components: { ProjectDisplay: _ProjectDisplay2.default },
@@ -3793,7 +3799,7 @@ exports.default = {
 				this.selectionState.lastSelectedEventId = this.event.EventId;
 				query.e = this.event.EventId;
 				query.se = this.event.EventId.toString();
-				this.$router.push({ name: this.$route.name, query: query }).catch(function () {});
+				this.$router.replace({ name: this.$route.name, query: query }).catch(function () {});
 			}
 
 			e.preventDefault();
@@ -15863,7 +15869,7 @@ module.exports = exports;
 var ___CSS_LOADER_API_IMPORT___ = __webpack_require__(/*! ../../../node_modules/css-loader/dist/runtime/api.js */ "./node_modules/css-loader/dist/runtime/api.js");
 exports = ___CSS_LOADER_API_IMPORT___(false);
 // Module
-exports.push([module.i, "\n.pageRoot[data-v-12bc9bd2]\n{\n\tmargin: 8px;\n}\n.pageRoot.noMargin[data-v-12bc9bd2]\n\t{\n\t\tmargin: 0px;\n}\n.loading[data-v-12bc9bd2]\n{\n\tmargin-top: 80px;\n\ttext-align: center;\n}\n.error[data-v-12bc9bd2]\n{\n\tcolor: #FF0000;\n\tfont-weight: bold;\n}\n.heading[data-v-12bc9bd2]\n{\n\tfont-size: 20px;\n\tborder-bottom: 1px solid #000000;\n\tmargin-bottom: 10px;\n\tmargin-top: 30px;\n\tmax-width: 400px;\n}\n.heading[data-v-12bc9bd2]:first-child\n\t{\n\t\tmargin-top: 0px;\n}\n.projectListItem[data-v-12bc9bd2]\n{\n\tmargin-left: 20px;\n}\n", ""]);
+exports.push([module.i, "\n.pageRoot[data-v-12bc9bd2]\n{\n\tmargin: 8px;\n}\n.pageRoot.noMargin[data-v-12bc9bd2]\n\t{\n\t\tmargin: 0px;\n}\n.loading[data-v-12bc9bd2]\n{\n\tmargin-top: 80px;\n\ttext-align: center;\n}\n.error[data-v-12bc9bd2]\n{\n\tcolor: #FF0000;\n\tfont-weight: bold;\n}\n.heading[data-v-12bc9bd2]\n{\n\tfont-size: 20px;\n\tborder-bottom: 1px solid #000000;\n\tmargin-bottom: 10px;\n\tmargin-top: 30px;\n\tmax-width: 400px;\n}\n.heading[data-v-12bc9bd2]:first-child\n\t{\n\t\tmargin-top: 0px;\n}\n.bodySection[data-v-12bc9bd2]\n{\n\tmargin-left: 20px;\n}\n", ""]);
 // Exports
 module.exports = exports;
 
@@ -40678,13 +40684,10 @@ var render = function() {
             ],
             1
           )
-        : _c(
-            "div",
-            [
-              _c("div", { staticClass: "heading" }, [
-                _vm._v("Select a Project")
-              ]),
-              _vm._v(" "),
+        : _c("div", [
+            _c("div", { staticClass: "heading" }, [_vm._v("Select a Project")]),
+            _vm._v(" "),
+            _c("div", { staticClass: "bodySection" }, [
               _vm.projects && _vm.projects.length > 0
                 ? _c(
                     "div",
@@ -40710,28 +40713,45 @@ var render = function() {
                   )
                 : _c("div", [
                     _vm._v(
-                      "\n\t\t\tNo projects are accessible by your user account.\n\t\t"
+                      "\n\t\t\t\tNo projects are accessible by your user account.\n\t\t\t"
                     )
-                  ]),
-              _vm._v(" "),
-              _c("div", { staticClass: "heading" }, [
-                _vm._v("Manage User Account")
-              ]),
-              _vm._v(" "),
-              _c("router-link", { attrs: { to: { name: "changePassword" } } }, [
-                _vm._v("Change Password")
-              ]),
-              _vm._v(" "),
-              _c("div", { staticClass: "heading" }, [_vm._v("Login History")]),
-              _vm._v(" "),
-              _c("div", [_vm._v("Under Construction")])
-            ],
-            1
-          )
+                  ])
+            ]),
+            _vm._v(" "),
+            _c("div", { staticClass: "heading" }, [
+              _vm._v("Manage User Account")
+            ]),
+            _vm._v(" "),
+            _c(
+              "div",
+              { staticClass: "bodySection" },
+              [
+                _c(
+                  "router-link",
+                  { attrs: { to: { name: "changePassword" } } },
+                  [_vm._v("Change Password")]
+                )
+              ],
+              1
+            ),
+            _vm._v(" "),
+            _c("div", { staticClass: "heading" }, [_vm._v("Login History")]),
+            _vm._v(" "),
+            _vm._m(0)
+          ])
     ]
   )
 }
-var staticRenderFns = []
+var staticRenderFns = [
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c("div", { staticClass: "bodySection" }, [
+      _c("div", [_vm._v("Under Construction")])
+    ])
+  }
+]
 render._withStripped = true
 
 
@@ -63800,7 +63820,13 @@ function CreateRouter(store, basePath) {
 
 			// Check session status
 			// If the session is not active, the API framework will redirect us to login automatically.
-			if (myApp.$store.state.sid) (0, _api2.default)("SessionStatus/IsSessionActive").catch(function (err) {});
+			if (myApp.$store.state.sid) {
+				//console.log("Route changed", from, to);
+				// We use the route for a lot of UI state, so we should only check session status if the path has changed.
+				if (from.path !== to.path) {
+					(0, _api2.default)("SessionStatus/IsSessionActive").catch(function (err) {});
+				}
+			}
 		});
 	});
 
