@@ -218,6 +218,7 @@
 	{
 		border-bottom: 1px solid black;
 		flex: 1 1 auto;
+		border-right: none;
 	}
 
 	.eventBodyBelow .eventDetailsContainer

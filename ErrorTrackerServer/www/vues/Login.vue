@@ -4,7 +4,7 @@
 			<div class="systemName">{{systemName}}</div>
 			<input type="text" class="txtUser" v-model="user" placeholder="User Name" v-on:keyup.enter="TryLogin" />
 			<input type="password" class="txtPass" v-model="pass" placeholder="Password" v-on:keyup.enter="TryLogin" />
-			<input type="button" class="btnLogin" @click="TryLogin" value="Log in" :disabled="!loginEnabled" on:keyup.space.enter="TryLogin" />
+			<input type="button" class="btnLogin" value="Log in" :disabled="!loginEnabled" @click="TryLogin" @keyup.space.enter="TryLogin" />
 		</div>
 		<div class="error" v-if="error">{{error}}</div>
 		<Footer class="loginFooter" />

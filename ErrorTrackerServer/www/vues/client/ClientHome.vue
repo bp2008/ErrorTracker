@@ -8,14 +8,26 @@
 							:openedEventId="openedEventId"
 							:selectedEventIds="selectedEventIds" />
 		</div>
-		<div v-else-if="projects && projects.length > 0">
-			<div class="heading">Select a Project</div>
-			<div v-for="p in projects" :key="p" class="projectListItem">
-				<router-link :to="{ name: 'clientHome', query: { p: p }}">{{p}}</router-link>
-			</div>
-		</div>
 		<div v-else>
-			No projects are accessible by your user account.
+			<div class="heading">Select a Project</div>
+			<div class="bodySection">
+				<div v-if="projects && projects.length > 0">
+					<div v-for="p in projects" :key="p" class="projectListItem">
+						<router-link :to="{ name: 'clientHome', query: { p: p }}">{{p}}</router-link>
+					</div>
+				</div>
+				<div v-else>
+					No projects are accessible by your user account.
+				</div>
+			</div>
+			<div class="heading">Manage User Account</div>
+			<div class="bodySection">
+				<router-link :to="{ name: 'changePassword' }">Change Password</router-link>
+			</div>
+			<div class="heading">Login History</div>
+			<div class="bodySection">
+				<div>Under Construction</div>
+			</div>
 		</div>
 	</div>
 </template>
@@ -131,10 +143,16 @@
 		font-size: 20px;
 		border-bottom: 1px solid #000000;
 		margin-bottom: 10px;
+		margin-top: 30px;
 		max-width: 400px;
 	}
 
-	.projectListItem
+		.heading:first-child
+		{
+			margin-top: 0px;
+		}
+
+	.bodySection
 	{
 		margin-left: 20px;
 	}

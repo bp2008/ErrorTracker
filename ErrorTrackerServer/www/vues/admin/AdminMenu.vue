@@ -28,7 +28,7 @@
 				this.$store.dispatch("Logout")
 					.then(data =>
 					{
-						this.$router.push({ name: "publicHome" });
+						this.$router.push({ name: "login" });
 					})
 					.catch(err =>
 					{

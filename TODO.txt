@@ -1,0 +1,39 @@
+* Email Configuration
+	* Consider: Email Notifications of new events
+	* Consider: Email Notifications of new events (daily summary)
+	* Consider: Email Notifications of new events (weekly summary)
+	* User Reset Password (via email)
+
+* Button/control bar at top of project display (just below top bar, fixed height <= 50px including bottom border)
+	* Move Filters and Compact Layout buttons here.
+	* Event Search using modified filter condition GUI
+		* Keep search parameters in vuex store?
+		* Search history array or just one state w/reset button?
+
+* An automatic system for identifying repeat occurrences of an event by matching EventType, SubType, and Message. (maybe just the first N characters of Message?)
+	* Concatenate EventType, SubType, and Message (partial Message?) and calculate an MD5 hash.
+	* Event class has method to calculate and return Hash.
+	* New Table "Repeat". Columns: RepeatId, [Indexed] Hash.
+		* Supports quick lookup of RepeatId by Hash string.
+	* New Table "RepeatMap". Columns: [Indexed] RepeatId, EventId
+		* Supports quick lookup of EventId(s) by RepeatId
+
+* Event Summaries in client home when no project is selected
+	* Total Event Count
+	* Unique Event Count (using Repeat System)
+
+* Event Read State
+	* Folders list unread count
+
+* App-wide database file
+	* Move project databases to subfolder to ensure no name collision with app-wide database file
+	* Login History Database
+		* Login history GUI
+			* Attached to client home (filtered by user)
+			* Attached to user config in admin (filtered by user)
+			* Overall history (on user list page)
+			* Consider: Email Notification of login from new IP
+				* Consider: With user setting to disable notification. Could be shown in user-filtered login history lists.
+			* Optional integration with GeolocationService
+
+* When deleting a project, remove it from all user access lists.

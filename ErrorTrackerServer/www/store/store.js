@@ -17,6 +17,7 @@ export default function CreateStore()
 		state:
 		{
 			sid: "",
+			userName: "",
 			isAdmin: false,
 			projectConfig: {},
 			eventBodyBelow: true
@@ -41,11 +42,13 @@ export default function CreateStore()
 			SessionLost(state)
 			{
 				state.sid = "";
+				state.userName = "";
 				state.isAdmin = false;
 			},
-			SessionAuthenticated(state, { sid, isAdmin })
+			SessionAuthenticated(state, { sid, userName, isAdmin })
 			{
 				state.sid = sid;
+				state.userName = userName;
 				state.isAdmin = isAdmin;
 			},
 			SetSid(state, sid)
@@ -109,17 +112,7 @@ export default function CreateStore()
 									let args = { sid: data.sid, user };
 									try
 									{
-										// Use BCrypt on the password, using the salt provided by the server.
-										var bCryptResult = bcrypt.hashSync(pass, data.salt);
-										// Compute SHA512 so we have the desired output size for later XORing
-										var bCryptResultHex = Util.bytesToHex(Util.stringToUtf8ByteArray(bCryptResult));
-										var onceHashedPw = Util.ComputeSHA512Hex(bCryptResultHex);
-										// We prove our identity by transmitting onceHashedPw to the server.
-										// However we won't do that in plain text.
-										// Hash one more time; PasswordHash is the value remembered by the server
-										var PasswordHash = Util.ComputeSHA512Hex(onceHashedPw);
-										var challengeHashed = Util.ComputeSHA512Hex(PasswordHash + data.challenge);
-										args.token = Util.XORHexStrings(challengeHashed, onceHashedPw);
+										args.token = BuildPasswordToken(pass, data.salt, data.challenge);
 									}
 									catch (ex)
 									{
@@ -135,7 +128,7 @@ export default function CreateStore()
 
 												if (data.authenticated)
 												{
-													commit("SessionAuthenticated", { sid: data.sid, isAdmin: data.isAdmin });
+													commit("SessionAuthenticated", { sid: data.sid, userName: user, isAdmin: data.isAdmin });
 													return data;
 												}
 												else
@@ -182,6 +175,51 @@ export default function CreateStore()
 					{
 						commit("SessionLost");
 						return data;
+					});
+			},
+			/**
+			 * Performs the change password protocol. Returns a promise that resolves if successful, otherwise rejects with a string containing an error message to show.
+			 * @param {Object} param0 Action context.
+			 * @param {Object} param1 Arguments to this action.
+			 * @returns {Promise} A promise that resolves if login is successful, otherwise rejects with a string containing an error message to show.
+			 */
+			ChangePassword({ commit, dispatch, state, rootState, rootGetters }, { oldPw, newPw })
+			{
+				return ExecAPI("ChangePW/StartChange", {})
+					.then(data =>
+					{
+						if (data.success)
+						{
+							let args = { oldPwToken: "", newPwToken: "" };
+							try
+							{
+								args.oldPwToken = BuildPasswordToken(oldPw, data.salt, data.challenge);
+								args.newPwToken = BuildNewPasswordToken(oldPw, newPw, data.salt, data.challenge);
+							}
+							catch (ex)
+							{
+								return Promise.reject("An error occurred while creating the authentication tokens: \n" + ex.stack);
+							}
+							return ExecAPI("ChangePW/FinishChange", args)
+								.then(data =>
+								{
+									if (data.success)
+										return data;
+									else
+										return Promise.reject(data.error);
+								});
+						}
+						else
+							return Promise.reject(data.error);
+					})
+					.catch(err =>
+					{
+						if (typeof err === "string")
+							return Promise.reject(err);
+						else if (err && typeof err.message === "string")
+							return Promise.reject(err.message);
+						else
+							return Promise.reject("An unhandled error occurred.");
 					});
 			}
 		},
@@ -296,4 +334,68 @@ function GetProjectConfig(state, projectName, getOnly)
 		pcfg = state.projectConfig[projectName];
 	}
 	return pcfg;
+}
+/**
+ * Builds a token which the server can use to verify that we know the password.
+ * @param {String} pass Password we claim to know.
+ * @param {String} salt Salt data from the server, unique to this user.
+ * @param {String} challenge Challenge data from the server, unique to this session and never reused.
+ */
+function BuildPasswordToken(pass, salt, challenge)
+{
+	// We don't want to share our actual password, so we generate a hash value.
+	var onceHashedPw = HashPw(pass, salt);
+
+	// We prove our identity by transmitting onceHashedPw to the server.
+	// However we won't do that in plain text.
+
+	// First we derive an encryption key from onceHashedPw and the server-provided challenge.
+	// The server will be able to derive the same encryption key and use it to decrypt onceHashedPw.
+	var encryptionKey = BuildEncryptionKey(onceHashedPw, challenge);
+
+	// Now we XOR the encryption key with onceHashedPw.  The result is our password token.
+	return Util.XORHexStrings(encryptionKey, onceHashedPw);
+}
+/**
+ * Builds a token which the server can decrypt when setting a new password.
+ * @param {String} oldPw Old password which the server already possesses cryptographic hash data for.
+ * @param {String} newPw New password which we intend to set.
+ * @param {String} salt Salt data from the server, unique to this user.
+ * @param {String} challenge Challenge data from the server, unique to this session and never reused.
+ */
+function BuildNewPasswordToken(oldPw, newPw, salt, challenge)
+{
+	// This works just like BuildPasswordToken except it uses the old password when deriving the encryption key.
+	var onceHashedPw = HashPw(newPw, salt);
+	var encryptionKey = BuildEncryptionKey(HashPw(oldPw, salt), challenge);
+	return Util.XORHexStrings(encryptionKey, onceHashedPw);
+}
+/**
+ * Returns the SHA512 hash of the bcrypt hash of the password.
+ * @param {String} pass Password
+ * @param {String} salt Bcrypt salt.
+ */
+function HashPw(pass, salt)
+{
+	// Use BCrypt on the password, using the salt provided by the server.
+	var bCryptResult = bcrypt.hashSync(pass, salt);
+	// Compute SHA512 so we have the desired output size for later XORing
+	var bCryptResultHex = Util.bytesToHex(Util.stringToUtf8ByteArray(bCryptResult));
+	var onceHashedPw = Util.ComputeSHA512Hex(bCryptResultHex);
+	return onceHashedPw;
+}
+/**
+ * Builds an encryption key based on onceHashedPw and the server-provided challenge.
+ * The server will be able to derive the same encryption key.
+ * @param {String} onceHashedPw SHA512 hash code from HashPw function.
+ * @param {String} challenge Challenge data from the server.
+ */
+function BuildEncryptionKey(onceHashedPw, challenge)
+{
+	// We prove our identity by transmitting onceHashedPw to the server.
+	// However we won't do that in plain text.
+	// Hash one more time; PasswordHash is the value remembered by the server
+	let PasswordHash = Util.ComputeSHA512Hex(onceHashedPw);
+	let encryptionKey = Util.ComputeSHA512Hex(PasswordHash + challenge);
+	return encryptionKey;
 }

@@ -93,6 +93,8 @@
     <Compile Include="Controllers\BaseControllers\UserController.cs" />
     <Compile Include="Controllers\BaseControllers\AdminController.cs" />
     <Compile Include="Controllers\BaseControllers\ETController.cs" />
+    <Compile Include="Controllers\SessionStatus.cs" />
+    <Compile Include="Controllers\ChangePW.cs" />
     <Compile Include="Controllers\FilterData.cs" />
     <Compile Include="Filtering\FilterEngine.cs" />
     <Compile Include="Controllers\FolderData.cs" />
@@ -152,6 +154,7 @@
     <None Include="www\vues\client\ClientHome.vue" />
     <None Include="www\vues\client\ClientLayout.vue" />
     <None Include="www\vues\client\ClientMenu.vue" />
+    <None Include="www\vues\client\ChangePassword.vue" />
     <None Include="www\vues\client\projectdisplay\event\EventDetails.vue" />
     <None Include="www\vues\client\projectdisplay\event\EventBrowser.vue" />
     <None Include="www\vues\client\projectdisplay\event\EventNode.vue" />
@@ -173,8 +176,6 @@
     <None Include="www\vues\common\ScaleLoader.vue" />
     <None Include="www\vues\common\Template.vue" />
     <None Include="www\vues\Login.vue" />
-    <None Include="www\vues\public\PublicHome.vue" />
-    <None Include="www\vues\public\PublicLayout.vue" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="webpack.config.js" />

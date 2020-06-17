@@ -1,12 +1,12 @@
 ﻿import Vue from 'vue';
 import VueRouter from 'vue-router';
+import ExecAPI from 'appRoot/api/api';
 
 import Login from 'appRoot/vues/Login.vue';
-import PublicLayout from 'appRoot/vues/public/PublicLayout.vue';
-import PublicHome from 'appRoot/vues/public/PublicHome.vue';
 import ClientLayout from 'appRoot/vues/client/ClientLayout.vue';
 import ClientHome from 'appRoot/vues/client/ClientHome.vue';
 import ClientFiltersHome from 'appRoot/vues/client/filters/ClientFiltersHome.vue';
+import ChangePassword from 'appRoot/vues/client/ChangePassword.vue';
 
 import AdminLayout from 'appRoot/vues/admin/AdminLayout.vue';
 import AdminHome from 'appRoot/vues/admin/AdminHome.vue';
@@ -22,10 +22,7 @@ export default function CreateRouter(store, basePath)
 		mode: 'history',
 		routes: [
 			{
-				path: basePath + '', component: PublicLayout,
-				children: [
-					{ path: '', component: PublicHome, name: 'publicHome' }
-				]
+				path: basePath + '', redirect: 'login'
 			},
 			{
 				path: basePath + 'login', component: Login, name: 'login'
@@ -60,6 +57,9 @@ export default function CreateRouter(store, basePath)
 							projectName: route.query.p ? route.query.p.toString() : "",
 							filterId: route.params.filterId ? route.params.filterId.toString() : ""
 						})
+					},
+					{
+						path: 'changePassword', component: ChangePassword, name: 'changePassword', meta: { title: "Change Password" }
 					}
 				]
 			},
@@ -116,6 +116,18 @@ export default function CreateRouter(store, basePath)
 			if (!routeSetsOwnTitle)
 			{
 				document.title = titleArr.join(" - ");
+			}
+
+			// Check session status
+			// If the session is not active, the API framework will redirect us to login automatically.
+			if (myApp.$store.state.sid)
+			{
+				//console.log("Route changed", from, to);
+				// We use the route for a lot of UI state, so we should only check session status if the path has changed.
+				if (from.path !== to.path)
+				{
+					ExecAPI("SessionStatus/IsSessionActive").catch(err => { });
+				}
 			}
 		});
 	});
