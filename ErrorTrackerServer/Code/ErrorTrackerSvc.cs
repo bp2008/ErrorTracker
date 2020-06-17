@@ -11,6 +11,7 @@ using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceProcess;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ErrorTrackerServer
@@ -18,6 +19,7 @@ namespace ErrorTrackerServer
 	public partial class ErrorTrackerSvc : ServiceBase
 	{
 		WebServer srv;
+		Thread thrMaintainProjects;
 		public static string SvcName { get; private set; }
 		public ErrorTrackerSvc()
 		{
@@ -49,16 +51,58 @@ namespace ErrorTrackerServer
 			}
 			SimpleHttpLogger.RegisterLogger(Logger.httpLogger);
 			srv = new WebServer(Settings.data.port_http, Settings.data.port_https, certSelector, IPAddress.Any);
+
+			thrMaintainProjects = new Thread(maintainProjects);
+			thrMaintainProjects.Name = "Maintain Projects";
+			thrMaintainProjects.IsBackground = false;
 		}
 
 		protected override void OnStart(string[] args)
 		{
 			srv.Start();
+			thrMaintainProjects.Start();
 		}
 
 		protected override void OnStop()
 		{
 			srv.Stop();
+			thrMaintainProjects.Abort();
+		}
+
+		private void maintainProjects()
+		{
+			try
+			{
+				while (true)
+				{
+					try
+					{
+						foreach (Project p in Settings.data.GetAllProjects())
+						{
+							int maxAgeDays = p.MaxEventAgeDays;
+							if (maxAgeDays > 0)
+							{
+								long ageCutoff = TimeUtil.GetTimeInMsSinceEpoch(DateTime.UtcNow.AddDays(-1 * maxAgeDays));
+								using (DB db = new DB(p.Name))
+								{
+									db.DeleteEventsOlderThan(ageCutoff);
+								}
+							}
+						}
+					}
+					catch (ThreadAbortException) { throw; }
+					catch (Exception ex)
+					{
+						Logger.Debug(ex);
+					}
+					Thread.Sleep(TimeSpan.FromMinutes(30));
+				}
+			}
+			catch (ThreadAbortException) { }
+			catch (Exception ex)
+			{
+				Logger.Debug(ex, "Maintain Projects thread is exiting prematurely.");
+			}
 		}
 	}
 }

@@ -17,6 +17,10 @@ namespace ErrorTrackerServer
 		/// URL fragment to use when submitting events to the server.
 		/// </summary>
 		public string SubmitKey;
+		/// <summary>
+		/// Max age in days for events.  Events older than this will be deleted automatically. Disabled if less than 1.
+		/// </summary>
+		public int MaxEventAgeDays = 0;
 
 		public void InitializeSubmitKey()
 		{

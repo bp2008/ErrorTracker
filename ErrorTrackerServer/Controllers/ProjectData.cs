@@ -70,6 +70,20 @@ namespace ErrorTrackerServer.Controllers
 			Logger.Info("Project \"" + request.projectName + "\" had its submit key replaced by \"" + session.userName + "\"");
 			return Json(new ApiResponseBase(true));
 		}
+		public ActionResult UpdateProject()
+		{
+			UpdateProjectRequest request = ApiRequestBase.ParseRequest<UpdateProjectRequest>(this);
+
+			Project p = Settings.data.GetProject(request.projectName);
+			if (p == null)
+				return Json(new ApiResponseBase(false, "project could not be found"));
+
+			p.MaxEventAgeDays = request.MaxEventAgeDays;
+			Settings.data.Save();
+
+			Logger.Info("Project \"" + request.projectName + "\" was updated by \"" + session.userName + "\". " + JsonConvert.SerializeObject(p));
+			return Json(new ApiResponseBase(true));
+		}
 	}
 	public class GetProjectDataResponse : ApiResponseBase
 	{
@@ -85,7 +99,8 @@ namespace ErrorTrackerServer.Controllers
 					return new ProjectInfo()
 					{
 						Name = p.Name,
-						SubmitKey = p.SubmitKey
+						SubmitKey = p.SubmitKey,
+						MaxEventAgeDays = p.MaxEventAgeDays
 					};
 				})
 				.ToList();
@@ -95,6 +110,7 @@ namespace ErrorTrackerServer.Controllers
 	{
 		public string Name;
 		public string SubmitKey;
+		public int MaxEventAgeDays;
 	}
 	public class ProjectRequest : ApiRequestBase
 	{
@@ -102,5 +118,9 @@ namespace ErrorTrackerServer.Controllers
 		/// Project name of the project being referred to.
 		/// </summary>
 		public string projectName;
+	}
+	public class UpdateProjectRequest : ProjectRequest
+	{
+		public int MaxEventAgeDays;
 	}
 }

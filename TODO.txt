@@ -26,7 +26,6 @@
 	* Folders list unread count
 
 * App-wide database file
-	* Move project databases to subfolder to ensure no name collision with app-wide database file
 	* Login History Database
 		* Login history GUI
 			* Attached to client home (filtered by user)
@@ -35,6 +34,3 @@
 			* Consider: Email Notification of login from new IP
 				* Consider: With user setting to disable notification. Could be shown in user-filtered login history lists.
 			* Optional integration with GeolocationService
-
-* Automatic Event deletion after certain age.
-	* Max age in days to be set in Admin > Projects.

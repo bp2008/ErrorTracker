@@ -1,11 +1,15 @@
 ﻿<template>
 	<div class="editProjectRoot">
 		<div class="title">Project: {{project.Name}}</div>
-		<div>Current event submission URL:</div>
+		<div class="dataRow">Current event submission URL:</div>
 		<div><code class="url">{{project.SubmitURL}}</code></div>
-		<div class="buttonRow">
-			<input type="button" value="Replace Submission Key" @click="ReplaceSubmitKey" />
+		<div>
+			<input type="button" value="Replace Submission Key" @click="ReplaceSubmitKey" title="Replaces the submission key with a new one (requires confirmation)" />
 			<input type="button" value="Copy Submission URL" @click="CopySubmitUrl" />
+		</div>
+		<div class="dataRow">Max Event Age (Days): <input type="number" v-model="maxEventAgeDays" min="0" max="36500" /> (0 to disable automatic Event deletion)</div>
+		<div class="buttonRow">
+			<input type="button" value="Commit Changes" @click="Commit" />
 			<input type="button" value="Delete Project" @click="Remove" />
 			<input ref="cancelBtn" type="button" value="Cancel" @click="Cancel" />
 		</div>
@@ -13,7 +17,7 @@
 </template>
 
 <script>
-	import { RemoveProject, ReplaceSubmitKey } from 'appRoot/api/ProjectData';
+	import { RemoveProject, ReplaceSubmitKey, UpdateProject } from 'appRoot/api/ProjectData';
 	import { ModalConfirmDialog } from 'appRoot/scripts/ModalDialog';
 	import { CopyToClipboard } from 'appRoot/scripts/Util';
 
@@ -29,10 +33,12 @@
 		data()
 		{
 			return {
+				maxEventAgeDays: 0
 			};
 		},
 		created()
 		{
+			this.maxEventAgeDays = this.project.MaxEventAgeDays;
 		},
 		mounted()
 		{
@@ -77,9 +83,24 @@
 						}
 					});
 			},
+			Commit()
+			{
+				UpdateProject(this.project.Name, this.maxEventAgeDays)
+					.then(data =>
+					{
+						if (data.success)
+							this.$emit("close", true);
+						else
+							toaster.error(data.error);
+					})
+					.catch(err =>
+					{
+						toaster.error(err);
+					});
+			},
 			ReplaceSubmitKey()
 			{
-				ModalConfirmDialog("Are you sure you want to change the submission key for this project?\n\nAny apps using the current submission key will need to be updated in order for event reporting to be restored.", "Confirm")
+				ModalConfirmDialog("Are you sure you want to change the submission key for this project?\n\nAny apps using the current submission key will need to be updated in order for event reporting to be restored.\n\nThe Edit Project dialog will be closed and any other configuration changes will be lost.", "Confirm")
 					.then(result =>
 					{
 						if (result)
@@ -107,7 +128,7 @@
 					toaster.success("Copied!");
 				}
 				else
-					toaster.error("Application Error. No submission URL was found for this project."); 
+					toaster.error("Application Error. No submission URL was found for this project.");
 			}
 		},
 		beforeDestroy()
@@ -142,6 +163,11 @@
 	}
 
 	.buttonRow
+	{
+		margin-top: 20px;
+	}
+
+	.dataRow
 	{
 		margin-top: 10px;
 	}

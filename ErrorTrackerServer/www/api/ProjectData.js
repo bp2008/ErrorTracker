@@ -16,3 +16,7 @@ export function ReplaceSubmitKey(projectName)
 {
 	return ExecAPI("ProjectData/ReplaceSubmitKey", { projectName });
 }
+export function UpdateProject(projectName, MaxEventAgeDays)
+{
+	return ExecAPI("ProjectData/UpdateProject", { projectName, MaxEventAgeDays });
+}

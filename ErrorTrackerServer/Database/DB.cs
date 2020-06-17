@@ -55,7 +55,7 @@ namespace ErrorTrackerServer
 		}
 		private SQLiteConnection CreateDbConnection()
 		{
-			SQLiteConnection c = new SQLiteConnection(Globals.WritableDirectoryBase + DbFilename, true);
+			SQLiteConnection c = new SQLiteConnection(Globals.WritableDirectoryBase + "Projects/" + DbFilename, true);
 			c.BusyTimeout = TimeSpan.FromSeconds(10);
 			CreateOrMigrate(c);
 			return c;
@@ -320,6 +320,23 @@ namespace ErrorTrackerServer
 		public bool EventExists(int eventId)
 		{
 			return conn.Value.ExecuteScalar<int>("SELECT COUNT(*) FROM Event WHERE EventId = ?", eventId) > 0;
+		}
+
+		/// <summary>
+		/// Deletes all events with Date lower than the specified value. Returns the number of events that were deleted.
+		/// </summary>
+		/// <param name="ageCutoff">Events with Date lower than this will be deleted.</param>
+		public int DeleteEventsOlderThan(long ageCutoff)
+		{
+			int eventCount = 0;
+			conn.Value.RunInTransaction(() =>
+			{
+				List<Event> events = conn.Value.Query<Event>("SELECT * FROM Event WHERE Event.Date < ?", ageCutoff);
+				eventCount = events.Count;
+				if (!DeleteEvents(events.Select(e => e.EventId).ToArray()))
+					throw new Exception("Unable to delete all " + events.Count + " events");
+			});
+			return eventCount;
 		}
 		#endregion
 		#region Folder Management

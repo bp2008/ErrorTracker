@@ -26,10 +26,13 @@ export default function ExecAPI(method, args)
 				return response.json();
 			else if (response.status === 403)
 			{
-				toaster.error("Your session was lost.");
-				CloseAllDialogs();
-				window.myApp.$store.commit("SessionLost");
-				window.myApp.$router.push({ name: "login", query: { path: window.myApp.$route.fullPath } });
+				if (window.myApp.$route.name !== "login")
+				{
+					toaster.error("Your session was lost.");
+					CloseAllDialogs();
+					window.myApp.$store.commit("SessionLost");
+					window.myApp.$router.push({ name: "login", query: { path: window.myApp.$route.fullPath } });
+				}
 				return new Promise((resolve, reject) => { });
 			}
 			else if (response.status === 418)
