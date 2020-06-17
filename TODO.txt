@@ -10,14 +10,6 @@
 		* Keep search parameters in vuex store?
 		* Search history array or just one state w/reset button?
 
-* An automatic system for identifying repeat occurrences of an event by matching EventType, SubType, and Message. (maybe just the first N characters of Message?)
-	* Concatenate EventType, SubType, and Message (partial Message?) and calculate an MD5 hash.
-	* Event class has method to calculate and return Hash.
-	* New Table "Repeat". Columns: RepeatId, [Indexed] Hash.
-		* Supports quick lookup of RepeatId by Hash string.
-	* New Table "RepeatMap". Columns: [Indexed] RepeatId, EventId
-		* Supports quick lookup of EventId(s) by RepeatId
-
 * Event Summaries in client home when no project is selected
 	* Total Event Count
 	* Unique Event Count (using Repeat System)
@@ -34,3 +26,7 @@
 			* Consider: Email Notification of login from new IP
 				* Consider: With user setting to disable notification. Could be shown in user-filtered login history lists.
 			* Optional integration with GeolocationService
+
+* Consider: Add an event stream which notifies browsers of new events and of changes made to events.  This is probably hard to do correctly, but would be extremely helpful.
+
+* Add GUI for showing events similar to the current event based on HashValue strings.

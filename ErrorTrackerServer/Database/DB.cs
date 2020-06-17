@@ -18,9 +18,9 @@ namespace ErrorTrackerServer
 	{
 		#region Constructor / Fields
 		/// <summary>
-		/// Database version number useful for performing migrations.
+		/// Database version number useful for performing migrations. This number should only be incremented when migrations are in place to support upgrading all previously existing versions to this version.
 		/// </summary>
-		public const int dbVersion = 1;
+		public const int dbVersion = 2;
 		/// <summary>
 		/// Project name.
 		/// </summary>
@@ -78,9 +78,41 @@ namespace ErrorTrackerServer
 					c.CreateTable<Folder>();
 					c.CreateTable<DbVersion>();
 
-					if (c.Query<DbVersion>("SELECT * From DbVersion").Count == 0)
-						c.Insert(new DbVersion() { CurrentVersion = dbVersion });
+					PerformDbMigrations(c);
 				}
+			}
+		}
+
+		/// <summary>
+		/// Performs Db Migrations. As this occurs during lazy connection loading, predefined API methods are unavailable here.
+		/// </summary>
+		/// <param name="c">The db connection.</param>
+		private void PerformDbMigrations(SQLiteConnection c)
+		{
+			// Get current version
+			DbVersion version = c.Query<DbVersion>("SELECT * From DbVersion").FirstOrDefault();
+			if (version == null)
+			{
+				// This is a new DB. It will start at the latest version!
+				version = new DbVersion() { CurrentVersion = dbVersion };
+				c.Insert(version);
+			}
+
+			// Update version 1 to 2
+			if (version.CurrentVersion == 1)
+			{
+				c.RunInTransaction(() =>
+				{
+					if (version.CurrentVersion == 1)
+					{
+						List<Event> events = c.Query<Event>("SELECT * FROM Event");
+						foreach (Event ev in events)
+							if (ev.ComputeHash())
+								c.Execute("UPDATE Event SET HashValue = ? WHERE EventId = ?", ev.HashValue, ev.EventId);
+						version.CurrentVersion = 2;
+						c.Execute("UPDATE DbVersion SET CurrentVersion = ?", version.CurrentVersion);
+					}
+				});
 			}
 		}
 		#endregion
@@ -337,6 +369,21 @@ namespace ErrorTrackerServer
 					throw new Exception("Unable to delete all " + events.Count + " events");
 			});
 			return eventCount;
+		}
+		/// <summary>
+		/// Recomputes and updates the HashValue of this event in the database.
+		/// </summary>
+		/// <param name="ev">Event to update the HashValue of.</param>
+		/// <returns></returns>
+		public void UpdateEventHashId(Event ev)
+		{
+			if (ev.ComputeHash())
+			{
+				if (ev.EventId != 0)
+				{
+					conn.Value.Execute("UPDATE Event SET HashValue = ? WHERE EventId = ?", ev.HashValue, ev.EventId);
+				}
+			}
 		}
 		#endregion
 		#region Folder Management

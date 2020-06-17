@@ -22,6 +22,11 @@ namespace ErrorTrackerServer.Database.Model
 		[PrimaryKey, AutoIncrement]
 		public long EventId { get; set; }
 		/// <summary>
+		/// The hash value for this event. Events sharing the same Hash are strongly related to each other.
+		/// </summary>
+		[Indexed]
+		public string HashValue { get; set; }
+		/// <summary>
 		/// ID of the folder this event is in.
 		/// </summary>
 		[Indexed]
@@ -152,6 +157,29 @@ namespace ErrorTrackerServer.Database.Model
 			if (_tags == null)
 				return 0;
 			return this._tags.Count;
+		}
+
+		/// <summary>
+		/// <para>Computes the base64 encoded (without padding) MD5 hash value of this event, which is always 22 characters long.  Sets it as the value of the <see cref="HashValue" /> property.</para>
+		/// <para>Returns true if the value of the Hash property changed as a result of calling this method.</para>
+		/// <para>Only some of the event data is included in the hash so that similar events can be identified by sharing the hash value.</para>
+		/// <para>If the hashing implementation or hashed data ever changes, the database version should be incremented and during the migration all Events should have their Hash properties recomputed.</para>
+		/// </summary>
+		/// <returns></returns>
+		public bool ComputeHash()
+		{
+			const int messageChars = 250;
+			string strToHash = ((int)EventType).ToString() + "\n"
+				+ SubType + "\n"
+				+ (Message == null || Message.Length <= messageChars ? Message : Message.Substring(messageChars));
+			byte[] md5 = Hash.GetMD5Bytes(strToHash);
+			string base64 = Convert.ToBase64String(md5);
+			if (HashValue != base64)
+			{
+				HashValue = base64;
+				return true;
+			}
+			return false;
 		}
 	}
 
