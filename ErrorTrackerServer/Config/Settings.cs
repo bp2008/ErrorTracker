@@ -1,4 +1,5 @@
 ﻿using BPUtil;
+using BPUtil.SimpleHttp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,10 @@ namespace ErrorTrackerServer
 		/// Controls where web server files are loaded from. If true, loaded from project directory. If false, loaded from executable's directory.
 		/// </summary>
 		public bool devMode = false;
+		/// <summary>
+		/// Virtual directory path, if one is required for incoming requests to an upstream proxy server.
+		/// </summary>
+		public string appPath = "/";
 		/// <summary>
 		/// HTTP port.
 		/// </summary>
@@ -47,6 +52,37 @@ namespace ErrorTrackerServer
 			else
 				return Globals.ApplicationDirectoryBase + "www/";
 		}
+		/// <summary>
+		/// Returns the app path beginning and ending with '/'.  Default App Path: "/"
+		/// </summary>
+		/// <returns></returns>
+		public string GetAppPath()
+		{
+			if (!string.IsNullOrWhiteSpace(appPath))
+			{
+				string ap = '/' + appPath.Trim().Trim('/', ' ', '\r', '\n', '\t') + '/';
+				if (ap != "//")
+					return ap;
+			}
+			return "/";
+		}
+
+		/// <summary>
+		/// Removes the configured appPath from the start of the incoming request URL, if it is found there.
+		/// </summary>
+		/// <param name="p">HttpProcessor to remove the appPath from.</param>
+		public void RemoveAppPath(HttpProcessor p)
+		{
+			string ap = appPath == null ? "/" : ('/' + appPath.Trim('/', ' ', '\r', '\n', '\t'));
+			if (ap != "" && p.request_url.AbsolutePath.StartsWith(ap, StringComparison.OrdinalIgnoreCase))
+			{
+				string absolutePath = p.request_url.AbsolutePath.Substring(ap.Length);
+				if (absolutePath.StartsWith("/"))
+					absolutePath = absolutePath.Substring(1);
+				p.request_url = new Uri(p.request_url.Scheme + "://" + p.request_url.DnsSafeHost + (p.request_url.IsDefaultPort ? "" : ":" + p.request_url.Port) + "/" + absolutePath + p.request_url.Query);
+				p.requestedPage = absolutePath;
+			}
+		}
 		#region Project Management
 		/// <summary>
 		/// List of projects. For speed, each project has its own database file.
@@ -71,7 +107,6 @@ namespace ErrorTrackerServer
 		{
 			return _TryAddListItem(project, Internal_Projects, p => p.Name, projectsLock);
 		}
-
 		/// <summary>
 		/// Removes the project with the specified name, returning the project that was removed.  Returns null if the project could not be found.
 		/// </summary>

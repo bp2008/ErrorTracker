@@ -36,6 +36,7 @@ namespace ErrorTrackerServer.Controllers
 				Settings.data.port_https = request.settings.port_https;
 				requiresRestart = true;
 			}
+			Settings.data.appPath = request.settings.appPath;
 			if (Settings.data.certificatePath != request.settings.certificatePath)
 			{
 				Settings.data.certificatePath = request.settings.certificatePath;
@@ -125,6 +126,7 @@ namespace ErrorTrackerServer.Controllers
 	{
 		public int port_http;
 		public int port_https;
+		public string appPath;
 		public string certificatePath;
 		public string certificatePassword;
 		[JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
@@ -134,6 +136,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			port_http = settings.port_http;
 			port_https = settings.port_https;
+			appPath = settings.appPath;
 			certificatePath = settings.certificatePath;
 			certificatePassword = settings.certificatePassword;
 			Enum.TryParse(settings.loginStyle, out loginStyle);

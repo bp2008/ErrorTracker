@@ -70,6 +70,9 @@
 			SaveChanges()
 			{
 				this.loading = true;
+				this.editObj.appPath = '/' + this.editObj.appPath.replace(/^\/+|\/+$/g, '') + '/';
+				if (this.editObj.appPath === '//')
+					this.editObj.appPath = '/';
 				SetSettingsData(this.editObj)
 					.then(data =>
 					{
@@ -77,6 +80,7 @@
 						{
 							if (data.message)
 								toaster.success(data.message);
+							appContext.appPath = this.editObj.appPath;
 							this.loadSettings();
 						}
 						else

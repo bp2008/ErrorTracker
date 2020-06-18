@@ -29,6 +29,8 @@ namespace ErrorTrackerServer
 
 		public override void handleGETRequest(HttpProcessor p)
 		{
+			Settings.data.RemoveAppPath(p);
+
 			if (mvcMain.ProcessRequest(p, p.requestedPage))
 			{
 			}
@@ -97,6 +99,8 @@ namespace ErrorTrackerServer
 
 		public override void handlePOSTRequest(HttpProcessor p, StreamReader inputData)
 		{
+			Settings.data.RemoveAppPath(p);
+
 			if (mvcMain.ProcessRequest(p, p.requestedPage))
 			{
 			}

@@ -30,3 +30,5 @@
 * Consider: Add an event stream which notifies browsers of new events and of changes made to events.  This is probably hard to do correctly, but would be extremely helpful.
 
 * Add GUI for showing events similar to the current event based on HashValue strings.
+
+* Customizable Server Name

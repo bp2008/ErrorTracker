@@ -18,11 +18,25 @@ Vue.use(VueRouter);
 
 export default function CreateRouter(store, basePath)
 {
+	// Detect if a custom basePath string is being used by the browser right now.  If not, replace it with the default "/" basePath.
+	let addBasePathSpecialRoute = false;
+	let basePathLower = basePath.toLowerCase();
+	let pathLower = location.pathname.toLowerCase();
+	if (!pathLower.startsWith(basePathLower))
+	{
+		// Our base path is not found at the start of the URL
+		// But maybe we have everything except the ending forward slash?
+		// E.g. "http://127.0.0.1/basePath"
+		if (basePathLower.charAt(basePathLower.length - 1) === '/' && pathLower === basePathLower.substr(0, basePathLower.length - 1))
+			addBasePathSpecialRoute = true;
+		else
+			basePath = "/"; // Nope. Base path is not being used.
+	}
 	const router = new VueRouter({
 		mode: 'history',
 		routes: [
 			{
-				path: basePath + '', redirect: 'login'
+				path: basePath + '', redirect: basePath + 'login'
 			},
 			{
 				path: basePath + 'login', component: Login, name: 'login'
@@ -76,7 +90,8 @@ export default function CreateRouter(store, basePath)
 		],
 		$store: store
 	});
-
+	if (addBasePathSpecialRoute)
+		router.addRoutes([{ path: basePath.substr(0, basePath.length - 1), redirect: basePath + 'login' }]);
 	router.onError(function (error)
 	{
 		console.error("Error while routing", error);

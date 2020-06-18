@@ -6,14 +6,13 @@
 	<meta name="viewport" content="width=device-width" />
 	<title>Error Tracker</title>
 	<script>
-		var serverVersion = "%%APP_VERSION%%";
 		var appContext = @AppContext;
 		window.onerror = function (msg, url, line, charIdx)
 		{
 			try
 			{
 				url = url.replace(/\/\/.*?\//, '//censored_hostname/');
-				var errStr = "An unexpected error has occurred in %%SYSTEM_NAME%% " + location.pathname + " (v " + serverVersion + "). A full refresh may solve the problem (CTRL + F5). If you wish to report the error, please SCREENSHOT the browser now.\n\n" + msg + "\nat " + url + " [" + line + ":" + charIdx + "]\n" + navigator.userAgent;
+				var errStr = "An unexpected error has occurred in " + appContext.systemName + " " + location.pathname + " (v " + appContext.serverVersion + "). A full refresh may solve the problem (CTRL + F5). If you wish to report the error, please SCREENSHOT the browser now.\n\n" + msg + "\nat " + url + " [" + line + ":" + charIdx + "]\n" + navigator.userAgent;
 				try
 				{
 					if (window.toaster)
@@ -53,7 +52,7 @@
 		<div class="mainAppLoading" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;font-family:Arial,sans-serif;padding:20px 0px;">
 			<div>
 				<div>Loading Error Tracker</div>
-				<div style="margin-top:15px;"><img src="%%APPPATH%%Images/ajax-loader.gif" alt="Loading…" /></div>
+				<div style="margin-top:15px;"><img src="@(AppPath)Images/ajax-loader.gif" alt="Loading…" /></div>
 			</div>
 		</div>
 	</div>

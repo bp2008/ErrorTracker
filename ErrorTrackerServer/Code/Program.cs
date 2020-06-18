@@ -1,6 +1,7 @@
 ﻿using BPUtil;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.ServiceProcess;
 using System.Text;
@@ -15,6 +16,9 @@ namespace ErrorTrackerServer
 		/// </summary>
 		static void Main()
 		{
+			System.Reflection.Assembly assembly = System.Reflection.Assembly.GetEntryAssembly();
+			Globals.Initialize(assembly.Location, "Data/");
+			Directory.CreateDirectory(Globals.WritableDirectoryBase + "Projects/");
 			AppInit.WindowsService<ErrorTrackerSvc>();
 		}
 	}

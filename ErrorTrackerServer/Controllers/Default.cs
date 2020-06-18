@@ -23,7 +23,7 @@ namespace ErrorTrackerServer.Controllers
 			dynamic appContext = new
 			{
 				systemName = "Error Tracker",
-				appPath = "/",
+				appPath = Settings.data.GetAppPath(),
 				loginStyle = Settings.data.loginStyle,
 				serverVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString()
 			};
