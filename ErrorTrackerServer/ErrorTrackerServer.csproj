@@ -87,6 +87,7 @@
     <Compile Include="Authentication\User.cs" />
     <Compile Include="BCrypt\BCrypt.cs" />
     <Compile Include="BCrypt\SaltParseException.cs" />
+    <Compile Include="Code\WebpackChunkResolver.cs" />
     <Compile Include="Config\Settings.cs" />
     <Compile Include="Config\Project.cs" />
     <Compile Include="Controllers\Auth.cs" />
@@ -168,6 +169,7 @@
     <None Include="www\vues\common\controls\ModalDialogContainer.vue" />
     <None Include="www\vues\common\controls\ColorInputPopup.vue" />
     <None Include="www\vues\common\controls\TextInputPopup.vue" />
+    <None Include="www\vues\common\controls\VStyle.vue" />
     <None Include="www\vues\common\controls\VSvg.vue" />
     <None Include="www\vues\common\controls\SvgButton.vue" />
     <None Include="www\vues\common\editor\Editor.vue" />

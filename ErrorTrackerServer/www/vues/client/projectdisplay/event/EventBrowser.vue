@@ -57,10 +57,9 @@
 	import EventBus from 'appRoot/scripts/EventBus';
 	import { ColorInputDialog } from 'appRoot/scripts/ModalDialog';
 	import { ModalConfirmDialog } from '../../../../scripts/ModalDialog';
-	import VirtualList from 'vue-virtual-scroll-list';
 
 	export default {
-		components: { VueContext, VirtualList, EventNode },
+		components: { VueContext, EventNode },
 		props:
 		{
 			projectName: { // pre-validated

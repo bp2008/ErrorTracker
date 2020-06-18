@@ -8,13 +8,20 @@
 		</div>
 		<div class="error" v-if="error">{{error}}</div>
 		<Footer class="loginFooter" />
+		<VStyle>
+			.loginRoot.wallpaper
+			{
+			background-image: url("{{wallpaperUrl}}");
+			}
+		</VStyle>
 	</div>
 </template>
 <script>
 	import Footer from 'appRoot/vues/common/Footer.vue';
+	import VStyle from 'appRoot/vues/common/controls/VStyle.vue';
 
 	export default {
-		components: { Footer },
+		components: { VStyle, Footer },
 		data()
 		{
 			return {
@@ -23,7 +30,8 @@
 				pass: "",
 				loginEnabled: true,
 				error: null,
-				loginRootClasses: ["loginRoot"]
+				loginRootClasses: ["loginRoot"],
+				wallpaperUrl: appContext.appPath + "Wallpaper"
 			};
 		},
 		created()
@@ -83,7 +91,6 @@
 
 		.loginRoot.wallpaper
 		{
-			background-image: url("/Wallpaper");
 			background-size: cover;
 			background-position: center;
 		}

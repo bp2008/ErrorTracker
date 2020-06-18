@@ -3,6 +3,8 @@ const webpack = require('webpack');
 
 const VueLoaderPlugin = require('vue-loader/lib/plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
+const ManifestPlugin = require('webpack-manifest-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 //const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 let cleanOptions = { root: __dirname };
@@ -21,12 +23,13 @@ module.exports = (env) => // env is "Release" or "Debug"
 		plugins: [
 			new webpack.DefinePlugin({ 'process.BROWSER': true }),
 			new webpack.DefinePlugin({ 'process.env.ASSET_PATH': JSON.stringify(ASSET_PATH) }),
+			new ManifestPlugin(), // causes "manifest.json" to be created. This is used server-side so the server knows which script files need loaded on the client.
 			new VueLoaderPlugin()
 			//, new BundleAnalyzerPlugin()
 		],
 		output: {
 			path: path.resolve(__dirname, "www/dist"),
-			filename: 'bundle.js',
+			filename: isProduction ? '[name].[contenthash].js' : '[name].js',
 			publicPath: '/dist/'
 		},
 		module: {
@@ -81,9 +84,33 @@ module.exports = (env) => // env is "Release" or "Debug"
 					test: /\.vue$/,
 					loader: 'vue-loader',
 					options: {
-						hotReload: true
+						hotReload: !isProduction
 					}
 				}
+			]
+		},
+		optimization: {
+			runtimeChunk: 'single', // This causes "runtime.[contenthash].js" to be created.  It is used by entry modules to know the file names of other modules.  It must be a separate file so that changes to those modules do not affect the entry modules. (for proper caching)
+			splitChunks: {
+				name: true,
+				minChunks: 2,
+				cacheGroups: {
+					vendor: { // vendors.[contenthash].js will contain all 3rd-party modules referenced by this app.
+						test: /[\\/]node_modules[\\/]/,
+						name: 'vendors',
+						chunks: 'initial',
+						minChunks: 1
+					}
+				}
+			},
+			minimizer: [
+				new TerserPlugin({
+					terserOptions: {
+						compress: {
+						}
+					},
+					sourceMap: true
+				})
 			]
 		},
 		resolve: {

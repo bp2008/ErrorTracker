@@ -1,4 +1,5 @@
 ﻿using BPUtil.MVC;
+using ErrorTrackerServer.Code;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,7 @@ namespace ErrorTrackerServer.Controllers
 {
 	public class Default : ETController
 	{
+		private static string[] scriptFiles = new string[] { "runtime.js", "vendors.js", "main.js" };
 		public ActionResult Index()
 		{
 			DirectoryInfo WWWDirectory = new DirectoryInfo(Settings.data.GetWWWDirectoryBase());
@@ -30,6 +32,18 @@ namespace ErrorTrackerServer.Controllers
 
 			ViewData.Set("AppContext", JsonConvert.SerializeObject(appContext));
 			ViewData.Set("AppPath", appContext.appPath);
+
+			WebpackChunkResolver webpackChunkResolver = new WebpackChunkResolver();
+			StringBuilder scriptCallouts = new StringBuilder();
+			foreach (string scriptName in scriptFiles)
+			{
+				scriptCallouts.Append("<script src=\"");
+				scriptCallouts.Append(appContext.appPath);
+				scriptCallouts.Append("dist/");
+				scriptCallouts.Append(webpackChunkResolver.Resolve(scriptName));
+				scriptCallouts.AppendLine("\"></script>");
+			}
+			ViewData.Set("ScriptCallouts", scriptCallouts.ToString());
 
 			return View(fi.FullName);
 		}
