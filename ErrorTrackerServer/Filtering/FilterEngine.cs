@@ -92,11 +92,27 @@ namespace ErrorTrackerServer.Filtering
 			if (full.filter.ConditionHandling != ConditionHandling.Unconditional && !full.conditions.Any(c => c.Enabled))
 				return; // No enabled conditions, and this is not an unconditional filter
 
+			//List<long> nextEventTimes = new List<long>();
+			//List<long> tagLoadTimes = new List<long>();
+			//List<long> executionTimes = new List<long>();
+			//System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+			//sw.Start();
 			foreach (Event e in db.GetAllEventsNoTagsDeferred())
 			{
+				//nextEventTimes.Add(sw.ElapsedMilliseconds);
+				//sw.Restart();
 				db.GetEventTags(e);
+				//tagLoadTimes.Add(sw.ElapsedMilliseconds);
+				//sw.Restart();
 				RunFilterAgainstEvent(full, e); // This method can indicate to stop executing filters against the event, but we are already done either way.
+				//executionTimes.Add(sw.ElapsedMilliseconds);
+				//sw.Restart();
 			}
+			//nextEventTimes.Add(sw.ElapsedMilliseconds);
+			//Logger.Info("Filter execution times (" + full.filter.Name + ")");
+			//Logger.Info("Next Event: [" + string.Join(", ", nextEventTimes.Where(t => t > 0)) + "]");
+			//Logger.Info("Tag Load: [" + string.Join(", ", tagLoadTimes.Where(t => t > 0)) + "]");
+			//Logger.Info("Execution: [" + string.Join(", ", executionTimes.Where(t => t > 0)) + "]");
 		}
 
 		/// <summary>
@@ -334,7 +350,11 @@ namespace ErrorTrackerServer.Filtering
 						targetFolder = db.FolderResolvePath(action.Argument.Trim());
 					else if (targetFolder != null)
 					{
-						if (db.MoveEvents(new long[] { e.EventId }, targetFolder.FolderId))
+						if (e.FolderId == targetFolder.FolderId)
+						{
+							// Do nothing
+						}
+						else if (db.MoveEvents(new long[] { e.EventId }, targetFolder.FolderId))
 							e.FolderId = targetFolder.FolderId;
 						else
 							Logger.Info("[Filter " + action.FilterId + "] FilterAction " + action.FilterActionId + " failed to move event " + e.EventId + " to \"" + action.Argument + "\"");

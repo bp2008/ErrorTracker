@@ -35,6 +35,9 @@
 										 @delete="deleteCondition"
 										 class="condition" />
 					</div>
+					<div>
+						<input type="button" value="New Condition (and Commit Changes)" @click="newCondition" />
+					</div>
 				</div>
 				<div class="inputSection actions">
 					<label class="inputLabel">Actions</label>
@@ -45,12 +48,14 @@
 									  @delete="deleteAction"
 									  class="action" />
 					</div>
+					<div>
+						<input type="button" value="New Action (and Commit Changes)" @click="newAction" />
+					</div>
 				</div>
 				<div class="buttonBar">
 					<input type="button" value="Commit Changes" @click="commitChanges" />
-					<input type="button" value="New Condition (and Commit Changes)" @click="newCondition" />
-					<input type="button" value="New Action (and Commit Changes)" @click="newAction" />
 					<input type="button" value="Delete Filter" @click="beginDeleteFilter" />
+					<input type="button" value="Run filter against all events" @click="runFilterAgainstAllEvents" />
 				</div>
 				<div class="notes">
 					<div class="notesHeading">Filter Notes</div>
