@@ -3,6 +3,7 @@ using ErrorTrackerServer.Database.Model;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 
@@ -81,11 +82,10 @@ namespace ErrorTrackerServer
 
 			// Sort Children lists by name.
 			foreach (FolderStructure f in folderMap.Values)
-				f.Children.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+				f.SortChildren();
 
 			return folderMap[0];
 		}
-
 		private FolderStructure(Folder f)
 		{
 			this.FolderId = f.FolderId;
@@ -145,9 +145,10 @@ namespace ErrorTrackerServer
 		/// <summary>
 		/// Resolves the specified path relative to this folder, returning the specified folder. Paths beginning with '/' are absolute paths resolved from the root. For the purpose of path resolving, the root folder has no name.
 		/// </summary>
-		/// <param name="path"></param>
+		/// <param name="path">Path to resolve, e.g. "/" or "/stuff/here" or "/stuff/here/"</param>
+		/// <param name="dbInTransaction">The database where this FolderStructure was loaded from, in which the calling code has started a transaction. Provide this if you want missing path elements to be created automatically. This argument should be null unless being called from within a DB instance with the intent to create folders.</param>
 		/// <returns></returns>
-		public FolderStructure ResolvePath(string path)
+		public FolderStructure ResolvePath(string path, DB dbInTransaction)
 		{
 			if (string.IsNullOrWhiteSpace(path))
 				return this;
@@ -158,7 +159,12 @@ namespace ErrorTrackerServer
 			if (parts[0] == "")
 				TryGetNode(0, out next);
 			else if (parts[0] == "..")
-				next = Parent;
+			{
+				if (Parent == null)
+					next = this;
+				else
+					next = Parent;
+			}
 			else
 			{
 				foreach (FolderStructure child in Children)
@@ -169,12 +175,32 @@ namespace ErrorTrackerServer
 						break;
 					}
 				}
+				if (next == null && dbInTransaction != null)
+				{
+					if (!dbInTransaction.IsInTransaction)
+						Logger.Info("FolderStructure.ResolvePath was given a DB instance that is not in a transaction. At " + new StackTrace(true).ToString());
+
+					// Create Folder					
+					if (dbInTransaction.AddFolder(parts[0], FolderId, out string errorMessage, out Folder newFolder))
+					{
+						next = new FolderStructure(newFolder);
+						next.Parent = this;
+						folderMap.Add(next.FolderId, next);
+						Children.Add(next);
+						SortChildren();
+					}
+					else
+						throw new Exception("Unable to create folder \"" + parts[0] + "\" because of error: " + errorMessage);
+				}
 			}
 
 			if (parts.Length > 2 && string.IsNullOrWhiteSpace(parts[1]))
-				return null; // Next path element is invalid but our parser would think it was the start of an absolute path, e.g. "//" or "stuff//here" or "stuff/  /here/"
+				throw new Exception("Empty/whitespace path element is invalid"); // Next path element is empty/whitespace and would cause our parser to restart at the root node if we didn't catch it here. e.g. "//" or "stuff//here" or "stuff/  /here/"
 
-			return next?.ResolvePath(string.Join("/", parts.Skip(1)));
+			if (next == null)
+				throw new Exception("Unable to resolve path because folder \"" + parts[0] + "\" does not exist.");
+
+			return next.ResolvePath(string.Join("/", parts.Skip(1)), dbInTransaction);
 		}
 
 		/// <summary>
@@ -188,6 +214,13 @@ namespace ErrorTrackerServer
 			if (!FindRootPath(nodesOnRootPath, ref pathParts))
 				return "";
 			return "/" + string.Join("/", pathParts);
+		}
+		/// <summary>
+		/// Sorts the children of this folder alphabetically.
+		/// </summary>
+		private void SortChildren()
+		{
+			Children.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
 		}
 		/// <summary>
 		/// Gets the absolute path of this folder. Empty string only if there is a circular reference (no path to root).

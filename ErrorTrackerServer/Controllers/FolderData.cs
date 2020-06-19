@@ -51,7 +51,7 @@ namespace ErrorTrackerServer.Controllers
 
 			using (DB db = new DB(p.Name))
 			{
-				if (db.AddFolder(request.folderName, request.parentFolderId, out string errorMessage))
+				if (db.AddFolder(request.folderName, request.parentFolderId, out string errorMessage, out Folder newFolder))
 					return Json(new ApiResponseBase(true));
 				else
 					return ApiError(errorMessage);

@@ -39,7 +39,7 @@ namespace ErrorTrackerServer.Database.Model
 		/// </para>
 		/// </summary>
 		[NotNull]
-		public string TagKey { get; set; }
+		public string TagKey { get; set; } = "";
 		/// <summary>
 		/// The operation used by this filter condition.
 		/// </summary>
@@ -49,7 +49,7 @@ namespace ErrorTrackerServer.Database.Model
 		/// Query to use when inspecting the tag.
 		/// </summary>
 		[NotNull]
-		public string Query { get; set; }
+		public string Query { get; set; } = "";
 		/// <summary>
 		/// If true, <see cref="Query"/> is a regular expression.
 		/// </summary>

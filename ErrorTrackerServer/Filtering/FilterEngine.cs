@@ -59,11 +59,67 @@ namespace ErrorTrackerServer.Filtering
 			if (full.filter.ConditionHandling != ConditionHandling.Unconditional && !full.conditions.Any(c => c.Enabled))
 				return; // No enabled conditions, and this is not an unconditional filter
 
-			List<Event> events = db.GetEventsInFolder(folderId);
-			foreach (Event e in events)
+			foreach (Event e in db.GetEventsInFolder(folderId))
 				RunFilterAgainstEvent(full, e); // This method can indicate to stop executing filters against the event, but we are already done either way.
 		}
 
+		/// <summary>
+		/// Runs a filter against all events. This method is not fast, and should be used sparingly.
+		/// </summary>
+		/// <param name="filterId">ID of the filter.</param>
+		/// <param name="runIfDisabled">If true, the filter will be run even if the filter is disabled.</param>
+		public void RunFilterAgainstAllEvents(int filterId, bool runIfDisabled = false)
+		{
+			FullFilter full = db.GetFilter(filterId);
+			if (full == null)
+				throw new Exception("Failed to find filter with ID " + filterId);
+			RunFilterAgainstAllEvents(full, runIfDisabled);
+		}
+
+		/// <summary>
+		/// Runs a filter against all events. This method is not fast, and should be used sparingly.
+		/// </summary>
+		/// <param name="full">Filter to run.</param>
+		/// <param name="runIfDisabled">If true, the filter will be run even if the filter is disabled.</param>
+		public void RunFilterAgainstAllEvents(FullFilter full, bool runIfDisabled = false)
+		{
+			if (!full.filter.Enabled && !runIfDisabled)
+				return; // Filter is disabled and we aren't being told to run it anyway
+
+			if (!full.actions.Any(a => a.Enabled))
+				return; // No actions are enabled, so no need to run this filter.
+
+			if (full.filter.ConditionHandling != ConditionHandling.Unconditional && !full.conditions.Any(c => c.Enabled))
+				return; // No enabled conditions, and this is not an unconditional filter
+
+			foreach (Event e in db.GetAllEventsNoTagsDeferred())
+			{
+				db.GetEventTags(e);
+				RunFilterAgainstEvent(full, e); // This method can indicate to stop executing filters against the event, but we are already done either way.
+			}
+		}
+
+		/// <summary>
+		/// Runs all enabled filters against all events. This method is not fast, and should be used sparingly.
+		/// </summary>
+		public void RunEnabledFiltersAgainstAllEvents()
+		{
+			List<FullFilter> enabledFilters = db.GetFilters(true);
+			foreach (Event e in db.GetAllEventsNoTagsDeferred())
+			{
+				db.GetEventTags(e);
+				foreach (FullFilter full in enabledFilters)
+				{
+					if (RunFilterAgainstEvent(full, e))
+						break;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Runs all enabled filters against the specified event.
+		/// </summary>
+		/// <param name="eventId">ID of the event to run filters against.</param>
 		public void RunEnabledFiltersAgainstEvent(int eventId)
 		{
 			Event e = db.GetEvent(eventId);
@@ -74,6 +130,11 @@ namespace ErrorTrackerServer.Filtering
 			}
 			RunEnabledFiltersAgainstEvent(e);
 		}
+
+		/// <summary>
+		/// Runs all enabled filters against the specified event.
+		/// </summary>
+		/// <param name="e">The event to run filters against.</param>
 		public void RunEnabledFiltersAgainstEvent(Event e)
 		{
 			if (e == null)
@@ -81,8 +142,8 @@ namespace ErrorTrackerServer.Filtering
 				Logger.Debug("FilterEngine was asked to run enabled filters against a null event (ID unknown).");
 				return;
 			}
-			List<FullFilter> allFilters = db.GetAllFilters();
-			foreach (FullFilter full in allFilters)
+			List<FullFilter> enabledFilters = db.GetFilters(true);
+			foreach (FullFilter full in enabledFilters)
 			{
 				if (RunFilterAgainstEvent(full, e))
 					return;
@@ -90,61 +151,75 @@ namespace ErrorTrackerServer.Filtering
 		}
 
 		/// <summary>
-		/// Runs the filter against the event (whether the filter is enabled or not).  Returns true if filter execution against this event should cease immediately.
+		/// Runs the filter against the event (whether the filter is enabled or not).  Returns true if filter execution against this event should cease immediately.  This method logs exceptions and does not rethrow them.
 		/// </summary>
 		/// <param name="full">A filter to run against the event.</param>
 		/// <param name="e">An event with the Tags field populated.</param>
 		/// <returns></returns>
 		private bool RunFilterAgainstEvent(FullFilter full, Event e)
 		{
-			// Evaluate Conditions
-			bool conditionsMet = false;
-			if (full.filter.ConditionHandling == ConditionHandling.Unconditional)
+			try
 			{
-				conditionsMet = true;
-			}
-			else if (full.filter.ConditionHandling == ConditionHandling.All)
-			{
-				int metCount = 0;
-				int triedCount = 0;
-				foreach (FilterCondition condition in full.conditions)
+				// Evaluate Conditions
+				bool conditionsMet = false;
+				if (full.filter.ConditionHandling == ConditionHandling.Unconditional)
 				{
-					if (condition.Enabled)
+					conditionsMet = true;
+				}
+				else if (full.filter.ConditionHandling == ConditionHandling.All)
+				{
+					int metCount = 0;
+					int triedCount = 0;
+					foreach (FilterCondition condition in full.conditions)
 					{
-						triedCount++;
-						if (EvalCondition(condition, e))
-							metCount++;
-						else
-							break;
+						if (condition.Enabled)
+						{
+							triedCount++;
+							if (EvalCondition(condition, e))
+								metCount++;
+							else
+								break;
+						}
+					}
+					conditionsMet = metCount == triedCount;
+				}
+				else if (full.filter.ConditionHandling == ConditionHandling.Any)
+				{
+					foreach (FilterCondition condition in full.conditions)
+					{
+						if (condition.Enabled)
+						{
+							if (EvalCondition(condition, e))
+							{
+								conditionsMet = true;
+								break;
+							}
+						}
 					}
 				}
-				conditionsMet = metCount == triedCount;
-			}
-			else if (full.filter.ConditionHandling == ConditionHandling.Any)
-			{
-				foreach (FilterCondition condition in full.conditions)
+				else
+					throw new Exception("[Filter " + full.filter.FilterId + "] Unsupported filter ConditionHandling: " + full.filter.ConditionHandling);
+
+				// Execute Actions if Conditions were sufficiently met.
+				if (conditionsMet)
 				{
-					if (condition.Enabled)
+					foreach (FilterAction action in full.actions)
 					{
-						if (EvalCondition(condition, e))
+						try
 						{
-							conditionsMet = true;
-							break;
+							if (ExecAction(action, e))
+								return true;
+						}
+						catch (Exception ex)
+						{
+							Logger.Debug(ex);
 						}
 					}
 				}
 			}
-			else
-				throw new Exception("[Filter " + full.filter.FilterId + "] Unsupported filter ConditionHandling: " + full.filter.ConditionHandling);
-
-			// Execute Actions if Conditions were sufficiently met.
-			if (conditionsMet)
+			catch (Exception ex)
 			{
-				foreach (FilterAction action in full.actions)
-				{
-					if (ExecAction(action, e))
-						return true;
-				}
+				Logger.Debug(ex);
 			}
 			return false;
 		}
@@ -254,12 +329,18 @@ namespace ErrorTrackerServer.Filtering
 			{
 				if (action.Operator == FilterActionType.MoveTo)
 				{
-					FolderStructure targetFolder = folderStructure.Value.ResolvePath(action.Argument.Trim());
+					FolderStructure targetFolder = folderStructure.Value.ResolvePath(action.Argument.Trim(), null);
 					if (targetFolder == null)
+						targetFolder = db.FolderResolvePath(action.Argument.Trim());
+					else if (targetFolder != null)
+					{
+						if (db.MoveEvents(new long[] { e.EventId }, targetFolder.FolderId))
+							e.FolderId = targetFolder.FolderId;
+						else
+							Logger.Info("[Filter " + action.FilterId + "] FilterAction " + action.FilterActionId + " failed to move event " + e.EventId + " to \"" + action.Argument + "\"");
+					}
+					else
 						Logger.Info("[Filter " + action.FilterId + "] FilterAction " + action.FilterActionId + " was unable to resolve path \"" + action.Argument + "\"");
-					if (!db.MoveEvents(new long[] { e.EventId }, targetFolder.FolderId))
-						Logger.Info("[Filter " + action.FilterId + "] FilterAction " + action.FilterActionId + " failed to move event " + e.EventId + " to \"" + action.Argument + "\"");
-					e.FolderId = targetFolder.FolderId;
 					return false;
 				}
 				else if (action.Operator == FilterActionType.Delete)

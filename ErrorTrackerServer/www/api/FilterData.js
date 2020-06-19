@@ -48,3 +48,11 @@ export function ReorderFilters(projectName, newOrder)
 {
 	return ExecAPI("FilterData/ReorderFilters", { projectName, newOrder });
 }
+export function RunFilterAgainstAllEvents(projectName, filterId)
+{
+	return ExecAPI("FilterData/RunFilterAgainstAllEvents", { projectName, filterId });
+}
+export function RunEnabledFiltersAgainstAllEvents(projectName)
+{
+	return ExecAPI("FilterData/RunEnabledFiltersAgainstAllEvents", { projectName });
+}

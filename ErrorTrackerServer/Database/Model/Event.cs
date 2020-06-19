@@ -25,6 +25,7 @@ namespace ErrorTrackerServer.Database.Model
 		/// The hash value for this event. Events sharing the same Hash are strongly related to each other.
 		/// </summary>
 		[Indexed]
+		[NotNull]
 		public string HashValue { get; set; }
 		/// <summary>
 		/// ID of the folder this event is in.
@@ -41,10 +42,12 @@ namespace ErrorTrackerServer.Database.Model
 		/// A string describing the type of event, to be used as a subtitle and a search filter.  E.g. So you can list "Info" events with SubType "AppStart".
 		/// </summary>
 		[Indexed]
+		[NotNull]
 		public string SubType { get; set; }
 		/// <summary>
 		/// The main body of the event. Describes what happened to cause the event.
 		/// </summary>
+		[NotNull]
 		public string Message { get; set; }
 		/// <summary>
 		/// A timestamp indicating the date and time of this event, in milliseconds since the unix epoch. (assigned by the Error Tracker Client)

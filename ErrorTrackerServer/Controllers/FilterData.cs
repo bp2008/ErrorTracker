@@ -1,6 +1,7 @@
 ﻿using BPUtil;
 using BPUtil.MVC;
 using ErrorTrackerServer.Database.Model;
+using ErrorTrackerServer.Filtering;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -226,6 +227,28 @@ namespace ErrorTrackerServer.Controllers
 				db.ReorderFilters(request.newOrder);
 			}
 			Logger.Info("Filters reordered by \"" + session.userName + "\"");
+			return Json(new ApiResponseBase(true));
+		}
+		public ActionResult RunFilterAgainstAllEvents()
+		{
+			OneFilterRequest request = ApiRequestBase.ParseRequest<OneFilterRequest>(this);
+
+			if (!request.Validate(out Project p, out ApiResponseBase error))
+				return Json(error);
+
+			using (FilterEngine fe = new FilterEngine(request.projectName))
+				fe.RunFilterAgainstAllEvents(request.filterId, true);
+			return Json(new ApiResponseBase(true));
+		}
+		public ActionResult RunEnabledFiltersAgainstAllEvents()
+		{
+			ProjectRequestBase request = ApiRequestBase.ParseRequest<ProjectRequestBase>(this);
+
+			if (!request.Validate(out Project p, out ApiResponseBase error))
+				return Json(error);
+
+			using (FilterEngine fe = new FilterEngine(request.projectName))
+				fe.RunEnabledFiltersAgainstAllEvents();
 			return Json(new ApiResponseBase(true));
 		}
 	}

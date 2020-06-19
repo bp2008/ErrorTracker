@@ -34,7 +34,7 @@ namespace ErrorTrackerServer.Database.Model
 		/// Argument for to the action type. E.g. for a "MoveTo" operation, this argument would be the folder path to move the event to.
 		/// </summary>
 		[NotNull]
-		public string Argument { get; set; }
+		public string Argument { get; set; } = "";
 	}
 
 	public enum FilterActionType : byte

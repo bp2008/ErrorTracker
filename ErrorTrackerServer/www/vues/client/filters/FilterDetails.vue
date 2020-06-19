@@ -81,7 +81,7 @@
 </template>
 
 <script>
-	import { GetFilter, EditFilter, DeleteFilter, AddCondition, EditCondition, DeleteCondition, AddAction, EditAction, DeleteAction } from 'appRoot/api/FilterData';
+	import { GetFilter, EditFilter, DeleteFilter, AddCondition, EditCondition, DeleteCondition, AddAction, EditAction, DeleteAction, RunFilterAgainstAllEvents } from 'appRoot/api/FilterData';
 	import { TextInputDialog, ModalConfirmDialog } from 'appRoot/scripts/ModalDialog';
 	import { GetReadableTextColorHexForBackgroundColorHex } from 'appRoot/scripts/Util';
 	import FilterCondition from 'appRoot/vues/client/filters/FilterCondition.vue';
@@ -261,6 +261,21 @@
 								.then(data =>
 								{
 									this.$router.replace(this.parentRoute);
+								});
+						}
+					});
+			},
+			runFilterAgainstAllEvents()
+			{
+				ModalConfirmDialog("Running filters against all events may take some time. Please confirm you wish to do this.", "Confirm")
+					.then(result =>
+					{
+						if (result)
+						{
+							this.hop(false, RunFilterAgainstAllEvents(this.projectName, this.filterId))
+								.then(data =>
+								{
+									toaster.success("Filter execution complete");
 								});
 						}
 					});

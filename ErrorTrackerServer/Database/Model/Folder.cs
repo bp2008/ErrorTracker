@@ -1,4 +1,5 @@
-﻿using SQLite;
+﻿using BPUtil;
+using SQLite;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -27,6 +28,7 @@ namespace ErrorTrackerServer.Database.Model
 		/// <summary>
 		/// Name of the folder.
 		/// </summary>
+		[NotNull]
 		public string Name { get; set; }
 
 		public Folder() { }
@@ -44,7 +46,9 @@ namespace ErrorTrackerServer.Database.Model
 		/// <returns></returns>
 		public static bool ValidateName(string name)
 		{
-			return !string.IsNullOrWhiteSpace(name) && !rxBadFolderName.IsMatch(name);
+			if (string.IsNullOrWhiteSpace(name) || rxBadFolderName.IsMatch(name))
+				return false;
+			return StringUtil.IsPrintableName(name);
 		}
 	}
 }

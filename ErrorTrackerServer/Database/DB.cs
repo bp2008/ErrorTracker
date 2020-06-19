@@ -20,7 +20,7 @@ namespace ErrorTrackerServer
 		/// <summary>
 		/// Database version number useful for performing migrations. This number should only be incremented when migrations are in place to support upgrading all previously existing versions to this version.
 		/// </summary>
-		public const int dbVersion = 2;
+		public const int dbVersion = 3;
 		/// <summary>
 		/// Project name.
 		/// </summary>
@@ -82,7 +82,6 @@ namespace ErrorTrackerServer
 				}
 			}
 		}
-
 		/// <summary>
 		/// Performs Db Migrations. As this occurs during lazy connection loading, predefined API methods are unavailable here.
 		/// </summary>
@@ -98,32 +97,62 @@ namespace ErrorTrackerServer
 				c.Insert(version);
 			}
 
-			// Update version 1 to 2
-			if (version.CurrentVersion == 1)
+			// Version 1 -> 2 added the HashValue column to Event
+			// Version 2 -> 3 began enforcing that all events have a hash value when they are added to the database.
+			// Both migrations therefore simply require existing hash values to all be recomputed.
+			if (version.CurrentVersion == 1 || version.CurrentVersion == 2)
 			{
 				c.RunInTransaction(() =>
 				{
-					if (version.CurrentVersion == 1)
+					version = c.Query<DbVersion>("SELECT * From DbVersion").FirstOrDefault();
+					if (version.CurrentVersion == 1 || version.CurrentVersion == 2)
 					{
-						List<Event> events = c.Query<Event>("SELECT * FROM Event");
-						foreach (Event ev in events)
-							if (ev.ComputeHash())
-								c.Execute("UPDATE Event SET HashValue = ? WHERE EventId = ?", ev.HashValue, ev.EventId);
-						version.CurrentVersion = 2;
+						MigrateComputeHashValuesForAllEvents(c);
+						version.CurrentVersion = 3;
 						c.Execute("UPDATE DbVersion SET CurrentVersion = ?", version.CurrentVersion);
 					}
 				});
+			}
+		}
+		private void MigrateComputeHashValuesForAllEvents(SQLiteConnection c)
+		{
+			foreach (Event ev in c.DeferredQuery<Event>("SELECT * FROM Event"))
+				if (ev.ComputeHash())
+					c.Execute("UPDATE Event SET HashValue = ? WHERE EventId = ?", ev.HashValue, ev.EventId);
+		}
+		/// <summary>
+		/// True if the database is currently in a transaction.
+		/// </summary>
+		public bool IsInTransaction
+		{
+			get
+			{
+				return conn.IsValueCreated ? conn.Value.IsInTransaction : false;
 			}
 		}
 		#endregion
 
 		#region Event Management
 		/// <summary>
+		/// Preprocesses an event before adding or updating it in the database in order to ensure certain constraints are not violated.
+		/// </summary>
+		/// <param name="e"></param>
+		private void PreprocessEvent(Event e)
+		{
+			if (e.Message == null)
+				e.Message = "[Message was null]";
+			if (e.SubType == null)
+				e.SubType = "[SubType was null]";
+			if (e.HashValue == null)
+				e.ComputeHash();
+		}
+		/// <summary>
 		/// Adds the specified event to the database.
 		/// </summary>
 		/// <param name="e">Event to add.  Any Tags attached to this event are also added.</param>
 		public void AddEvent(Event e)
 		{
+			PreprocessEvent(e);
 			conn.Value.RunInTransaction(() =>
 			{
 				conn.Value.Insert(e);
@@ -131,7 +160,6 @@ namespace ErrorTrackerServer
 				conn.Value.InsertAll(tags);
 			});
 		}
-
 		///// <summary>
 		///// Moves the specified event to the specified folder, returning true if successful.
 		///// </summary>
@@ -146,7 +174,6 @@ namespace ErrorTrackerServer
 		//		return true;
 		//	return false;
 		//}
-
 		/// <summary>
 		/// Moves the specified events to the specified folder, returning true if all of the events were moved. (false if the number of affected rows != eventIds.Length)
 		/// </summary>
@@ -162,7 +189,6 @@ namespace ErrorTrackerServer
 				return true;
 			return false;
 		}
-
 		///// <summary>
 		///// Deletes the specified event, returning true if successful.
 		///// </summary>
@@ -174,7 +200,6 @@ namespace ErrorTrackerServer
 		//		return true;
 		//	return false;
 		//}
-
 		/// <summary>
 		/// Deletes the specified events and their Tags, returning true if all of the events were deleted. (false if the number of affected Event rows != eventIds.Length)
 		/// </summary>
@@ -207,7 +232,6 @@ namespace ErrorTrackerServer
 				return true;
 			return false;
 		}
-
 		/// <summary>
 		/// Adds the specified events to the database.
 		/// </summary>
@@ -216,6 +240,8 @@ namespace ErrorTrackerServer
 		{
 			if (events.Count > 0)
 			{
+				foreach (Event e in events)
+					PreprocessEvent(e);
 				conn.Value.RunInTransaction(() =>
 				{
 					conn.Value.InsertAll(events, false);
@@ -230,7 +256,6 @@ namespace ErrorTrackerServer
 				});
 			}
 		}
-
 		/// <summary>
 		/// Gets the event with the specified ID, or null if the event is not found.
 		/// </summary>
@@ -253,7 +278,27 @@ namespace ErrorTrackerServer
 			}
 			return null;
 		}
-
+		/// <summary>
+		/// Returns a collection that iterates through all the Events without needing to load them all into memory first. If you need to use the event's tags, you will need to call 
+		/// </summary>
+		/// <returns></returns>
+		public IEnumerable<Event> GetAllEventsNoTagsDeferred()
+		{
+			return conn.Value.DeferredQuery<Event>("SELECT * FROM Event");
+		}
+		/// <summary>
+		/// Loads the event's tags from the database only if the event currently has no tags defined. Meant to be used with <see cref="GetAllEventsNoTagsDeferred"/>.
+		/// </summary>
+		/// <param name="ev">The event to load tags into.</param>
+		/// <returns></returns>
+		public void GetEventTags(Event ev)
+		{
+			if (ev.GetTagCount() > 0)
+				return;
+			List<Tag> tags = conn.Value.Query<Tag>("SELECT * FROM Tag WHERE EventId = ?", ev.EventId);
+			foreach (Tag t in tags)
+				ev.SetTag(t.Key, t.Value);
+		}
 		/// <summary>
 		/// Gets all events within the specified date range.
 		/// </summary>
@@ -285,7 +330,6 @@ namespace ErrorTrackerServer
 			List<Event> events = conn.Value.Query<Event>("SELECT * FROM Event WHERE Date >= ? AND Date <= ?", oldestEpoch, newestEpoch);
 			return events;
 		}
-
 		/// <summary>
 		/// Gets all events from the specified folder.
 		/// </summary>
@@ -329,7 +373,11 @@ namespace ErrorTrackerServer
 			List<Event> events = conn.Value.Query<Event>("SELECT * FROM Event WHERE Event.FolderId = ? AND Date >= ? AND Date <= ?", folderId, oldestEpoch, newestEpoch);
 			return events;
 		}
-
+		/// <summary>
+		/// Given a list of Event and a list of Tag, adds each tag to the appropriate event.
+		/// </summary>
+		/// <param name="events">List of events.</param>
+		/// <param name="tags">List of tags.</param>
 		private void AddTagsToEvents(List<Event> events, List<Tag> tags)
 		{
 			Dictionary<long, Event> eventDict = new Dictionary<long, Event>(events.Count);
@@ -339,7 +387,11 @@ namespace ErrorTrackerServer
 			foreach (Tag t in tags)
 				eventDict[t.EventId].SetTag(t.Key, t.Value);
 		}
-
+		/// <summary>
+		/// Returns the number of events in the folder. Non-existent folders contain 0 events.
+		/// </summary>
+		/// <param name="folderId">ID of the folder.</param>
+		/// <returns></returns>
 		public long CountEventsInFolder(int folderId)
 		{
 			return conn.Value.ExecuteScalar<long>("SELECT COUNT(*) FROM Event WHERE Event.FolderId = ?", folderId);
@@ -353,7 +405,6 @@ namespace ErrorTrackerServer
 		{
 			return conn.Value.ExecuteScalar<int>("SELECT COUNT(*) FROM Event WHERE EventId = ?", eventId) > 0;
 		}
-
 		/// <summary>
 		/// Deletes all events with Date lower than the specified value. Returns the number of events that were deleted.
 		/// </summary>
@@ -411,15 +462,18 @@ namespace ErrorTrackerServer
 		/// <param name="folderName">Name of the folder to create.</param>
 		/// <param name="parentFolderId">ID of the folder that will contain the new folder.</param>
 		/// <param name="errorMessage">[out] string assigned an appropriate error message when the method returns false</param>
+		/// <param name="newFolder">[out] the new folder when the method returns true</param>
 		/// <returns></returns>
-		public bool AddFolder(string folderName, int parentFolderId, out string errorMessage)
+		public bool AddFolder(string folderName, int parentFolderId, out string errorMessage, out Folder newFolder)
 		{
 			folderName = folderName.Trim();
 			if (!Folder.ValidateName(folderName))
 			{
 				errorMessage = "Invalid folder name.";
+				newFolder = null;
 				return false;
 			}
+			Folder nf = null;
 			string eMsg = null;
 			conn.Value.RunInTransaction(() =>
 			{
@@ -427,14 +481,20 @@ namespace ErrorTrackerServer
 				if (root.TryGetNode(parentFolderId, out FolderStructure parent))
 				{
 					if (parent.GetChild(folderName) == null)
-						conn.Value.Insert(new Folder(folderName, parentFolderId));
+					{
+						nf = new Folder(folderName, parentFolderId);
+						conn.Value.Insert(nf);
+					}
 					else
 						eMsg = "A folder with this name already exists in the specified location.";
 				}
 				else
 					eMsg = "Parent folder (ID: " + parentFolderId + ") was not found.";
 			});
+			if (eMsg == null)
+				nf = null;
 			errorMessage = eMsg;
+			newFolder = nf;
 			return errorMessage == null;
 		}
 		/// <summary>
@@ -579,6 +639,22 @@ namespace ErrorTrackerServer
 				return folders[0];
 			return null;
 		}
+		/// <summary>
+		/// Attempts to return the FolderStructure at the specified path, creating missing folders if necessary.
+		/// </summary>
+		/// <param name="path">Path to resolve.</param>
+		/// <returns></returns>
+		public FolderStructure FolderResolvePath(string path)
+		{
+			FolderStructure fs = null;
+			conn.Value.RunInTransaction(() =>
+			{
+				fs = GetFolderStructure();
+				if (!string.IsNullOrWhiteSpace(path))
+					fs = fs.ResolvePath(path, this);
+			});
+			return fs;
+		}
 		#endregion
 		#region Filter Management
 		/// <summary>
@@ -613,17 +689,21 @@ namespace ErrorTrackerServer
 					.ToList();
 		}
 		/// <summary>
-		/// Gets a list of FullFilter for all filters in the database.
+		/// Gets a list of FullFilter for all filters in the database, optionally returning only the filters which are enabled.
 		/// </summary>
+		/// <param name="onlyEnabledFilters">If true, only enabled filters will be returned.</param>
 		/// <returns></returns>
-		public List<FullFilter> GetAllFilters()
+		public List<FullFilter> GetFilters(bool onlyEnabledFilters)
 		{
 			List<Filter> filters = null;
 			List<FilterCondition> conditions = null;
 			List<FilterAction> actions = null;
 			conn.Value.RunInTransaction(() =>
 			{
-				filters = conn.Value.Query<Filter>("SELECT * FROM Filter");
+				if (onlyEnabledFilters)
+					filters = conn.Value.Query<Filter>("SELECT * FROM Filter WHERE Enabled = ?", true);
+				else
+					filters = conn.Value.Query<Filter>("SELECT * FROM Filter");
 				conditions = conn.Value.Query<FilterCondition>("SELECT * FROM FilterCondition");
 				actions = conn.Value.Query<FilterAction>("SELECT * FROM FilterAction");
 			});
