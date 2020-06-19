@@ -199,7 +199,7 @@ namespace ErrorTrackerServer.Controllers
 	}
 	public class MoveEventRequest : GetEventRequest
 	{
-		public long newFolderId;
+		public int newFolderId;
 	}
 	public class GetEventsRequest : ProjectRequestBase
 	{
@@ -207,7 +207,7 @@ namespace ErrorTrackerServer.Controllers
 	}
 	public class MoveEventsRequest : GetEventsRequest
 	{
-		public long newFolderId;
+		public int newFolderId;
 	}
 	public class SetEventsColorRequest : GetEventsRequest
 	{

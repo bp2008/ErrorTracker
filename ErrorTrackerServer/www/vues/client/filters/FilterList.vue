@@ -25,6 +25,7 @@
 			<div v-if="filterSummaries && filterSummaries.length === 0">This project does not have any filters yet.</div>
 			<div class="buttonBar">
 				<input type="button" value="New Filter" @click="newFilter" />
+				<input type="button" value="Run enabled filters against all events" @click="runFilters" />
 			</div>
 			<div v-if="loading" class="loadingOverlay">
 				<div class="loading"><ScaleLoader /> Loading…</div>
@@ -38,7 +39,7 @@
 </template>
 
 <script>
-	import { GetAllFilters, AddFilter, ReorderFilters } from 'appRoot/api/FilterData';
+	import { GetAllFilters, AddFilter, ReorderFilters, RunEnabledFiltersAgainstAllEvents } from 'appRoot/api/FilterData';
 	import { TextInputDialog, ModalConfirmDialog } from 'appRoot/scripts/ModalDialog';
 	import draggable from 'vuedraggable'
 
@@ -172,6 +173,33 @@
 					FilterId: f.filter.FilterId,
 					Order: f.filter.Order
 				}));
+			},
+			runFilters()
+			{
+				ModalConfirmDialog("Please confirm you wish to run enabled filters against all events.", "Confirm")
+					.then(result =>
+					{
+						if (result)
+						{
+							this.loading = true;
+							RunEnabledFiltersAgainstAllEvents(this.projectName)
+								.then(data =>
+								{
+									if (data.success)
+										toaster.success("Filter execution complete");
+									else
+										toaster.error(data.error);
+								})
+								.catch(err =>
+								{
+									toaster.error(err);
+								})
+								.finally(() =>
+								{
+									this.loading = false;
+								});
+						}
+					});
 			}
 		},
 		watch:

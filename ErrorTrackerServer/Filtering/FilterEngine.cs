@@ -19,6 +19,7 @@ namespace ErrorTrackerServer.Filtering
 		/// </summary>
 		public DB db { get; private set; }
 		private Lazy<FolderStructure> folderStructure;
+		private DeferredActionCollection deferredActions = new DeferredActionCollection();
 		public FilterEngine(string projectName)
 		{
 			ProjectName = projectName;
@@ -29,7 +30,7 @@ namespace ErrorTrackerServer.Filtering
 			}, false);
 		}
 		/// <summary>
-		/// Runs a filter on the specified folder.
+		/// Runs a filter on all events in the specified folder.
 		/// </summary>
 		/// <param name="filterId">ID of the filter.</param>
 		/// <param name="folderId">ID of the folder to run the filter on.</param>
@@ -43,7 +44,7 @@ namespace ErrorTrackerServer.Filtering
 		}
 
 		/// <summary>
-		/// Runs a filter on the specified folder.
+		/// Runs a filter on all events in the specified folder.
 		/// </summary>
 		/// <param name="full">Filter to run.</param>
 		/// <param name="folderId">ID of the folder to run the filter on.</param>
@@ -59,10 +60,31 @@ namespace ErrorTrackerServer.Filtering
 			if (full.filter.ConditionHandling != ConditionHandling.Unconditional && !full.conditions.Any(c => c.Enabled))
 				return; // No enabled conditions, and this is not an unconditional filter
 
-			foreach (Event e in db.GetEventsInFolder(folderId))
-				RunFilterAgainstEvent(full, e); // This method can indicate to stop executing filters against the event, but we are already done either way.
+			foreach (Event e in db.GetEventsWithoutTagsInFolderDeferred(folderId))
+			{
+				db.GetEventTags(e);
+				DeferredRunFilterAgainstEvent(full, e); // This method can indicate to stop executing filters against the event, but we are already done either way.
+			}
+			deferredActions.ExecuteDeferredActions(db);
 		}
-
+		/// <summary>
+		/// Runs enabled filters on all events in the specified folder.
+		/// </summary>
+		/// <param name="folderId"></param>
+		public void RunEnabledFiltersAgainstFolder(int folderId)
+		{
+			List<FullFilter> enabledFilters = db.GetFilters(true);
+			foreach (Event e in db.GetEventsWithoutTagsInFolderDeferred(folderId))
+			{
+				db.GetEventTags(e);
+				foreach (FullFilter full in enabledFilters)
+				{
+					if (DeferredRunFilterAgainstEvent(full, e))
+						break;
+				}
+			}
+			deferredActions.ExecuteDeferredActions(db);
+		}
 		/// <summary>
 		/// Runs a filter against all events. This method is not fast, and should be used sparingly.
 		/// </summary>
@@ -92,27 +114,12 @@ namespace ErrorTrackerServer.Filtering
 			if (full.filter.ConditionHandling != ConditionHandling.Unconditional && !full.conditions.Any(c => c.Enabled))
 				return; // No enabled conditions, and this is not an unconditional filter
 
-			//List<long> nextEventTimes = new List<long>();
-			//List<long> tagLoadTimes = new List<long>();
-			//List<long> executionTimes = new List<long>();
-			//System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-			//sw.Start();
 			foreach (Event e in db.GetAllEventsNoTagsDeferred())
 			{
-				//nextEventTimes.Add(sw.ElapsedMilliseconds);
-				//sw.Restart();
 				db.GetEventTags(e);
-				//tagLoadTimes.Add(sw.ElapsedMilliseconds);
-				//sw.Restart();
-				RunFilterAgainstEvent(full, e); // This method can indicate to stop executing filters against the event, but we are already done either way.
-				//executionTimes.Add(sw.ElapsedMilliseconds);
-				//sw.Restart();
+				DeferredRunFilterAgainstEvent(full, e); // This method can indicate to stop executing filters against the event, but we are already done either way.
 			}
-			//nextEventTimes.Add(sw.ElapsedMilliseconds);
-			//Logger.Info("Filter execution times (" + full.filter.Name + ")");
-			//Logger.Info("Next Event: [" + string.Join(", ", nextEventTimes.Where(t => t > 0)) + "]");
-			//Logger.Info("Tag Load: [" + string.Join(", ", tagLoadTimes.Where(t => t > 0)) + "]");
-			//Logger.Info("Execution: [" + string.Join(", ", executionTimes.Where(t => t > 0)) + "]");
+			deferredActions.ExecuteDeferredActions(db);
 		}
 
 		/// <summary>
@@ -126,10 +133,11 @@ namespace ErrorTrackerServer.Filtering
 				db.GetEventTags(e);
 				foreach (FullFilter full in enabledFilters)
 				{
-					if (RunFilterAgainstEvent(full, e))
+					if (DeferredRunFilterAgainstEvent(full, e))
 						break;
 				}
 			}
+			deferredActions.ExecuteDeferredActions(db);
 		}
 
 		/// <summary>
@@ -161,18 +169,20 @@ namespace ErrorTrackerServer.Filtering
 			List<FullFilter> enabledFilters = db.GetFilters(true);
 			foreach (FullFilter full in enabledFilters)
 			{
-				if (RunFilterAgainstEvent(full, e))
-					return;
+				if (DeferredRunFilterAgainstEvent(full, e))
+					break;
 			}
+			deferredActions.ExecuteDeferredActions(db);
 		}
 
 		/// <summary>
-		/// Runs the filter against the event (whether the filter is enabled or not).  Returns true if filter execution against this event should cease immediately.  This method logs exceptions and does not rethrow them.
+		/// <para>Runs the filter against the event (whether the filter is enabled or not).  Returns true if filter execution against this event should cease immediately.  This method logs exceptions and does not rethrow them.</para>
+		/// <para>AFTER CALLING THIS METHOD ONE OR MORE TIMES, CALL deferredActions.ExecuteDeferredActions()</para>
 		/// </summary>
 		/// <param name="full">A filter to run against the event.</param>
 		/// <param name="e">An event with the Tags field populated.</param>
 		/// <returns></returns>
-		private bool RunFilterAgainstEvent(FullFilter full, Event e)
+		private bool DeferredRunFilterAgainstEvent(FullFilter full, Event e)
 		{
 			try
 			{
@@ -223,7 +233,7 @@ namespace ErrorTrackerServer.Filtering
 					{
 						try
 						{
-							if (ExecAction(action, e))
+							if (DeferredExecAction(action, e))
 								return true;
 						}
 						catch (Exception ex)
@@ -339,7 +349,7 @@ namespace ErrorTrackerServer.Filtering
 		/// <param name="action">Action</param>
 		/// <param name="e">Event</param>
 		/// <returns></returns>
-		private bool ExecAction(FilterAction action, Event e)
+		private bool DeferredExecAction(FilterAction action, Event e)
 		{
 			if (action.Enabled)
 			{
@@ -348,16 +358,11 @@ namespace ErrorTrackerServer.Filtering
 					FolderStructure targetFolder = folderStructure.Value.ResolvePath(action.Argument.Trim(), null);
 					if (targetFolder == null)
 						targetFolder = db.FolderResolvePath(action.Argument.Trim());
-					else if (targetFolder != null)
+					if (targetFolder != null)
 					{
-						if (e.FolderId == targetFolder.FolderId)
-						{
-							// Do nothing
-						}
-						else if (db.MoveEvents(new long[] { e.EventId }, targetFolder.FolderId))
-							e.FolderId = targetFolder.FolderId;
-						else
-							Logger.Info("[Filter " + action.FilterId + "] FilterAction " + action.FilterActionId + " failed to move event " + e.EventId + " to \"" + action.Argument + "\"");
+						deferredActions.MoveEventTo(e, targetFolder.FolderId);
+						// Make change in memory so that later filters during this filtering operation can see and act upon the new value.
+						e.FolderId = targetFolder.FolderId;
 					}
 					else
 						Logger.Info("[Filter " + action.FilterId + "] FilterAction " + action.FilterActionId + " was unable to resolve path \"" + action.Argument + "\"");
@@ -365,8 +370,7 @@ namespace ErrorTrackerServer.Filtering
 				}
 				else if (action.Operator == FilterActionType.Delete)
 				{
-					if (!db.DeleteEvents(new long[] { e.EventId }))
-						Logger.Info("[Filter " + action.FilterId + "] FilterAction " + action.FilterActionId + " failed to delete event " + e.EventId);
+					deferredActions.DeleteEvent(e);
 					return true;
 				}
 				else if (action.Operator == FilterActionType.SetColor)
@@ -384,7 +388,8 @@ namespace ErrorTrackerServer.Filtering
 						Logger.Info("[Filter " + action.FilterId + "] FilterAction " + action.FilterActionId + " with Operator \"SetColor\" has invalid Argument \"" + action.Argument + "\"");
 						return false;
 					}
-					db.SetEventsColor(new long[] { e.EventId }, color);
+					deferredActions.SetEventColor(e, color);
+					// Make change in memory so that later filters during this filtering operation can see and act upon the new value.
 					e.Color = color;
 					return false;
 				}

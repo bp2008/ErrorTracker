@@ -44,6 +44,9 @@
 				<li class="v-context__sub">
 					<a role="button">Run Filter</a>
 					<ul class="v-context">
+						<li>
+							<a role="button" @click.prevent="runAllEnabledFilters(folder.data)"><b>All Enabled Filters</b></a>
+						</li>
 						<li v-for="f in filters" :key="f.filter.FilterId" v-if="f.NumActions > 0">
 							<a role="button" @click.prevent="runFilter(f.filter, folder.data)">{{f.filter.Name}}</a>
 						</li>
@@ -55,7 +58,7 @@
 </template>
 
 <script>
-	import { GetFolderStructure, AddFolder, RenameFolder, MoveFolder, DeleteFolder, RunFilterOnFolder } from 'appRoot/api/FolderData';
+	import { GetFolderStructure, AddFolder, RenameFolder, MoveFolder, DeleteFolder, RunFilterOnFolder, RunEnabledFiltersOnFolder } from 'appRoot/api/FolderData';
 	import { MoveEvents } from 'appRoot/api/EventData';
 	import { GetAllFilters } from 'appRoot/api/FilterData';
 	import { VueContext } from 'vue-context';
@@ -244,7 +247,7 @@
 					{
 						if (data.success)
 						{
-							toaster.success("Successfully moved " + eventIds.length + " event" + (eventIds.length == 1 ? "" : "s"));
+							toaster.success("Moved " + eventIds.length + " event" + (eventIds.length == 1 ? "" : "s"));
 							EventBus.externalChangesToVisibleEvents++;
 						}
 						else
@@ -283,9 +286,11 @@
 			},
 			runFilter(filter, folder)
 			{
+				this.loading = true;
 				RunFilterOnFolder(this.projectName, filter.FilterId, folder.FolderId)
 					.then(data =>
 					{
+						this.loading = false;
 						if (data.success)
 						{
 							toaster.success("Filter execution completed");
@@ -296,6 +301,28 @@
 					})
 					.catch(err =>
 					{
+						this.loading = false;
+						toaster.error(err);
+					});
+			},
+			runAllEnabledFilters(folder)
+			{
+				this.loading = true;
+				RunEnabledFiltersOnFolder(this.projectName, folder.FolderId)
+					.then(data =>
+					{
+						this.loading = false;
+						if (data.success)
+						{
+							toaster.success("Filter execution completed");
+							EventBus.externalChangesToVisibleEvents++;
+						}
+						else
+							toaster.error(data.error);
+					})
+					.catch(err =>
+					{
+						this.loading = false;
 						toaster.error(err);
 					});
 			}

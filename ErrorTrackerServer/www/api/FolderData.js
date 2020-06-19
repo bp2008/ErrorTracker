@@ -28,3 +28,7 @@ export function RunFilterOnFolder(projectName, filterId, folderId)
 {
 	return ExecAPI("FolderData/RunFilterOnFolder", { projectName, filterId, folderId });
 }
+export function RunEnabledFiltersOnFolder(projectName, folderId)
+{
+	return ExecAPI("FolderData/RunEnabledFiltersOnFolder", { projectName, folderId });
+}

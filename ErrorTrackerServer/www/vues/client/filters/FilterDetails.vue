@@ -272,7 +272,7 @@
 			},
 			runFilterAgainstAllEvents()
 			{
-				ModalConfirmDialog("Running filters against all events may take some time. Please confirm you wish to do this.", "Confirm")
+				ModalConfirmDialog("Please confirm you wish to run this filter against all events.", "Confirm")
 					.then(result =>
 					{
 						if (result)

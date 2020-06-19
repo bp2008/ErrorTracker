@@ -166,7 +166,7 @@ namespace ErrorTrackerServer
 		///// <param name="eventId">Event ID to move.</param>
 		///// <param name="newFolderId">Folder ID to move the event into.</param>
 		///// <returns></returns>
-		//public bool MoveEvent(long eventId, long newFolderId)
+		//public bool MoveEvent(long eventId, int newFolderId)
 		//{
 		//	if (GetFolder(newFolderId) == null)
 		//		return false;
@@ -180,7 +180,7 @@ namespace ErrorTrackerServer
 		/// <param name="eventIds">Event IDs to move.</param>
 		/// <param name="newFolderId">Folder ID to move the events into.</param>
 		/// <returns></returns>
-		public bool MoveEvents(long[] eventIds, long newFolderId)
+		public bool MoveEvents(long[] eventIds, int newFolderId)
 		{
 			if (newFolderId != 0 && GetFolder(newFolderId) == null)
 				return false;
@@ -287,7 +287,7 @@ namespace ErrorTrackerServer
 			return conn.Value.DeferredQuery<Event>("SELECT * FROM Event");
 		}
 		/// <summary>
-		/// Loads the event's tags from the database only if the event currently has no tags defined. Meant to be used with <see cref="GetAllEventsNoTagsDeferred"/>.
+		/// Loads the event's tags from the database only if the event currently has no tags defined. Meant to be used with deferred event getters such as <see cref="GetAllEventsNoTagsDeferred"/>.
 		/// </summary>
 		/// <param name="ev">The event to load tags into.</param>
 		/// <returns></returns>
@@ -359,6 +359,16 @@ namespace ErrorTrackerServer
 		{
 			List<Event> events = conn.Value.Query<Event>("SELECT * FROM Event WHERE Event.FolderId = ?", folderId);
 			return events;
+		}
+
+		/// <summary>
+		/// Gets all events from the specified folder. Does not populate the Tags field. Does not load all events into memory first.
+		/// </summary>
+		/// <param name="folderId">Folder ID.</param>
+		/// <returns></returns>
+		public IEnumerable<Event> GetEventsWithoutTagsInFolderDeferred(int folderId)
+		{
+			return conn.Value.DeferredQuery<Event>("SELECT * FROM Event WHERE Event.FolderId = ?", folderId);
 		}
 
 		/// <summary>

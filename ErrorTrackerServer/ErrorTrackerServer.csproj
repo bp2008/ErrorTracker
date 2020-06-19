@@ -97,6 +97,7 @@
     <Compile Include="Controllers\SessionStatus.cs" />
     <Compile Include="Controllers\ChangePW.cs" />
     <Compile Include="Controllers\FilterData.cs" />
+    <Compile Include="Filtering\DeferredActionCollection.cs" />
     <Compile Include="Filtering\FilterEngine.cs" />
     <Compile Include="Controllers\FolderData.cs" />
     <Compile Include="Controllers\EventData.cs" />
@@ -125,6 +126,7 @@
       <DependentUpon>ErrorTrackerSvc.cs</DependentUpon>
     </Compile>
     <Compile Include="Code\Program.cs" />
+    <Compile Include="Filtering\ActionAggregator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Code\Util.cs" />
     <Compile Include="Code\WebServer.cs" />

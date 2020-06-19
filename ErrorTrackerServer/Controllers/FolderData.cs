@@ -89,7 +89,7 @@ namespace ErrorTrackerServer.Controllers
 		}
 		public ActionResult DeleteFolder()
 		{
-			DeleteFolderRequest request = ApiRequestBase.ParseRequest<DeleteFolderRequest>(this);
+			OneFolderRequest request = ApiRequestBase.ParseRequest<OneFolderRequest>(this);
 
 			if (!request.Validate(out Project p, out ApiResponseBase error))
 				return Json(error);
@@ -101,6 +101,24 @@ namespace ErrorTrackerServer.Controllers
 				else
 					return ApiError(errorMessage);
 			}
+		}
+		public ActionResult RunEnabledFiltersOnFolder()
+		{
+			OneFolderRequest request = ApiRequestBase.ParseRequest<OneFolderRequest>(this);
+
+			if (!request.Validate(out Project p, out ApiResponseBase error))
+				return Json(error);
+
+			try
+			{
+				using (FilterEngine fe = new FilterEngine(request.projectName))
+					fe.RunEnabledFiltersAgainstFolder(request.folderId);
+			}
+			catch (Exception ex)
+			{
+				return ApiError(ex.ToString());
+			}
+			return Json(new ApiResponseBase(true));
 		}
 		public ActionResult RunFilterOnFolder()
 		{
@@ -136,23 +154,20 @@ namespace ErrorTrackerServer.Controllers
 		public string folderName;
 		public int parentFolderId;
 	}
-	public class MoveFolderRequest : ProjectRequestBase
+	public class OneFolderRequest : ProjectRequestBase
 	{
 		public int folderId;
+	}
+	public class MoveFolderRequest : OneFolderRequest
+	{
 		public int newParentFolderId;
 	}
-	public class RenameFolderRequest : ProjectRequestBase
+	public class RenameFolderRequest : OneFolderRequest
 	{
-		public int folderId;
 		public string newFolderName;
 	}
-	public class DeleteFolderRequest : ProjectRequestBase
+	public class RunFilterOnFolderRequest : OneFolderRequest
 	{
-		public int folderId;
-	}
-	public class RunFilterOnFolderRequest : ProjectRequestBase
-	{
-		public int folderId;
 		public int filterId;
 	}
 }
