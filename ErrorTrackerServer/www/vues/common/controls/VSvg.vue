@@ -1,5 +1,5 @@
 ﻿<template>
-	<svg v-on="$listeners"><use :xlink:href="'#' + sprite"></use></svg>
+	<svg v-on="$listeners" class="vsvg"><use :xlink:href="'#' + sprite"></use></svg>
 </template>
 
 <script>

@@ -1,39 +1,39 @@
 ﻿<template>
-	<div class="pageRoot">
-		<div class="linkBack">
-			<router-link :to="projectHomeRoute">← To Project Home</router-link>
-		</div>
-		<div v-if="error" class="error">
-			{{error}}
-			<div class="tryAgain"><input type="button" value="Try Again" @click="loadFilterSummaries" /></div>
-		</div>
-		<div v-else-if="loading || filterSummaries">
-			<div class="heading">Filter List</div>
-			<div class="filterSummaryList" v-if="filterSummaries && filterSummaries.length">
-				<draggable v-model="filterSummaries" @start="startDragging" @end="endDragging">
-					<router-link v-for="f in filterSummaries"
-								 :key="f.filter.FilterId"
-								 class="filterNode"
-								 :to="makeFilterDetailsLink(f.filter)">
-						<span class="filterName" v-text="f.filter.Name" />
-						<span class="filterMeta">[{{f.NumConditions}} Conditions, {{f.NumActions}} Actions]</span>
-						<span class="filterMeta filterEnabled" v-if="f.filter.Enabled">[Enabled]</span>
-						<span class="filterMeta filterDisabled" v-if="!f.filter.Enabled">[Disabled]</span>
-					</router-link>
-				</draggable>
+	<div>
+		<ControlBar :projectName="projectName" :onFilters="true" />
+		<div class="pageRoot">
+			<div v-if="error" class="error">
+				{{error}}
+				<div class="tryAgain"><input type="button" value="Try Again" @click="loadFilterSummaries" /></div>
 			</div>
-			<div v-if="filterSummaries && filterSummaries.length === 0">This project does not have any filters yet.</div>
-			<div class="buttonBar">
-				<input type="button" value="New Filter" @click="newFilter" />
-				<input type="button" value="Run enabled filters against all events" @click="runFilters" />
+			<div v-else-if="loading || filterSummaries">
+				<div class="heading">Filter List</div>
+				<div class="filterSummaryList" v-if="filterSummaries && filterSummaries.length">
+					<draggable v-model="filterSummaries" @start="startDragging" @end="endDragging">
+						<router-link v-for="f in filterSummaries"
+									 :key="f.filter.FilterId"
+									 class="filterNode"
+									 :to="makeFilterDetailsLink(f.filter)">
+							<span class="filterName" v-text="f.filter.Name" />
+							<span class="filterMeta">[{{f.NumConditions}} Conditions, {{f.NumActions}} Actions]</span>
+							<span class="filterMeta filterEnabled" v-if="f.filter.Enabled">[Enabled]</span>
+							<span class="filterMeta filterDisabled" v-if="!f.filter.Enabled">[Disabled]</span>
+						</router-link>
+					</draggable>
+				</div>
+				<div v-if="filterSummaries && filterSummaries.length === 0">This project does not have any filters yet.</div>
+				<div class="buttonBar">
+					<input type="button" value="New Filter" @click="newFilter" />
+					<input type="button" value="Run enabled filters against all events" @click="runFilters" />
+				</div>
+				<div v-if="loading" class="loadingOverlay">
+					<div class="loading"><ScaleLoader /> Loading…</div>
+				</div>
 			</div>
-			<div v-if="loading" class="loadingOverlay">
-				<div class="loading"><ScaleLoader /> Loading…</div>
+			<div v-else>
+				Failed to load filter list for project: {{projectName}}
+				<div class="tryAgain"><input type="button" value="Try Again" @click="loadFilterSummaries" /></div>
 			</div>
-		</div>
-		<div v-else>
-			Failed to load filter list for project: {{projectName}}
-			<div class="tryAgain"><input type="button" value="Try Again" @click="loadFilterSummaries" /></div>
 		</div>
 	</div>
 </template>
@@ -41,10 +41,11 @@
 <script>
 	import { GetAllFilters, AddFilter, ReorderFilters, RunEnabledFiltersAgainstAllEvents } from 'appRoot/api/FilterData';
 	import { TextInputDialog, ModalConfirmDialog } from 'appRoot/scripts/ModalDialog';
+	import ControlBar from 'appRoot/vues/client/controls/ControlBar.vue';
 	import draggable from 'vuedraggable'
 
 	export default {
-		components: { draggable },
+		components: { ControlBar, draggable },
 		props:
 		{
 			projectName: {
@@ -67,10 +68,6 @@
 		},
 		computed:
 		{
-			projectHomeRoute()
-			{
-				return { name: 'clientHome', query: { p: this.projectName } };
-			}
 		},
 		methods:
 		{
@@ -216,14 +213,6 @@
 	.pageRoot
 	{
 		margin: 8px;
-	}
-
-	.linkBack
-	{
-		min-height: 30px;
-		margin-bottom: 10px;
-		display: flex;
-		align-items: center;
 	}
 
 	.loadingOverlay

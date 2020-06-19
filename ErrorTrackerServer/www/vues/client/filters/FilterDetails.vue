@@ -1,86 +1,86 @@
 ﻿<template>
-	<div class="pageRoot">
-		<div class="linkBack">
-			<router-link :to="parentRoute">← To Filter List</router-link> <input v-if="dirty" type="button" value="Commit Unsaved Changes" @click="commitChanges" class="dirty" />
-		</div>
-		<div v-if="error" class="error">
-			{{error}}
-			<div class="tryAgain"><input type="button" value="Try Again" @click="loadFilter" /></div>
-		</div>
-		<div v-else-if="loading || filter">
-			<div v-if="filter">
-				<div class="inputSection properties">
-					<label class="inputLabel">Filter Properties</label>
-					<div>ID: {{filter.filter.FilterId}}</div>
-					<div>
-						<input type="text" v-model="filter.filter.Name" class="primaryInput" placeholder="Name" title="Name" /> <span class="hint">← Filter Name</span>
+	<div>
+		<ControlBar :projectName="projectName" :onFilters="true" :filterId="filterId" :dirty="dirty" @commit="commitChanges" />
+		<div class="pageRoot">
+			<div v-if="error" class="error">
+				{{error}}
+				<div class="tryAgain"><input type="button" value="Try Again" @click="loadFilter" /></div>
+			</div>
+			<div v-else-if="loading || filter">
+				<div v-if="filter">
+					<div class="inputSection properties">
+						<label class="inputLabel">Filter Properties</label>
+						<div>ID: {{filter.filter.FilterId}}</div>
+						<div>
+							<input type="text" v-model="filter.filter.Name" class="primaryInput" placeholder="Name" title="Name" /> <span class="hint">← Filter Name</span>
+						</div>
+						<div>
+							<label><input type="checkbox" v-model="filter.filter.Enabled" /> Enabled (run automatically on new events)</label>
+						</div>
+						<div>
+							<select v-model="filter.filter.ConditionHandling" class="primaryInput">
+								<option value="All">All conditions must match</option>
+								<option value="Any">At least one condition must match</option>
+								<option value="Unconditional">Ignore conditions (always trigger actions)</option>
+							</select>
+						</div>
 					</div>
-					<div>
-						<label><input type="checkbox" v-model="filter.filter.Enabled" /> Enabled (run automatically on new events)</label>
+					<div class="inputSection conditions">
+						<label class="inputLabel">Conditions</label>
+						<div class="conditionList">
+							<FilterCondition v-for="condition in filter.conditions"
+											 :key="condition.FilterConditionId"
+											 :condition="condition"
+											 @delete="deleteCondition"
+											 class="condition" />
+						</div>
+						<div>
+							<input type="button" value="New Condition (and Commit Changes)" @click="newCondition" />
+						</div>
 					</div>
-					<div>
-						<select v-model="filter.filter.ConditionHandling" class="primaryInput">
-							<option value="All">All conditions must match</option>
-							<option value="Any">At least one condition must match</option>
-							<option value="Unconditional">Ignore conditions (always trigger actions)</option>
-						</select>
+					<div class="inputSection actions">
+						<label class="inputLabel">Actions</label>
+						<div class="actionList">
+							<FilterAction v-for="action in filter.actions"
+										  :key="action.FilterActionId"
+										  :action="action"
+										  @delete="deleteAction"
+										  class="action" />
+						</div>
+						<div>
+							<input type="button" value="New Action (and Commit Changes)" @click="newAction" />
+						</div>
+					</div>
+					<div class="buttonBar">
+						<input type="button" value="Commit Changes" @click="commitChanges" />
+						<input type="button" value="Delete Filter" @click="beginDeleteFilter" />
+						<input type="button" value="Run filter against all events" @click="runFilterAgainstAllEvents" />
+					</div>
+					<div class="notes">
+						<div class="notesHeading">Filter Notes</div>
+						<div class="notesBody">
+							<ul>
+								<li>When deleting <b>conditions</b> or <b>actions</b>, changes are committed for the entire <b>filter</b>.</li>
+								<li>Disabled <b>filters</b> can still be run manually.</li>
+								<li>Disabled <b>conditions</b> and actions are ignored (as if they did not exist) when executing the <b>filter</b>.</li>
+								<li><code class="inline">All conditions must match</code> mode requires at least one <b>condition</b> to match.</li>
+								<li>In <b>conditions</b>, the <code class="inline">Field Name</code> and <code class="inline">Query</code> fields are case-insensitive.</li>
+								<li>A <b>condition's</b> <code class="inline">Field Name</code> field can be <code class="inline">EventType</code>, <code class="inline">SubType</code>, <code class="inline">Message</code>, <code class="inline">Date</code>, <code class="inline">Folder</code>, <code class="inline">Color</code>, or any application-specific tag key. An empty <code class="inline">Field Name</code> will fail the condition.</li>
+								<li><b>Actions</b> are executed in the order they are defined above.</li>
+								<li>The <b>action</b> <code class="inline">stop execution against matched event</code> prevents other <b>filters</b> and <b>actions</b> from executing against the matched event for the remainder of the current filtering operation.</li>
+								<li>The <b>action</b> <code class="inline">move event to</code> requires an absolute folder path (e.g. <code class="inline">/ignored/spam</code>).  If the path is invalid or fails to resolve (case-insensitive), the event will not be moved.</li>
+							</ul>
+						</div>
 					</div>
 				</div>
-				<div class="inputSection conditions">
-					<label class="inputLabel">Conditions</label>
-					<div class="conditionList">
-						<FilterCondition v-for="condition in filter.conditions"
-										 :key="condition.FilterConditionId"
-										 :condition="condition"
-										 @delete="deleteCondition"
-										 class="condition" />
-					</div>
-					<div>
-						<input type="button" value="New Condition (and Commit Changes)" @click="newCondition" />
-					</div>
-				</div>
-				<div class="inputSection actions">
-					<label class="inputLabel">Actions</label>
-					<div class="actionList">
-						<FilterAction v-for="action in filter.actions"
-									  :key="action.FilterActionId"
-									  :action="action"
-									  @delete="deleteAction"
-									  class="action" />
-					</div>
-					<div>
-						<input type="button" value="New Action (and Commit Changes)" @click="newAction" />
-					</div>
-				</div>
-				<div class="buttonBar">
-					<input type="button" value="Commit Changes" @click="commitChanges" />
-					<input type="button" value="Delete Filter" @click="beginDeleteFilter" />
-					<input type="button" value="Run filter against all events" @click="runFilterAgainstAllEvents" />
-				</div>
-				<div class="notes">
-					<div class="notesHeading">Filter Notes</div>
-					<div class="notesBody">
-						<ul>
-							<li>When deleting <b>conditions</b> or <b>actions</b>, changes are committed for the entire <b>filter</b>.</li>
-							<li>Disabled <b>filters</b> can still be run manually.</li>
-							<li>Disabled <b>conditions</b> and actions are ignored (as if they did not exist) when executing the <b>filter</b>.</li>
-							<li><code class="inline">All conditions must match</code> mode requires at least one <b>condition</b> to match.</li>
-							<li>In <b>conditions</b>, the <code class="inline">Field Name</code> and <code class="inline">Query</code> fields are case-insensitive.</li>
-							<li>A <b>condition's</b> <code class="inline">Field Name</code> field can be <code class="inline">EventType</code>, <code class="inline">SubType</code>, <code class="inline">Message</code>, <code class="inline">Date</code>, <code class="inline">Folder</code>, <code class="inline">Color</code>, or any application-specific tag key. An empty <code class="inline">Field Name</code> will fail the condition.</li>
-							<li><b>Actions</b> are executed in the order they are defined above.</li>
-							<li>The <b>action</b> <code class="inline">stop execution against matched event</code> prevents other <b>filters</b> and <b>actions</b> from executing against the matched event for the remainder of the current filtering operation.</li>
-							<li>The <b>action</b> <code class="inline">move event to</code> requires an absolute folder path (e.g. <code class="inline">/ignored/spam</code>).  If the path is invalid or fails to resolve (case-insensitive), the event will not be moved.</li>
-						</ul>
-					</div>
+				<div v-if="loading" class="loadingOverlay">
+					<div class="loading"><ScaleLoader /> Loading…</div>
 				</div>
 			</div>
-			<div v-if="loading" class="loadingOverlay">
-				<div class="loading"><ScaleLoader /> Loading…</div>
+			<div v-else>
+				Failed to load filter {{filterId}} in project: {{projectName}}
+				<div class="tryAgain"><input type="button" value="Try Again" @click="loadFilter" /></div>
 			</div>
-		</div>
-		<div v-else>
-			Failed to load filter {{filterId}} in project: {{projectName}}
-			<div class="tryAgain"><input type="button" value="Try Again" @click="loadFilter" /></div>
 		</div>
 	</div>
 </template>
@@ -89,11 +89,12 @@
 	import { GetFilter, EditFilter, DeleteFilter, AddCondition, EditCondition, DeleteCondition, AddAction, EditAction, DeleteAction, RunFilterAgainstAllEvents } from 'appRoot/api/FilterData';
 	import { TextInputDialog, ModalConfirmDialog } from 'appRoot/scripts/ModalDialog';
 	import { GetReadableTextColorHexForBackgroundColorHex } from 'appRoot/scripts/Util';
+	import ControlBar from 'appRoot/vues/client/controls/ControlBar.vue';
 	import FilterCondition from 'appRoot/vues/client/filters/FilterCondition.vue';
 	import FilterAction from 'appRoot/vues/client/filters/FilterAction.vue';
 
 	export default {
-		components: { FilterCondition, FilterAction },
+		components: { ControlBar, FilterCondition, FilterAction },
 		props:
 		{
 			projectName: {
@@ -121,10 +122,6 @@
 		},
 		computed:
 		{
-			parentRoute()
-			{
-				return { name: 'clientFilters', query: { p: this.projectName } };
-			},
 			filterJson()
 			{
 				return JSON.stringify(this.filter);
@@ -265,7 +262,7 @@
 							this.hop(false, DeleteFilter(this.projectName, this.filterId))
 								.then(data =>
 								{
-									this.$router.replace(this.parentRoute);
+									this.$router.replace({ name: 'clientFilters', query: { p: this.projectName } });
 								});
 						}
 					});
@@ -304,26 +301,6 @@
 	.pageRoot
 	{
 		margin: 8px;
-	}
-
-	.linkBack
-	{
-		min-height: 30px;
-		margin-bottom: 10px;
-		display: flex;
-		align-items: center;
-	}
-
-		.linkBack > *
-		{
-			margin-right: 10px;
-		}
-
-	.dirty
-	{
-		color: #ff0000;
-		font-size: 18px;
-		font-weight: bold;
 	}
 
 	.loadingOverlay

@@ -1,5 +1,6 @@
 ﻿<template>
 	<div :class="{ projectDisplay: true, eventBodyBelow: eventBodyBelow }">
+		<ControlBar :projectName="projectName" />
 		<div v-if="(error)" class="error">{{error}}</div>
 		<div v-else-if="loading" class="loading"><ScaleLoader /> Loading…</div>
 		<div v-else class="body" :style="bodyStyle">
@@ -30,10 +31,11 @@
 	import EventBrowser from 'appRoot/vues/client/projectdisplay/event/EventBrowser.vue';
 	import EventDetails from 'appRoot/vues/client/projectdisplay/event/EventDetails.vue';
 	import ResizeBar from 'appRoot/vues/client/projectdisplay/ResizeBar.vue';
+	import ControlBar from 'appRoot/vues/client/controls/ControlBar.vue';
 	import EventBus from 'appRoot/scripts/EventBus';
 
 	export default {
-		components: { FolderBrowser, EventBrowser, EventDetails, ResizeBar },
+		components: { ControlBar, FolderBrowser, EventBrowser, EventDetails, ResizeBar },
 		props:
 		{
 			projectName: { // pre-validated
@@ -66,13 +68,13 @@
 		{
 			availableHeight()
 			{
-				let otherThingsHeight = EventBus.topNavHeight + EventBus.footerHeight;
+				let otherThingsHeight = EventBus.topNavHeight + EventBus.controlBarHeight + EventBus.footerHeight;
 				return EventBus.windowHeight - otherThingsHeight;
 			},
 			bodyStyle()
 			{
 				if (this.eventBodyBelow)
-					return { height: (this.tbStart - EventBus.topNavHeight) + "px" };
+					return { height: (this.tbStart - EventBus.topNavHeight - EventBus.controlBarHeight) + "px" };
 				else
 					return { height: this.availableHeight + "px" };
 			},
@@ -93,7 +95,7 @@
 			{
 				if (this.eventBodyBelow)
 				{
-					return { height: (this.availableHeight - (this.tbStart - EventBus.topNavHeight)) + "px" };
+					return { height: (this.availableHeight - (this.tbStart - EventBus.topNavHeight - EventBus.controlBarHeight)) + "px" };
 				}
 				else
 					return {};

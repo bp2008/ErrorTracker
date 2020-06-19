@@ -1,17 +1,5 @@
 ﻿<template>
 	<div class="eventDetails">
-		<div class="buttonBar">
-			<router-link :to="{ name: 'clientFilters', query: { p: projectName }}" title="Open filter list">
-				<SvgButton sprite="filter_alt"
-						   :size="38" />
-			</router-link>
-			<span title="Toggle event body position">
-				<SvgButton :class="{ eventBodyBelow: true, isBelow: eventBodyBelow }"
-						   :sprite="eventBodyBelow_sprite"
-						   :size="38"
-						   @click="eventBodyPositionToggle" />
-			</span>
-		</div>
 		<div v-if="error" class="error">
 			{{error}}
 			<div class="tryAgain"><input type="button" value="Try Again" @click="loadEvent" /></div>
@@ -49,15 +37,11 @@
 </template>
 <script>
 	import { GetEvent } from 'appRoot/api/EventData';
-	import svg1 from 'appRoot/images/sprite/view_column.svg';
-	import svg2 from 'appRoot/images/sprite/view_compact.svg';
-	import svg3 from 'appRoot/images/sprite/filter_alt.svg';
-	import SvgButton from 'appRoot/vues/common/controls/SvgButton.vue';
 	import { GetDateStr, GetReadableTextColorHexForBackgroundColorHex } from 'appRoot/scripts/Util';
 	import EventBus from 'appRoot/scripts/EventBus';
 
 	export default {
-		components: { SvgButton },
+		components: { },
 		props:
 		{
 			projectName: { // pre-validated
@@ -88,14 +72,6 @@
 		},
 		computed:
 		{
-			eventBodyBelow()
-			{
-				return this.$store.state.eventBodyBelow;
-			},
-			eventBodyBelow_sprite()
-			{
-				return this.eventBodyBelow ? "view_compact" : "view_column";
-			},
 			titleBarStyle()
 			{
 				if (this.event)
@@ -159,14 +135,6 @@
 						else
 							this.loadingEventId = null;
 					});
-			},
-			filterClicked()
-			{
-				this.$router.push
-			},
-			eventBodyPositionToggle()
-			{
-				this.$store.commit("SetEventBodyBelow", !this.eventBodyBelow);
 			},
 			onEventColorChanged({ eventId, color })
 			{
@@ -250,26 +218,6 @@
 		padding: 7px 10px;
 		border-bottom: 1px solid #e4e4e4;
 		font-size: 16px;
-	}
-
-	.buttonBar
-	{
-		font-size: 0px;
-		line-height: 0px;
-		margin: 0px;
-		padding: 0px;
-		float: right;
-		background-color: #FFFFFF;
-	}
-
-		.buttonBar::v-deep svg
-		{
-			fill: #0088FF;
-		}
-
-	.eventBodyBelow.isBelow
-	{
-		transform: scaleY(-1);
 	}
 
 	.title

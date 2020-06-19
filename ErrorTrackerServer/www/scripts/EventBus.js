@@ -27,6 +27,7 @@ const EventBus = new Vue({
 		mouseX: 0,
 		mouseY: 0,
 		topNavHeight: 0,
+		controlBarHeight: 0,
 		footerHeight: 0,
 		tooltipHtml: "", // HTML shown in a tooltip that follows the cursor.
 		mouseUps: 0, // Counter of mouse up events at the document level.
@@ -61,6 +62,7 @@ const EventBus = new Vue({
 			this.windowWidth = window.innerWidth;
 			this.windowHeight = window.innerHeight;
 			this.topNavHeight = MeasureHeightOfId("topNav");
+			this.controlBarHeight = MeasureHeightOfId("controlBar");
 			this.footerHeight = MeasureHeightOfId("appFooter");
 		},
 		OnScroll(event)

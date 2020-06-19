@@ -20,16 +20,9 @@
 			{
 				return this.$store.state.isAdmin;
 			},
-			projectName()
-			{
-				return this.$route.query.p;
-			},
 			title()
 			{
-				let t = appContext.systemName;
-				if (this.projectName)
-					t += " - " + this.projectName;
-				return t;
+				return appContext.systemName + " Client";
 			}
 		},
 		methods:

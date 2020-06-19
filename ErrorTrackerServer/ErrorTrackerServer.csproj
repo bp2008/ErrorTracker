@@ -149,6 +149,7 @@
     <None Include="www\vues\admin\AdminProjects.vue" />
     <None Include="www\vues\admin\AdminSettings.vue" />
     <None Include="www\vues\admin\AdminUsers.vue" />
+    <None Include="www\vues\client\controls\ControlBar.vue" />
     <None Include="www\vues\client\filters\ClientFiltersHome.vue" />
     <None Include="www\vues\client\filters\FilterAction.vue" />
     <None Include="www\vues\client\filters\FilterCondition.vue" />
@@ -238,9 +239,7 @@
     <Content Include="www\styles\theme.green.css" />
     <Content Include="www\styles\toastr.min.css" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="www\vues\client\controls\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\..\BPUtil\BPUtil\BPUtil.csproj">
       <Project>{a4981d8d-debf-4b34-b9ce-ff25520a02b7}</Project>
