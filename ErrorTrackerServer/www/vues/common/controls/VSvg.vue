@@ -1,5 +1,5 @@
 ﻿<template>
-	<svg v-on="$listeners" class="vsvg"><use :xlink:href="'#' + sprite"></use></svg>
+	<svg v-on="$listeners" class="vsvg"><use :xlink:href="'#' + sprite"></use><title v-if="title" role="presentation">{{title}}</title></svg>
 </template>
 
 <script>
@@ -9,6 +9,10 @@
 			sprite: {
 				type: String,
 				required: true
+			},
+			title: {
+				type: String,
+				default: ""
 			}
 		}
 	}

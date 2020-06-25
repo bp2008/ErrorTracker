@@ -215,6 +215,7 @@
     <Content Include="www\images\sprite\network.svg" />
     <Content Include="www\images\sprite\remove.svg" />
     <Content Include="www\images\sprite\remove_computer.svg" />
+    <Content Include="www\images\sprite\search.svg" />
     <Content Include="www\images\sprite\settings.svg" />
     <Content Include="www\images\sprite\settings_network.svg" />
     <Content Include="www\images\sprite\user.svg" />

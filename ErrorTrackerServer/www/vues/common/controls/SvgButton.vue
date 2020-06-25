@@ -1,5 +1,5 @@
 ﻿<template>
-	<svg class="svgbtn" :style="btnStyle" v-on="$listeners"><use :xlink:href="'#' + sprite"></use></svg>
+	<svg class="svgbtn" :style="btnStyle" v-on="$listeners"><use :xlink:href="'#' + sprite"></use><title v-if="title" role="presentation">{{title}}</title></svg>
 </template>
 
 <script>
@@ -19,6 +19,10 @@
 				default: ""
 			},
 			borderWidth: {
+				type: String,
+				default: ""
+			},
+			title: {
 				type: String,
 				default: ""
 			}

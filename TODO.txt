@@ -32,3 +32,14 @@
 * Add GUI for showing events similar to the current event based on HashValue strings.
 
 * Customizable Server Name
+
+* UNDO stack.
+	* Maybe with confirmation (if no REDO stack)
+	* With context menu items.
+	* By hotkey.
+	* Toast notification.
+
+* Consider: REDO stack
+	* With context menu items.
+	* By hotkey.
+	* Toast notification.

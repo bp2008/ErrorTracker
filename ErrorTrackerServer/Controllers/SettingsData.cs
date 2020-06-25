@@ -26,6 +26,7 @@ namespace ErrorTrackerServer.Controllers
 			SetSettingsRequest request = ApiRequestBase.ParseRequest<SetSettingsRequest>(this);
 
 			bool requiresRestart = false;
+			Settings.data.systemName = request.settings.systemName;
 			if (Settings.data.port_http != request.settings.port_http)
 			{
 				Settings.data.port_http = request.settings.port_http;
@@ -124,6 +125,7 @@ namespace ErrorTrackerServer.Controllers
 
 	public class SettingsObject
 	{
+		public string systemName;
 		public int port_http;
 		public int port_https;
 		public string appPath;
@@ -134,6 +136,7 @@ namespace ErrorTrackerServer.Controllers
 		public SettingsObject() { }
 		public SettingsObject(Settings settings)
 		{
+			systemName = settings.systemName;
 			port_http = settings.port_http;
 			port_https = settings.port_https;
 			appPath = settings.appPath;

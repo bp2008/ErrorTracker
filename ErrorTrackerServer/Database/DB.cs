@@ -501,7 +501,7 @@ namespace ErrorTrackerServer
 				else
 					eMsg = "Parent folder (ID: " + parentFolderId + ") was not found.";
 			});
-			if (eMsg == null)
+			if (eMsg != null)
 				nf = null;
 			errorMessage = eMsg;
 			newFolder = nf;

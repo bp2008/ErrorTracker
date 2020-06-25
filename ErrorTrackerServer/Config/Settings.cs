@@ -21,6 +21,10 @@ namespace ErrorTrackerServer
 		/// </summary>
 		public bool devMode = false;
 		/// <summary>
+		/// The title of the system, shown in various messages and parts of the web UI.
+		/// </summary>
+		public string systemName = "Error Tracker";
+		/// <summary>
 		/// Virtual directory path, if one is required for incoming requests to an upstream proxy server.
 		/// </summary>
 		public string appPath = "/";

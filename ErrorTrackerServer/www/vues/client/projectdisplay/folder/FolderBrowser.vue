@@ -247,7 +247,10 @@
 					{
 						if (data.success)
 						{
-							toaster.success("Moved " + eventIds.length + " event" + (eventIds.length == 1 ? "" : "s"));
+							let folderPath = this.getFolderPath(newFolderId);
+							if (folderPath == null)
+								folderPath = "unknown folder";
+							toaster.success("Moved " + eventIds.length + " event" + (eventIds.length == 1 ? "" : "s") + " to " + folderPath);
 							EventBus.externalChangesToVisibleEvents++;
 						}
 						else
@@ -325,6 +328,15 @@
 						this.loading = false;
 						toaster.error(err);
 					});
+			},
+			getFolder(folderId)
+			{
+				return getFolderRecursive(this.rootFolder, folderId);
+			},
+			getFolderPath(folderId)
+			{
+				let folder = getFolderRecursive(this.rootFolder, folderId);
+				return folder ? folder.AbsolutePath : null;
 			}
 		},
 		watch:
@@ -335,6 +347,22 @@
 				this.loadFolders();
 			}
 		}
+	}
+	function getFolderRecursive(root, folderId)
+	{
+		if (root)
+		{
+			if (root.FolderId === folderId)
+				return root;
+			if (root.Children && root.Children.length)
+				for (let i = 0; i < root.Children.length; i++)
+				{
+					let found = getFolderRecursive(root.Children[i], folderId);
+					if (found)
+						return found;
+				}
+		}
+		return null;
 	}
 </script>
 

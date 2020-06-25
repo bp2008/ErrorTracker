@@ -143,7 +143,9 @@ namespace ErrorTrackerServer
 		}
 
 		/// <summary>
-		/// Resolves the specified path relative to this folder, returning the specified folder. Paths beginning with '/' are absolute paths resolved from the root. For the purpose of path resolving, the root folder has no name.
+		/// Resolves the specified path relative to this folder, returning the specified folder or null if the path is valid but cannot be resolved.
+		/// Paths beginning with '/' are absolute paths resolved from the root. For the purpose of path resolving, the root folder has no name.
+		/// Some error conditions can cause this method to throw an exception.
 		/// </summary>
 		/// <param name="path">Path to resolve, e.g. "/" or "/stuff/here" or "/stuff/here/"</param>
 		/// <param name="dbInTransaction">The database where this FolderStructure was loaded from, in which the calling code has started a transaction. Provide this if you want missing path elements to be created automatically. This argument should be null unless being called from within a DB instance with the intent to create folders.</param>
@@ -198,7 +200,7 @@ namespace ErrorTrackerServer
 				throw new Exception("Empty/whitespace path element is invalid"); // Next path element is empty/whitespace and would cause our parser to restart at the root node if we didn't catch it here. e.g. "//" or "stuff//here" or "stuff/  /here/"
 
 			if (next == null)
-				throw new Exception("Unable to resolve path because folder \"" + parts[0] + "\" does not exist.");
+				return null;
 
 			return next.ResolvePath(string.Join("/", parts.Skip(1)), dbInTransaction);
 		}

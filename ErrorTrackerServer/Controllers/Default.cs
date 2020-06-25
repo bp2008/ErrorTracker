@@ -24,7 +24,7 @@ namespace ErrorTrackerServer.Controllers
 
 			dynamic appContext = new
 			{
-				systemName = "Error Tracker",
+				systemName = !string.IsNullOrWhiteSpace(Settings.data.systemName) ? Settings.data.systemName.Trim() : "Error Tracker",
 				appPath = Settings.data.GetAppPath(),
 				loginStyle = Settings.data.loginStyle,
 				serverVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString()

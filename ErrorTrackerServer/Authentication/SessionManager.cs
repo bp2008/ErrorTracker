@@ -15,10 +15,10 @@ namespace ErrorTrackerServer
 		/// <summary>
 		/// The maximum amount of time, in milliseconds, that a session should remain active if no requests are received using it.
 		/// </summary>
-		public const long SessionMaxIdleTime = 10 * 60 * 1000; // 10 minutes
-															   /// <summary>
-															   /// The maximum amount of time, in milliseconds, that an UNAUTHENTICATED session should remain active.
-															   /// </summary>
+		public const long SessionMaxIdleTime = 2160 * 60 * 1000; // 1.5 days
+		/// <summary>
+		/// The maximum amount of time, in milliseconds, that an UNAUTHENTICATED session should remain active.
+		/// </summary>
 		public const long SessionMaxUnauthenticatedTime = 15 * 1000; // 15 seconds
 
 		/// <summary>
