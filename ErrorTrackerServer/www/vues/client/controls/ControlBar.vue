@@ -5,15 +5,26 @@
 			<!-- TODO: Change the currentLocation to depict the folder path when not in the filter list.  Put the Filter List link somewhere to the right instead. -->
 			<template v-else>
 				<router-link :to="{ name: 'clientHome', query: { p: projectName }}" :class="{ pathComponent: true, clickable: onFilters }">{{projectName}}</router-link>
-				&gt;
-				<router-link :to="{ name: 'clientFilters', query: { p: projectName }}" :class="{ pathComponent: true, clickable: !onFilters || filterId, filterListLink: true }">Filter List</router-link>
-				<template v-if="filterId">
+				<template v-if="onFilters">
 					&gt;
-					<router-link :to="{ name: 'clientFilters', query: { p: projectName }, params: { filterId: filterId }}" class="pathComponent">Filter {{filterId}}</router-link>
-					<a role="button" tabindex="0" v-if="dirty" @click="commitChanges" class="dirty pathComponent clickable">Commit Unsaved Changes</a>
+					<router-link :to="{ name: 'clientFilters', query: { p: projectName }}" :class="{ pathComponent: true, clickable: !onFilters || filterId, filterListLink: true }">Filter List</router-link>
+					<template v-if="filterId">
+						&gt;
+						<router-link :to="{ name: 'clientFilters', query: { p: projectName }, params: { filterId: filterId }}" class="pathComponent">Filter {{filterId}}</router-link>
+						<a role="button" tabindex="0" v-if="dirty" @click="commitChanges" class="dirty pathComponent clickable">Commit Unsaved Changes</a>
+					</template>
+				</template>
+				<template v-else>
+					&gt;
+					<code class="inline" v-if="folderPath">{{folderPath}}</code>
+					<code class="inline" v-else>no folder selected</code>
 				</template>
 			</template>
 		</div>
+		<router-link v-if="!onFilters" :to="{ name: 'clientFilters', query: { p: projectName }}" class="filterBtn">
+			<vsvg sprite="filter_alt" class="filterIcon" />
+			Edit Filters
+		</router-link>
 		<div v-if="!onFilters" class="searchBar">
 			<input type="search" v-model="searchQuery" class="searchInput" placeholder="Search" @keypress.enter.prevent="doSearch" />
 			<vsvg sprite="search" role="button" tabindex="0" @click="doSearch" @keypress.enter.prevent="doSearch" title="search" class="searchBtn" />
@@ -39,6 +50,7 @@
 	import svg2 from 'appRoot/images/sprite/view_compact.svg';
 	import svg3 from 'appRoot/images/sprite/search.svg';
 	import svg4 from 'appRoot/images/sprite/settings.svg';
+	import svg5 from 'appRoot/images/sprite/filter_alt.svg';
 	import SvgButton from 'appRoot/vues/common/controls/SvgButton.vue';
 
 	export default {
@@ -60,6 +72,10 @@
 			dirty: {
 				type: Boolean,
 				default: false
+			},
+			folderPath: {
+				type: String,
+				default: ""
 			}
 		},
 		data()
@@ -170,9 +186,38 @@
 			background-color: #f12323;
 		}
 
+	.filterBtn
+	{
+		display: flex;
+		align-items: center;
+/*		color: #000000;*/
+		color: #0000ee;
+		text-decoration: none;
+		font-weight: bold;
+		border: 1px solid #000000;
+		padding: 1px 5px 1px 1px;
+		margin: 0px 5px;
+	}
+
+		.filterBtn:hover
+		{
+			background-color: rgba(0,0,0,0.05);
+		}
+
+		.filterBtn:active
+		{
+			background-color: rgba(0,0,0,0.085);
+		}
+
+	.filterIcon
+	{
+		width: 31px;
+		height: 31px;
+		fill: currentColor;
+	}
+
 	.searchBar
 	{
-		margin: 0px 5px;
 		display: flex;
 		align-items: stretch;
 		height: 35px;
@@ -211,13 +256,14 @@
 
 	.svgbtn
 	{
-		fill: #0000ee;
+/*		color: #0000ee;*/
+		fill: currentColor;
 	}
 
 	.advancedSearchBtn
 	{
 		flex: 0 1 auto;
-		margin: 0px 10px;
+		margin: 0px 5px;
 	}
 
 	.eventBodyBelow.isBelow

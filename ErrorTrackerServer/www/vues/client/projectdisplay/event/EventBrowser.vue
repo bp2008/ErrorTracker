@@ -5,19 +5,18 @@
 			<div class="tryAgain"><input type="button" value="Try Again" @click="loadEvents" /></div>
 		</div>
 		<div v-else-if="events" class="eventListWrapper">
-			<!--<template>
-				<EventNode v-for="e in events" :key="'event' + e.EventId"
-						   :projectName="projectName"
-						   :event="e"
-						   :selected="isEventSelected(e)"
-						   :selectionState="selectionState"
-						   @menu="onMenu" />
-			</template>-->
+			<div class="eventListHeading">
+				<div class="path">{{path}}</div>
+				<div class="eventTotals"><a class="newEvents" v-if="newEvents > 0" title="click to scroll to top" role="button" tabindex="0" @click="scrollToTop" @keypress.enter.prevent="scrollToTop">^ {{newEvents}} new ^</a> {{selectedEventIdsArray.length}}/{{eventCount}}</div>
+			</div>
 			<RecycleScroller class="eventList"
 							 :items="events"
-							 :item-size="37"
+							 :item-size="eventItemSize"
 							 key-field="EventId"
-							 v-slot="{ item }">
+							 v-slot="{ item }"
+							 ref="eventScroller"
+							 :emitUpdate="true"
+							 @update="eventScrollerUpdated">
 				<EventNode :projectName="projectName"
 						   :event="item"
 						   :selected="isEventSelected(item)"
@@ -73,11 +72,31 @@
 			selectedEventIds: {
 				type: String,
 				default: ""
+			},
+			path: {
+				type: String,
+				default: ""
 			}
 		},
 		created()
 		{
 			this.loadEvents();
+		},
+		mounted()
+		{
+			//let fakeEventInterval = setInterval(() =>
+			//{
+			//	if (this.$refs.eventScroller)
+			//	{
+			//		this.insertEvents([{ Color: "0000FF", Date: Date.now(), EventId: Date.now(), EventType: "Info", Message: "Dynamically-added fake event", SubType: "Dynamic Event" }]);
+			//	}
+			//	else
+			//	{
+			//		console.log("Clearing Interval " + fakeEventInterval);
+			//		clearInterval(fakeEventInterval);
+			//	}
+			//}, 500);
+			//console.log("Starting Interval " + fakeEventInterval);
 		},
 		beforeDestroy()
 		{
@@ -91,6 +110,8 @@
 				error: null,
 				loading: false,
 				events: null,
+				eventItemSize: 37,
+				newEvents: 0,
 				selectionState: {
 					lastSelectedEventId: null,
 					getEventsBetween: this.getEventsBetween
@@ -124,13 +145,16 @@
 			externalChangesToVisibleEvents()
 			{
 				return EventBus.externalChangesToVisibleEvents;
+			},
+			eventCount()
+			{
+				return this.events ? this.events.length : 0;
 			}
 		},
 		methods:
 		{
 			loadEvents()
 			{
-				// TODO: Make reloading the event list not clear the event list, and preserve scroll position.
 				this.loading = true;
 				this.error = null;
 
@@ -147,6 +171,7 @@
 					{
 						if (data.success)
 						{
+							this.newEvents = 0;
 							data.events.sort((a, b) =>
 							{
 								return b.Date - a.Date;
@@ -275,7 +300,7 @@
 			},
 			deleteEvent(event)
 			{
-				let selectedEvents = this.$route.query.se ? this.$route.query.se.split(',').map(eidString => parseInt(eidString)) : [];
+				let selectedEvents = this.selectedEventIds;
 				if (selectedEvents.indexOf(event.EventId) === -1)
 					selectedEvents = [event.EventId]; // The right-clicked event is not one of the selected events.
 				ModalConfirmDialog("Do you want to delete " + selectedEvents.length + " event" + (selectedEvents.length == 1 ? "" : "s") + "?", "Confirm Delete").then(result =>
@@ -309,6 +334,36 @@
 					query.se = allEventIds.join(',');
 					this.$router.replace({ name: this.$route.name, query });
 				}
+			},
+			eventScrollerUpdated()
+			{
+				if (this.$refs.eventScroller && this.$refs.eventScroller.$el)
+				{
+					let eventsAboveScroller = Math.floor(this.$refs.eventScroller.$el.scrollTop / this.eventItemSize);
+					if (this.newEvents > eventsAboveScroller)
+						this.newEvents = eventsAboveScroller;
+				}
+			},
+			insertEvents(eventsToInsert)
+			{
+				if (this.events)
+				{
+					this.events.splice(0, 0, { Color: "0000FF", Date: Date.now(), EventId: Date.now(), EventType: "Info", Message: "Dynamically-added fake event", SubType: "Dynamic Event" });
+					this.$nextTick(() =>
+					{
+						this.newEvents += eventsToInsert.length;
+						if (this.$refs.eventScroller && this.$refs.eventScroller.$el)
+							this.$refs.eventScroller.$el.scrollTop += (this.eventItemSize * eventsToInsert.length);
+					});
+				}
+			},
+			scrollToTop()
+			{
+				if (this.$refs.eventScroller && this.$refs.eventScroller.$el)
+				{
+					this.$refs.eventScroller.$el.scrollTop = 0;
+					this.newEvents = 0;
+				}
 			}
 		},
 		watch:
@@ -339,9 +394,46 @@
 
 	.eventListWrapper
 	{
-		position: relative;
 		width: 100%;
 		height: 100%;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.eventListHeading
+	{
+		background-color: #EEEEEE;
+		font-size: 14px;
+		padding: 1px 2px 1px 3px;
+		border-bottom: 1px solid #666666;
+		display: flex;
+		/*		flex-wrap: wrap;*/
+		justify-content: space-between;
+	}
+
+		.eventListHeading .eventTotals
+		{
+			margin-left: 5px;
+		}
+
+		.eventListHeading .newEvents
+		{
+			font-weight: bold;
+			animation: blinkyGreen 2s steps(1, start) infinite normal;
+		}
+
+	@keyframes blinkyGreen
+	{
+		0%
+		{
+			color: #000000;
+		}
+
+		50%
+		{
+			color: #00FF88;
+			background-color: rgba(0,50,0,0.75);
+		}
 	}
 
 	.eventList

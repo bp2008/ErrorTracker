@@ -101,6 +101,10 @@
 		},
 		computed:
 		{
+			selectedFolderPath()
+			{
+				return this.getFolderPath(this.selectedFolderId);
+			}
 		},
 		methods:
 		{
@@ -345,6 +349,10 @@
 			{
 				this.loadFilters();
 				this.loadFolders();
+			},
+			selectedFolderPath()
+			{
+				this.$emit("selectedFolderPathChanged", this.selectedFolderPath);
 			}
 		}
 	}

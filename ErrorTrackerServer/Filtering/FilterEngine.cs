@@ -62,7 +62,6 @@ namespace ErrorTrackerServer.Filtering
 
 			foreach (Event e in db.GetEventsWithoutTagsInFolderDeferred(folderId))
 			{
-				db.GetEventTags(e);
 				DeferredRunFilterAgainstEvent(full, e); // This method can indicate to stop executing filters against the event, but we are already done either way.
 			}
 			deferredActions.ExecuteDeferredActions(db);
@@ -76,7 +75,6 @@ namespace ErrorTrackerServer.Filtering
 			List<FullFilter> enabledFilters = db.GetFilters(true);
 			foreach (Event e in db.GetEventsWithoutTagsInFolderDeferred(folderId))
 			{
-				db.GetEventTags(e);
 				foreach (FullFilter full in enabledFilters)
 				{
 					if (DeferredRunFilterAgainstEvent(full, e))
@@ -116,7 +114,6 @@ namespace ErrorTrackerServer.Filtering
 
 			foreach (Event e in db.GetAllEventsNoTagsDeferred())
 			{
-				db.GetEventTags(e);
 				DeferredRunFilterAgainstEvent(full, e); // This method can indicate to stop executing filters against the event, but we are already done either way.
 			}
 			deferredActions.ExecuteDeferredActions(db);
@@ -130,7 +127,6 @@ namespace ErrorTrackerServer.Filtering
 			List<FullFilter> enabledFilters = db.GetFilters(true);
 			foreach (Event e in db.GetAllEventsNoTagsDeferred())
 			{
-				db.GetEventTags(e);
 				foreach (FullFilter full in enabledFilters)
 				{
 					if (DeferredRunFilterAgainstEvent(full, e))
@@ -283,6 +279,7 @@ namespace ErrorTrackerServer.Filtering
 				valueToTest = e.Color.ToString("X").PadLeft(8, '0').Substring(2); // Converts to hex color value (6 chars)
 			else
 			{
+				db.GetEventTags(e);
 				if (e.TryGetTag(keyLower, out string value))
 					valueToTest = value;
 			}
@@ -402,6 +399,105 @@ namespace ErrorTrackerServer.Filtering
 			}
 			return false;
 		}
+
+		#region Search Feature
+		/// <summary>
+		/// Given a search query, returns a list of matching events.  Each returned event will have its Tags populated from the DB if there was no match in the base event fields -- so you may want to populate or depopulate the tags on all these events before serializing to send to the client.
+		/// </summary>
+		/// <param name="query"></param>
+		/// <param name="folderId">Folder ID to search.  If -1, all events are searched.</param>
+		/// <returns></returns>
+		public List<Event> Search(string query, int folderId)
+		{
+			List<Event> matches = new List<Event>();
+			foreach (Event e in GetEventsForSearchDeferred(folderId))
+			{
+				if (SearchEvent(e, query))
+					matches.Add(e);
+			}
+			return matches;
+		}
+
+		/// <summary>
+		/// Returns true if the query is found in the event's Message, EventType, Subtype, or any of the Tag values (not case-sensitive).
+		/// </summary>
+		/// <param name="e"></param>
+		/// <param name="query"></param>
+		/// <returns></returns>
+		private bool SearchEvent(Event e, string query)
+		{
+			if (StringContains(e.Message, query)
+				|| StringContains(e.EventType.ToString(), query)
+				|| StringContains(e.SubType, query))
+			{
+				return true;
+			}
+			else
+			{
+				db.GetEventTags(e);
+				if (e.GetAllTags().Any(t => StringContains(t.Value, query)))
+					return true;
+			}
+			return false;
+		}
+
+		private bool StringContains(string str, string query)
+		{
+			return str.IndexOf(query, StringComparison.OrdinalIgnoreCase) > -1;
+		}
+
+		/// <summary>
+		/// Given a set of filter conditions, returns a list of matching events.  The Tags of each event may or may not be populated by this search depending to
+		/// </summary>
+		/// <param name="conditions">Array of filter conditions to evaluate. The FilterCondition.Enabled field is disregarded.</param>
+		/// <param name="matchAny">If true, only one of the conditions needs to match. If false, all conditions need to match.</param>
+		/// <param name="folderId">Folder ID to search.  If -1, all events are searched.</param>
+		/// <returns></returns>
+		public List<Event> AdvancedSearch(FilterCondition[] conditions, bool matchAny, int folderId)
+		{
+			List<Event> matches = new List<Event>();
+			if (conditions.Length == 0)
+				return matches;
+			foreach (FilterCondition condition in conditions)
+				condition.Enabled = true;
+			foreach (Event e in GetEventsForSearchDeferred(folderId))
+			{
+				if (matchAny)
+				{
+					foreach (FilterCondition condition in conditions)
+					{
+						if (EvalCondition(condition, e))
+						{
+							matches.Add(e);
+							break;
+						}
+					}
+				}
+				else
+				{
+					int metCount = 0;
+					foreach (FilterCondition condition in conditions)
+					{
+						if (EvalCondition(condition, e))
+							metCount++;
+						else
+							break;
+					}
+					if (metCount == conditions.Length)
+						matches.Add(e);
+				}
+			}
+			return matches;
+		}
+
+		private IEnumerable<Event> GetEventsForSearchDeferred(int folderId)
+		{
+			if (folderId == -1)
+				return db.GetAllEventsNoTagsDeferred();
+			else
+				return db.GetEventsWithoutTagsInFolderDeferred(folderId);
+		}
+		#endregion
 
 		#region IDisposable Pattern
 		protected virtual void Dispose(bool disposing)

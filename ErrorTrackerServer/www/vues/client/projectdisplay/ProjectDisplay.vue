@@ -1,18 +1,19 @@
 ﻿<template>
 	<div :class="{ projectDisplay: true, eventBodyBelow: eventBodyBelow }">
-		<ControlBar :projectName="projectName" />
+		<ControlBar :projectName="projectName" :folderPath="selectedFolderPath" />
 		<div v-if="(error)" class="error">{{error}}</div>
 		<div v-else-if="loading" class="loading"><ScaleLoader /> Loading…</div>
 		<div v-else class="body" :style="bodyStyle">
 			<div class="folderBrowserContainer" :style="folderBrowserStyle">
-				<FolderBrowser :projectName="projectName" :selectedFolderId="selectedFolderId" />
+				<FolderBrowser :projectName="projectName" :selectedFolderId="selectedFolderId" @selectedFolderPathChanged="selectedFolderPathChanged" />
 			</div>
 			<ResizeBar :min="50" :max="600" :start="fbStart" :default="175" @change="fbChange" />
 			<div class="eventBrowserContainer" :style="eventBrowserStyle" @keydown="onEventBrowserKeydown" tabindex="0">
 				<EventBrowser ref="eventBrowser"
 							  :projectName="projectName"
 							  :selectedFolderId="selectedFolderId"
-							  :selectedEventIds="selectedEventIds" />
+							  :selectedEventIds="selectedEventIds"
+							  :path="selectedFolderPath" />
 			</div>
 			<ResizeBar v-if="!eventBodyBelow" :min="100" :max="800" :start="ebStart" :default="400" :offset="fbStart" @change="ebChange" />
 			<div v-if="!eventBodyBelow" class="eventDetailsContainer">
@@ -58,7 +59,8 @@
 		{
 			return {
 				error: null,
-				loading: false
+				loading: false,
+				selectedFolderPath: null
 			};
 		},
 		created()
@@ -141,6 +143,10 @@
 						e.preventDefault();
 					}
 				}
+			},
+			selectedFolderPathChanged(path)
+			{
+				this.selectedFolderPath = path;
 			}
 		},
 		watch:
