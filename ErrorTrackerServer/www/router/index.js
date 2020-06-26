@@ -56,7 +56,8 @@ export default function CreateRouter(store, basePath)
 							projectName: route.query.p ? route.query.p.toString() : "",
 							selectedFolderId: route.query.f ? parseInt(route.query.f) : 0,
 							openedEventId: route.query.e ? route.query.e : null,
-							selectedEventIds: route.query.se ? route.query.se : ""
+							selectedEventIds: route.query.se ? route.query.se : "",
+							searchResults: route.query.sres ? route.query.sres === "1" : false
 						})
 					},
 					{

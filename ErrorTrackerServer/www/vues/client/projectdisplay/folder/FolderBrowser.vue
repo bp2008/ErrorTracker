@@ -13,10 +13,16 @@
 						:folder="rootFolder"
 						:selectedFolderId="selectedFolderId"
 						@menu="onMenu"
-						@moveInto="onMoveInto" />
+						@moveInto="onMoveInto"
+						class="folderRootNode" />
 			<div v-if="loading || filters_loading" class="loadingOverlay">
 				<div class="loading"><ScaleLoader /> Updating…</div>
 			</div>
+			<router-link v-if="searchResults" :to="closeSearchResultsRoute" class="searchResultsOverlay">
+				<p>Currently viewing Search Results</p>
+				<p><vsvg sprite="arrow_right_alt" class="arrowRight" /></p>
+				<p>Click here to close Search Results</p>
+			</router-link>
 		</div>
 		<div v-else-if="loading || filters_loading" class="loading"><ScaleLoader /> Loading…</div>
 		<div v-else>
@@ -65,6 +71,7 @@
 	import { TextInputDialog, ModalConfirmDialog } from 'appRoot/scripts/ModalDialog';
 	import EventBus from 'appRoot/scripts/EventBus';
 	import { ParseDraggingItems } from 'appRoot/scripts/Util';
+	import svg1 from 'appRoot/images/sprite/arrow_right_alt.svg';
 
 	export default {
 		components: { VueContext },
@@ -77,6 +84,10 @@
 			selectedFolderId: {
 				type: Number,
 				default: 0
+			},
+			searchResults: {
+				type: Boolean,
+				default: false
 			}
 		},
 		data()
@@ -104,6 +115,12 @@
 			selectedFolderPath()
 			{
 				return this.getFolderPath(this.selectedFolderId);
+			},
+			closeSearchResultsRoute()
+			{
+				let query = Object.assign({}, this.$route.query);
+				delete query.sres;
+				return { name: this.$route.name, query };
 			}
 		},
 		methods:
@@ -382,13 +399,19 @@
 		height: 100%;
 	}
 
+	.folderRootNode
+	{
+		padding: 4px 8px;
+	}
+
 	.loading
 	{
 		margin-top: 80px;
 		text-align: center;
 	}
 
-	.loadingOverlay
+	.loadingOverlay,
+	.searchResultsOverlay
 	{
 		position: absolute;
 		top: 0px;
@@ -398,6 +421,11 @@
 		background-color: rgba(0,0,0,0.25);
 		z-index: 10;
 		user-select: none;
+		box-sizing: border-box;
+	}
+
+	.loadingOverlay
+	{
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -410,6 +438,27 @@
 			padding: 4px;
 			border-radius: 4px;
 		}
+
+	.searchResultsOverlay
+	{
+		padding: 10px;
+		background-color: #f8f8f8;
+		text-align: center;
+		cursor: pointer;
+		text-decoration: none;
+		color: inherit;
+	}
+
+		.searchResultsOverlay:hover
+		{
+			background-color: #FFFFFF;
+		}
+
+	.arrowRight
+	{
+		width: 67px;
+		height: 67px;
+	}
 
 	.error
 	{

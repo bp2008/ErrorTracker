@@ -5,7 +5,7 @@
 		<div v-else-if="loading" class="loading"><ScaleLoader /> Loading…</div>
 		<div v-else class="body" :style="bodyStyle">
 			<div class="folderBrowserContainer" :style="folderBrowserStyle">
-				<FolderBrowser :projectName="projectName" :selectedFolderId="selectedFolderId" @selectedFolderPathChanged="selectedFolderPathChanged" />
+				<FolderBrowser :projectName="projectName" :selectedFolderId="selectedFolderId" @selectedFolderPathChanged="selectedFolderPathChanged" :searchResults="searchResults" />
 			</div>
 			<ResizeBar :min="50" :max="600" :start="fbStart" :default="175" @change="fbChange" />
 			<div class="eventBrowserContainer" :style="eventBrowserStyle" @keydown="onEventBrowserKeydown" tabindex="0">
@@ -13,7 +13,8 @@
 							  :projectName="projectName"
 							  :selectedFolderId="selectedFolderId"
 							  :selectedEventIds="selectedEventIds"
-							  :path="selectedFolderPath" />
+							  :path="selectedFolderPath"
+							  :searchResults="searchResults" />
 			</div>
 			<ResizeBar v-if="!eventBodyBelow" :min="100" :max="800" :start="ebStart" :default="400" :offset="fbStart" @change="ebChange" />
 			<div v-if="!eventBodyBelow" class="eventDetailsContainer">
@@ -53,6 +54,10 @@
 			selectedEventIds: {
 				type: String,
 				default: ""
+			},
+			searchResults: {
+				type: Boolean,
+				default: false
 			}
 		},
 		data()
@@ -186,7 +191,6 @@
 	.folderBrowserContainer
 	{
 		flex: 0 0 auto;
-		padding: 4px 8px;
 		border-right: 1px solid #A9B7C9;
 		background-color: #FAFAFA;
 		overflow: auto;

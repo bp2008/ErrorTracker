@@ -91,6 +91,10 @@
 		{
 			EventBus.OnResize();
 		},
+		updated()
+		{
+			EventBus.OnResize();
+		},
 		computed:
 		{
 			eventBodyBelow()
@@ -129,14 +133,16 @@
 	{
 		position: sticky;
 		top: 0px;
+		z-index: 20;
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		min-height: 35px;
+		min-height: 40px;
 		border-bottom: 1px solid #545454;
-		box-shadow: 0px 1px 5px rgba(0,0,0,0.5);
+		box-shadow: 0px 1px 4px rgba(0,0,0,0.25);
 		background-color: #A8CBDB;
 		padding: 2px 2px;
+		box-sizing: border-box;
 	}
 
 		.controlBar > *

@@ -201,6 +201,7 @@
     <Content Include="www\images\sprite\add_computer.svg" />
     <Content Include="www\images\sprite\add_group.svg" />
     <Content Include="www\images\sprite\add_user.svg" />
+    <Content Include="www\images\sprite\arrow_right_alt.svg" />
     <Content Include="www\images\sprite\chart.svg" />
     <Content Include="www\images\sprite\computer.svg" />
     <Content Include="www\images\sprite\create_new_folder.svg" />

@@ -6,7 +6,8 @@
 			<ProjectDisplay :projectName="validatedProjectName"
 							:selectedFolderId="selectedFolderId"
 							:openedEventId="openedEventId"
-							:selectedEventIds="selectedEventIds" />
+							:selectedEventIds="selectedEventIds"
+							:searchResults="searchResults" />
 		</div>
 		<div v-else>
 			<div class="heading">Select a Project</div>
@@ -54,6 +55,10 @@
 			selectedEventIds: {
 				type: String,
 				default: ""
+			},
+			searchResults: {
+				type: Boolean,
+				default: false
 			}
 		},
 		data()

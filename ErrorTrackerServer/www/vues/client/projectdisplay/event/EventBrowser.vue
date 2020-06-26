@@ -76,6 +76,10 @@
 			path: {
 				type: String,
 				default: ""
+			},
+			searchResults: {
+				type: Boolean,
+				default: false
 			}
 		},
 		created()
