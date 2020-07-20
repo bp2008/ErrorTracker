@@ -56,7 +56,7 @@
 	import EventBus from 'appRoot/scripts/EventBus';
 	import { ColorInputDialog } from 'appRoot/scripts/ModalDialog';
 	import { ModalConfirmDialog } from '../../../../scripts/ModalDialog';
-	import { SearchSimple } from 'appRoot/api/SearchData';
+	import { SearchSimple, SearchAdvanced } from 'appRoot/api/SearchData';
 
 	export default {
 		components: { VueContext, EventNode },
@@ -151,6 +151,18 @@
 			eventCount()
 			{
 				return this.events ? this.events.length : 0;
+			},
+			searchQuery()
+			{
+				return !this.searchArgs ? null : this.searchArgs.query;
+			},
+			searchMatchAny()
+			{
+				return !this.searchArgs ? null : this.searchArgs.matchAny;
+			},
+			searchConditionsStr()
+			{
+				return !this.searchArgs || !this.searchArgs.conditions ? null : JSON.stringify(this.searchArgs.conditions);
 			}
 		},
 		methods:
@@ -169,10 +181,10 @@
 				//yesterday.setDate(yesterday.getDate() - 1);
 
 				let promise = null;
-				if (this.searchArgs.query)
-					promise = SearchSimple(this.projectName, this.selectedFolderId, this.searchArgs.query);
+				if (this.searchQuery)
+					promise = SearchSimple(this.projectName, this.selectedFolderId, this.searchQuery);
 				else if (this.searchConditionsStr)
-					promise = SearchAdvanced(this.projectName, this.selectedFolderId, this.searchArgs.matchAny, this.searchArgs.conditions);
+					promise = SearchAdvanced(this.projectName, this.selectedFolderId, this.searchMatchAny, this.searchArgs.conditions);
 				else
 					promise = GetEventsInFolder(this.projectName, this.selectedFolderId, 0, 0);
 				this.handleEventListLoadPromise(promise);
@@ -399,7 +411,15 @@
 			{
 				this.loadEvents();
 			},
-			searchArgs()
+			searchQuery()
+			{
+				this.loadEvents();
+			},
+			searchMatchAny()
+			{
+				this.loadEvents();
+			},
+			searchConditionsStr()
 			{
 				this.loadEvents();
 			}

@@ -151,6 +151,7 @@
     <None Include="www\vues\admin\AdminSettings.vue" />
     <None Include="www\vues\admin\AdminUsers.vue" />
     <None Include="www\vues\client\controls\ControlBar.vue" />
+    <None Include="www\vues\client\search\AdvancedSearchHome.vue" />
     <None Include="www\vues\client\filters\ClientFiltersHome.vue" />
     <None Include="www\vues\client\filters\FilterAction.vue" />
     <None Include="www\vues\client\filters\FilterCondition.vue" />

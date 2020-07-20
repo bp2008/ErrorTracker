@@ -29,12 +29,13 @@
 			<input type="search" v-model="searchQuery" class="searchInput" placeholder="Search" @keypress.enter.prevent="doSearch" />
 			<vsvg sprite="search" role="button" tabindex="0" @click="doSearch" @keypress.enter.prevent="doSearch" title="search" class="searchBtn" />
 		</div>
-		<SvgButton v-if="!onFilters"
-				   class="advancedSearchBtn"
-				   title="advanced search"
-				   sprite="settings"
-				   :size="35"
-				   @click="advancedSearch" />
+		<router-link v-if="!onFilters"
+					 :to="{ name: 'advancedSearch', query: { p: projectName, f: selectedFolderId }}"
+					 class="advancedSearchBtn">
+			<vsvg sprite="settings"
+				  class="filterIcon"
+				  title="advanced search" />
+		</router-link>
 		<SvgButton v-if="!onFilters"
 				   title="Toggle event body position"
 				   :class="{ eventBodyBelow: true, isBelow: eventBodyBelow }"
@@ -148,7 +149,7 @@
 		align-items: center;
 		min-height: 40px;
 		border-bottom: 1px solid #545454;
-		box-shadow: 0px 1px 4px rgba(0,0,0,0.25);
+		box-shadow: 0px 1px 2px rgba(0,0,0,0.25);
 		background-color: #A8CBDB;
 		padding: 2px 2px;
 		box-sizing: border-box;
@@ -201,7 +202,8 @@
 			background-color: #f12323;
 		}
 
-	.filterBtn
+	.filterBtn,
+	.advancedSearchBtn
 	{
 		display: flex;
 		align-items: center;
@@ -214,15 +216,23 @@
 		margin: 0px 5px;
 	}
 
-		.filterBtn:hover
+		.filterBtn:hover,
+		.advancedSearchBtn:hover
 		{
 			background-color: rgba(0,0,0,0.05);
 		}
 
-		.filterBtn:active
+		.filterBtn:active,
+		.advancedSearchBtn:active
 		{
 			background-color: rgba(0,0,0,0.085);
 		}
+
+	.advancedSearchBtn
+	{
+		color: #000000;
+		padding: 1px;
+	}
 
 	.filterIcon
 	{
@@ -243,7 +253,7 @@
 		flex: 1 1 auto;
 		min-width: 50px;
 		max-width: 100%;
-		width: 100%;
+		width: 150px;
 		font-size: 17px;
 		padding: 1px 5px 1px 10px;
 		border: 1px solid #AAAAAA;
@@ -284,5 +294,13 @@
 	.eventBodyBelow.isBelow
 	{
 		transform: scaleY(-1);
+	}
+
+	@media (min-width: 600px)
+	{
+		.searchInput
+		{
+			width: 100%;
+		}
 	}
 </style>

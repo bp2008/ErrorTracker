@@ -458,7 +458,7 @@ namespace ErrorTrackerServer.Filtering
 		public List<Event> AdvancedSearch(FilterCondition[] conditions, bool matchAny, int folderId)
 		{
 			List<Event> matches = new List<Event>();
-			if (conditions.Length == 0)
+			if (conditions == null || conditions.Length == 0)
 				return matches;
 			foreach (FilterCondition condition in conditions)
 				condition.Enabled = true;

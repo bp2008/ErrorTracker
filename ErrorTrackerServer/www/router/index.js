@@ -7,6 +7,7 @@ import ClientLayout from 'appRoot/vues/client/ClientLayout.vue';
 import ClientHome from 'appRoot/vues/client/ClientHome.vue';
 import ClientFiltersHome from 'appRoot/vues/client/filters/ClientFiltersHome.vue';
 import ChangePassword from 'appRoot/vues/client/ChangePassword.vue';
+import AdvancedSearchHome from 'appRoot/vues/client/search/AdvancedSearchHome.vue';
 
 import AdminLayout from 'appRoot/vues/admin/AdminLayout.vue';
 import AdminHome from 'appRoot/vues/admin/AdminHome.vue';
@@ -87,6 +88,19 @@ export default function CreateRouter(store, basePath)
 						, props: (route) => ({
 							projectName: route.query.p ? route.query.p.toString() : "",
 							filterId: route.params.filterId ? route.params.filterId.toString() : ""
+						})
+					},
+					{
+						path: 'advancedSearch', component: AdvancedSearchHome, name: 'advancedSearch'
+						, meta: {
+							title(r)
+							{
+								return (r.query && r.query.p ? (r.query.p + " - ") : "") + "Advanced Search"
+							}
+						}
+						, props: (route) => ({
+							projectName: route.query.p ? route.query.p.toString() : "",
+							selectedFolderId: route.query.f ? parseInt(route.query.f) : 0
 						})
 					},
 					{

@@ -432,6 +432,7 @@
 		z-index: 10;
 		user-select: none;
 		box-sizing: border-box;
+		word-break: break-word;
 	}
 
 	.loadingOverlay
