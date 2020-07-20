@@ -5,7 +5,7 @@
 			<input type="button" value="Delete" @click="$emit('delete', condition)" />
 		</div>
 		<div>
-			<input type="text" v-model="condition.TagKey" placeholder="Field Name" title="Field Name (case-insensitive)" />
+			<input type="text" v-model.lazy="condition.TagKey" placeholder="Field Name" title="Field Name (case-insensitive)" />
 			<label title="Not (negate result)"><input type="checkbox" v-model="condition.Not" />!</label>
 			<select v-model="condition.Operator">
 				<option value="Contains">contains</option>
@@ -15,7 +15,7 @@
 			</select>
 			<label title="If checked, the Query is a regular expression"><input type="checkbox" v-model="condition.Regex" /> Regex</label>
 		</div>
-		<input type="text" v-model="condition.Query" placeholder="Query" title="Query (case-insensitive)" class="queryInput" />
+		<input type="text" v-model.lazy="condition.Query" placeholder="Query" title="Query (case-insensitive)" class="queryInput" />
 	</div>
 </template>
 
@@ -34,8 +34,13 @@
 <style scoped>
 	.condition.disabled
 	{
-		background-color: #FFCCCC;
+		background-color: #FFCCCC !important;
 	}
+
+		.condition.disabled:nth-child(2n)
+		{
+			background-color: #DDBBBB !important;
+		}
 
 	.topRow
 	{

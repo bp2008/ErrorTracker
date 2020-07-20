@@ -28,6 +28,14 @@ function safeJsonParse(str)
 		return null;
 	}
 }
+function buildSearchArgsFromRoute(route)
+{
+	return {
+		query: route.query.q,
+		matchAny: route.query.matchAny ? route.query.matchAny === "1" : false,
+		conditions: route.query.scon ? safeJsonParse(route.query.scon) : null
+	};
+}
 
 export default function CreateRouter(store, basePath)
 {
@@ -70,11 +78,7 @@ export default function CreateRouter(store, basePath)
 							selectedFolderId: route.query.f ? parseInt(route.query.f) : 0,
 							openedEventId: route.query.e ? route.query.e : null,
 							selectedEventIds: route.query.se ? route.query.se : "",
-							searchArgs: {
-								query: route.query.q,
-								matchAny: route.query.matchAny ? route.query.matchAny === "1" : false,
-								conditions: route.query.scon ? safeJsonParse(route.query.scon) : null
-							}
+							searchArgs: buildSearchArgsFromRoute(route)
 						})
 					},
 					{
@@ -100,7 +104,8 @@ export default function CreateRouter(store, basePath)
 						}
 						, props: (route) => ({
 							projectName: route.query.p ? route.query.p.toString() : "",
-							selectedFolderId: route.query.f ? parseInt(route.query.f) : 0
+							selectedFolderId: route.query.f ? parseInt(route.query.f) : 0,
+							searchArgs: buildSearchArgsFromRoute(route)
 						})
 					},
 					{

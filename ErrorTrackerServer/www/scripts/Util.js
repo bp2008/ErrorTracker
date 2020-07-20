@@ -747,3 +747,16 @@ export function GetReadableTextColorHexForBackgroundColorHex(c, dark, light)
 			return "DDDDDD";
 	}
 }
+
+/**
+ * Returns a new array that contains the same items in the same order as the given array.
+ * @param {Array} array array to copy
+ * @returns {Array} copy of array
+ */
+export function CopyArray(array)
+{
+	let copy = new Array(array.length);
+	for (let i = 0; i < array.length; i++)
+		copy[i] = array[i];
+	return copy;
+}

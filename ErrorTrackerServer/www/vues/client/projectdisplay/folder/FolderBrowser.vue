@@ -19,14 +19,17 @@
 				<div class="loading"><ScaleLoader /> Updating…</div>
 			</div>
 			<router-link v-if="isSearch" :to="closeSearchResultsRoute" class="searchResultsOverlay">
-				<p>Searching folder</p>
-				<p>{{selectedFolderPath}}</p>
+				<h3 class="searchingHeading">
+					<vsvg sprite="search" role="presentation" class="searchIcon" />
+					Search Results
+				</h3>
 				<template v-if="searchArgs.query">
 					<p>for &quot;<b>{{searchArgs.query}}</b>&quot;</p>
 				</template>
 				<template v-else>
-					<p>(advanced query)</p>
+					<p>for [advanced query]</p>
 				</template>
+				<p>in <code class="inline">{{selectedFolderPath}}</code></p>
 				<p><vsvg sprite="arrow_right_alt" class="arrowRight" /></p>
 				<p>Click here to close Search Results</p>
 			</router-link>
@@ -79,6 +82,7 @@
 	import EventBus from 'appRoot/scripts/EventBus';
 	import { ParseDraggingItems } from 'appRoot/scripts/Util';
 	import svg1 from 'appRoot/images/sprite/arrow_right_alt.svg';
+	import svg2 from 'appRoot/images/sprite/search.svg';
 
 	export default {
 		components: { VueContext },
@@ -495,5 +499,19 @@
 		white-space: nowrap;
 		background-color: transparent;
 		border: 0;
+	}
+
+	.searchingHeading
+	{
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.searchIcon
+	{
+		width: 30px;
+		height: 30px;
+		padding-right: 5px;
 	}
 </style>

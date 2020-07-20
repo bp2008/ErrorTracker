@@ -66,6 +66,11 @@
 		background-color: #FFCCCC;
 	}
 
+		.action.disabled:nth-child(2n)
+		{
+			background-color: #DDBBBB !important;
+		}
+
 	.topRow
 	{
 		display: flex;

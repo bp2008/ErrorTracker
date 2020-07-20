@@ -6,8 +6,8 @@
 		</div>
 		<div v-else-if="loading" class="loading"><ScaleLoader /> Loading…</div>
 		<div v-else-if="event" class="eventBody">
-			<div class="title" :style="titleBarStyle" v-text="event.Message" />
-			<div class="subTitle">
+			<div class="title" :style="titleBarStyle" v-text="event.Message" :title="'Event color: #' + event.Color" />
+			<div class="subTitle" :title="'EventType: ' + event.EventType + ', SubType: ' + event.SubType">
 				<span class="eventType">{{event.EventType}}:</span>
 				<span class="subType" v-text="event.SubType" />
 			</div>
