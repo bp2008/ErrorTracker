@@ -73,6 +73,10 @@
 				type: Boolean,
 				default: false
 			},
+			selectedFolderId: {
+				type: Number,
+				default: 0
+			},
 			folderPath: {
 				type: String,
 				default: ""
@@ -118,7 +122,12 @@
 			},
 			doSearch()
 			{
-				toaster.info("TODO: Search");
+				let query = {
+					p: this.projectName,
+					f: this.selectedFolderId,
+					q: this.searchQuery
+				};
+				this.$router.push({ name: "clientHome", query });
 			},
 			advancedSearch()
 			{
@@ -196,7 +205,7 @@
 	{
 		display: flex;
 		align-items: center;
-/*		color: #000000;*/
+		/*		color: #000000;*/
 		color: #0000ee;
 		text-decoration: none;
 		font-weight: bold;
@@ -262,7 +271,7 @@
 
 	.svgbtn
 	{
-/*		color: #0000ee;*/
+		/*		color: #0000ee;*/
 		fill: currentColor;
 	}
 

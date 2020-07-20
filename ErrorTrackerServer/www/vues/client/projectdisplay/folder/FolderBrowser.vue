@@ -18,8 +18,15 @@
 			<div v-if="loading || filters_loading" class="loadingOverlay">
 				<div class="loading"><ScaleLoader /> Updating…</div>
 			</div>
-			<router-link v-if="searchResults" :to="closeSearchResultsRoute" class="searchResultsOverlay">
-				<p>Currently viewing Search Results</p>
+			<router-link v-if="isSearch" :to="closeSearchResultsRoute" class="searchResultsOverlay">
+				<p>Searching folder</p>
+				<p>{{selectedFolderPath}}</p>
+				<template v-if="searchArgs.query">
+					<p>for &quot;<b>{{searchArgs.query}}</b>&quot;</p>
+				</template>
+				<template v-else>
+					<p>(advanced query)</p>
+				</template>
 				<p><vsvg sprite="arrow_right_alt" class="arrowRight" /></p>
 				<p>Click here to close Search Results</p>
 			</router-link>
@@ -85,10 +92,7 @@
 				type: Number,
 				default: 0
 			},
-			searchResults: {
-				type: Boolean,
-				default: false
-			}
+			searchArgs: null
 		},
 		data()
 		{
@@ -112,6 +116,10 @@
 		},
 		computed:
 		{
+			isSearch()
+			{
+				return this.searchArgs && !!(this.searchArgs.query || this.searchArgs.conditions);
+			},
 			selectedFolderPath()
 			{
 				return this.getFolderPath(this.selectedFolderId);
@@ -119,7 +127,9 @@
 			closeSearchResultsRoute()
 			{
 				let query = Object.assign({}, this.$route.query);
-				delete query.sres;
+				delete query.q;
+				delete query.matchAny;
+				delete query.scon;
 				return { name: this.$route.name, query };
 			}
 		},

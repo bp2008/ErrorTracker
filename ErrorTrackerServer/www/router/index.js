@@ -16,6 +16,18 @@ import AdminProjects from 'appRoot/vues/admin/AdminProjects.vue';
 
 Vue.use(VueRouter);
 
+function safeJsonParse(str)
+{
+	try
+	{
+		return JSON.parse(str);
+	}
+	catch (ex)
+	{
+		return null;
+	}
+}
+
 export default function CreateRouter(store, basePath)
 {
 	// Detect if a custom basePath string is being used by the browser right now.  If not, replace it with the default "/" basePath.
@@ -57,7 +69,11 @@ export default function CreateRouter(store, basePath)
 							selectedFolderId: route.query.f ? parseInt(route.query.f) : 0,
 							openedEventId: route.query.e ? route.query.e : null,
 							selectedEventIds: route.query.se ? route.query.se : "",
-							searchResults: route.query.sres ? route.query.sres === "1" : false
+							searchArgs: {
+								query: route.query.q,
+								matchAny: route.query.matchAny ? route.query.matchAny === "1" : false,
+								conditions: route.query.scon ? safeJsonParse(route.query.scon) : null
+							}
 						})
 					},
 					{

@@ -7,7 +7,7 @@
 							:selectedFolderId="selectedFolderId"
 							:openedEventId="openedEventId"
 							:selectedEventIds="selectedEventIds"
-							:searchResults="searchResults" />
+							:searchArgs="searchArgs" />
 		</div>
 		<div v-else>
 			<div class="heading">Select a Project</div>
@@ -56,10 +56,7 @@
 				type: String,
 				default: ""
 			},
-			searchResults: {
-				type: Boolean,
-				default: false
-			}
+			searchArgs: null
 		},
 		data()
 		{

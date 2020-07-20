@@ -163,6 +163,14 @@ namespace ErrorTrackerServer.Database.Model
 		}
 
 		/// <summary>
+		/// Clears the tags collection. (not thread-safe)
+		/// </summary>
+		public void ClearTags()
+		{
+			_tags?.Clear();
+		}
+
+		/// <summary>
 		/// <para>Computes the base64 encoded (without padding) MD5 hash value of this event, which is always 22 characters long.  Sets it as the value of the <see cref="HashValue" /> property.</para>
 		/// <para>Returns true if the value of the Hash property changed as a result of calling this method.</para>
 		/// <para>Only some of the event data is included in the hash so that similar events can be identified by sharing the hash value.</para>

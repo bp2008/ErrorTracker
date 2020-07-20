@@ -443,6 +443,8 @@ namespace ErrorTrackerServer.Filtering
 
 		private bool StringContains(string str, string query)
 		{
+			if (str == null)
+				return false;
 			return str.IndexOf(query, StringComparison.OrdinalIgnoreCase) > -1;
 		}
 

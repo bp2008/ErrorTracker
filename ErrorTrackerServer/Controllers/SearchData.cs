@@ -27,7 +27,11 @@ namespace ErrorTrackerServer.Controllers
 
 			SearchResultsResponse response = new SearchResultsResponse();
 			using (FilterEngine fe = new FilterEngine(p.Name))
+			{
 				response.events = fe.Search(request.query, request.folderId);
+				foreach (Event e in response.events)
+					e.ClearTags();
+			}
 			return Json(response);
 		}
 		public ActionResult SearchAdvanced()
@@ -39,7 +43,11 @@ namespace ErrorTrackerServer.Controllers
 
 			SearchResultsResponse response = new SearchResultsResponse();
 			using (FilterEngine fe = new FilterEngine(p.Name))
+			{
 				response.events = fe.AdvancedSearch(request.conditions, request.matchAny, request.folderId);
+				foreach (Event e in response.events)
+					e.ClearTags();
+			}
 			return Json(response);
 		}
 	}

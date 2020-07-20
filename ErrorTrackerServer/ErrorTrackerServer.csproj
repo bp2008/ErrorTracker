@@ -191,6 +191,7 @@
     <Content Include="www\api\EventData.js" />
     <Content Include="www\api\ProjectList.js" />
     <Content Include="www\api\ProjectData.js" />
+    <Content Include="www\api\SearchData.js" />
     <Content Include="www\api\UserData.js" />
     <Content Include="www\api\SettingsData.js" />
     <Content Include="www\api\api.js" />

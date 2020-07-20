@@ -56,6 +56,7 @@
 	import EventBus from 'appRoot/scripts/EventBus';
 	import { ColorInputDialog } from 'appRoot/scripts/ModalDialog';
 	import { ModalConfirmDialog } from '../../../../scripts/ModalDialog';
+	import { SearchSimple } from 'appRoot/api/SearchData';
 
 	export default {
 		components: { VueContext, EventNode },
@@ -77,10 +78,7 @@
 				type: String,
 				default: ""
 			},
-			searchResults: {
-				type: Boolean,
-				default: false
-			}
+			searchArgs: null
 		},
 		created()
 		{
@@ -170,7 +168,24 @@
 				//var yesterday = new Date();
 				//yesterday.setDate(yesterday.getDate() - 1);
 
-				GetEventsInFolder(this.projectName, this.selectedFolderId, 0, 0)
+				let promise = null;
+				if (this.searchArgs.query)
+					promise = SearchSimple(this.projectName, this.selectedFolderId, this.searchArgs.query);
+				else if (this.searchConditionsStr)
+					promise = SearchAdvanced(this.projectName, this.selectedFolderId, this.searchArgs.matchAny, this.searchArgs.conditions);
+				else
+					promise = GetEventsInFolder(this.projectName, this.selectedFolderId, 0, 0);
+				this.handleEventListLoadPromise(promise);
+			},
+			handleEventListLoadPromise(promise)
+			{
+				if (!promise)
+				{
+					this.error = "Application Error. Event browser has invalid properties.";
+					this.loading = false;
+					return;
+				}
+				promise
 					.then(data =>
 					{
 						if (data.success)
@@ -381,6 +396,10 @@
 				this.loadEvents();
 			},
 			externalChangesToVisibleEvents()
+			{
+				this.loadEvents();
+			},
+			searchArgs()
 			{
 				this.loadEvents();
 			}
