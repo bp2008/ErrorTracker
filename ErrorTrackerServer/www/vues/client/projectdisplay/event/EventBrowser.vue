@@ -50,7 +50,7 @@
 </template>
 
 <script>
-	import { GetEventsInFolder, SetEventsColor, DeleteEvents } from 'appRoot/api/EventData';
+	import { GetEvents, SetEventsColor, DeleteEvents } from 'appRoot/api/EventData';
 	import { VueContext } from 'vue-context';
 	import EventNode from 'appRoot/vues/client/projectdisplay/event/EventNode.vue';
 	import EventBus from 'appRoot/scripts/EventBus';
@@ -186,7 +186,7 @@
 				else if (this.searchConditionsStr)
 					promise = SearchAdvanced(this.projectName, this.selectedFolderId, this.searchMatchAll, this.searchArgs.conditions);
 				else
-					promise = GetEventsInFolder(this.projectName, this.selectedFolderId, 0, 0);
+					promise = GetEvents(this.projectName, this.selectedFolderId, 0, 0);
 				this.handleEventListLoadPromise(promise);
 			},
 			handleEventListLoadPromise(promise)

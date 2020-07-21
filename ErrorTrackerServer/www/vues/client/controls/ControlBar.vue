@@ -17,7 +17,7 @@
 				<template v-else>
 					&gt;
 					<code class="inline" v-if="folderPath">{{folderPath}}</code>
-					<code class="inline" v-else>no folder selected</code>
+					<code class="inline" v-else>🗄️ All Folders</code>
 				</template>
 			</template>
 		</div>

@@ -4,9 +4,9 @@ export function GetEventsByDate(projectName, startTime, endTime)
 {
 	return ExecAPI("EventData/GetEventsByDate", { projectName, startTime, endTime });
 }
-export function GetEventsInFolder(projectName, folderId, startTime, endTime)
+export function GetEvents(projectName, folderId, startTime, endTime)
 {
-	return ExecAPI("EventData/GetEventsInFolder", { projectName, folderId, startTime, endTime });
+	return ExecAPI("EventData/GetEvents", { projectName, folderId, startTime, endTime });
 }
 export function GetEvent(projectName, eventId)
 {

@@ -42,19 +42,19 @@
 		<!-- Folder Context Menu -->
 		<vue-context ref="menu">
 			<template slot-scope="folder">
-				<li v-if="folder.data">
+				<li v-if="folder.data && folder.data.FolderId > -1">
 					<span class="menuComment">{{folder.data.AbsolutePath}}</span>
 				</li>
-				<li>
+				<li v-show="folder.data && folder.data.FolderId > 0">
 					<a role="button" @click.prevent="newFolder(folder.data)">New Folder</a>
 				</li>
-				<li v-show="folder.data && folder.data.FolderId !== 0">
+				<li v-show="folder.data && folder.data.FolderId > 0">
 					<a role="button" @click.prevent="beginMoveFolder(folder.data)">Move</a>
 				</li>
-				<li v-show="folder.data && folder.data.FolderId !== 0">
+				<li v-show="folder.data && folder.data.FolderId > 0">
 					<a role="button" @click.prevent="renameFolder(folder.data)">Rename</a>
 				</li>
-				<li v-show="folder.data && folder.data.FolderId !== 0">
+				<li v-show="folder.data && folder.data.FolderId > 0">
 					<a role="button" @click.prevent="deleteFolder(folder.data)">Delete</a>
 				</li>
 				<li class="v-context__sub">
@@ -149,7 +149,10 @@
 					.then(data =>
 					{
 						if (data.success)
+						{
+							data.root.Children.push({ FolderId: -1, Name: "All Folders" });
 							this.rootFolder = data.root;
+						}
 						else
 						{
 							this.error = data.error;

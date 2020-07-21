@@ -279,7 +279,15 @@ namespace ErrorTrackerServer
 			return null;
 		}
 		/// <summary>
-		/// Returns a collection that iterates through all the Events without needing to load them all into memory first. If you need to use the event's tags, you will need to call 
+		/// Returns a collection that iterates through all the Events. If you need to use an Event's tags, you will need to call <see cref="GetEventTags"/> on the Event.
+		/// </summary>
+		/// <returns></returns>
+		public List<Event> GetAllEventsNoTags()
+		{
+			return conn.Value.Query<Event>("SELECT * FROM Event");
+		}
+		/// <summary>
+		/// Returns a collection that iterates through all the Events without needing to load them all into memory first. If you need to use an Event's tags, you will need to call <see cref="GetEventTags"/> on the Event.
 		/// </summary>
 		/// <returns></returns>
 		public IEnumerable<Event> GetAllEventsNoTagsDeferred()
@@ -341,7 +349,7 @@ namespace ErrorTrackerServer
 			List<Tag> tags = null;
 			conn.Value.RunInTransaction(() =>
 			{
-				events = conn.Value.Query<Event>("SELECT * FROM Event WHERE Event.FolderId = ?", folderId);
+				events = GetEventsWithoutTagsInFolder(folderId);
 				if (events.Count > 0)
 					tags = conn.Value.Query<Tag>("SELECT Tag.* FROM Tag INNER JOIN Event ON Tag.EventId = Event.EventId WHERE Event.FolderId = ?", folderId);
 			});
@@ -353,35 +361,42 @@ namespace ErrorTrackerServer
 		/// <summary>
 		/// Gets all events from the specified folder. Does not populate the Tags field.
 		/// </summary>
-		/// <param name="folderId">Folder ID.</param>
+		/// <param name="folderId">Folder ID. Negative ID matches All Folders.</param>
 		/// <returns></returns>
 		public List<Event> GetEventsWithoutTagsInFolder(int folderId)
 		{
-			List<Event> events = conn.Value.Query<Event>("SELECT * FROM Event WHERE Event.FolderId = ?", folderId);
-			return events;
+			if (folderId < 0)
+				return GetAllEventsNoTags();
+			else
+				return conn.Value.Query<Event>("SELECT * FROM Event WHERE Event.FolderId = ?", folderId);
 		}
 
 		/// <summary>
 		/// Gets all events from the specified folder. Does not populate the Tags field. Does not load all events into memory first.
 		/// </summary>
-		/// <param name="folderId">Folder ID.</param>
+		/// <param name="folderId">Folder ID. Negative ID matches All Folders.</param>
 		/// <returns></returns>
 		public IEnumerable<Event> GetEventsWithoutTagsInFolderDeferred(int folderId)
 		{
-			return conn.Value.DeferredQuery<Event>("SELECT * FROM Event WHERE Event.FolderId = ?", folderId);
+			if (folderId < 0)
+				return GetAllEventsNoTagsDeferred();
+			else
+				return conn.Value.DeferredQuery<Event>("SELECT * FROM Event WHERE Event.FolderId = ?", folderId);
 		}
 
 		/// <summary>
 		/// Gets all events from the specified folder within the specified date range. Does not populate the Tags field.
 		/// </summary>
-		/// <param name="folderId">Folder ID.</param>
+		/// <param name="folderId">Folder ID. Negative ID matches All Folders.</param>
 		/// <param name="oldestEpoch">Start date in milliseconds since the unix epoch.</param>
 		/// <param name="newestEpoch">End date in milliseconds since the unix epoch.</param>
 		/// <returns></returns>
 		public List<Event> GetEventsWithoutTagsInFolderByDate(int folderId, long oldestEpoch, long newestEpoch)
 		{
-			List<Event> events = conn.Value.Query<Event>("SELECT * FROM Event WHERE Event.FolderId = ? AND Date >= ? AND Date <= ?", folderId, oldestEpoch, newestEpoch);
-			return events;
+			if (folderId < 0)
+				return GetEventsByDate(oldestEpoch, newestEpoch);
+			else
+				return conn.Value.Query<Event>("SELECT * FROM Event WHERE Event.FolderId = ? AND Date >= ? AND Date <= ?", folderId, oldestEpoch, newestEpoch);
 		}
 		/// <summary>
 		/// Given a list of Event and a list of Tag, adds each tag to the appropriate event.

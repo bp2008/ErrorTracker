@@ -12,7 +12,13 @@
 						@dragover.native="dragOver"
 						@dragenter.native="dragEnter"
 						@dragleave.native="dragLeave"
-						@drop.native="onDrop"><vsvg sprite="folder_open" class="folderIcon" /> <span class="name">{{ folder.Name }}</span></FolderLink>
+						@drop.native="onDrop"
+						:title="linkTitle">
+				<span class="folderIcon" v-if="isAllFolders">🗄️</span>
+				<span class="folderIcon" v-else-if="selected">📂</span>
+				<span class="folderIcon" v-else>📁</span>
+				<span class="name">{{ folder.Name }}</span>
+			</FolderLink>
 		</div>
 		<div class="children" v-show="expanded">
 			<FolderNode v-for="child in folder.Children"
@@ -27,9 +33,7 @@
 </template>
 
 <script>
-	import svg1 from 'appRoot/images/sprite/folder.svg';
-	import svg2 from 'appRoot/images/sprite/folder_open.svg';
-	import svg3 from 'appRoot/images/sprite/expand_more.svg';
+	import svg1 from 'appRoot/images/sprite/expand_more.svg';
 	import FolderLink from 'appRoot/vues/client/projectdisplay/folder/FolderLink.vue';
 	import EventBus from 'appRoot/scripts/EventBus';
 	import { ParseDraggingItems } from 'appRoot/scripts/Util';
@@ -88,6 +92,17 @@
 			movingItem()
 			{
 				return EventBus.movingItem;
+			},
+			isAllFolders()
+			{
+				return this.folder.FolderId === -1;
+			},
+			linkTitle()
+			{
+				if (this.isAllFolders)
+					return "A special node you can select to view or search the contents of all folders in the project.";
+				else
+					return null;
 			}
 		},
 		methods:
@@ -107,15 +122,21 @@
 			folderLinkClick()
 			{
 				// called on link click only if openFolderRoute returned falsy
+				if (this.isAllFolders)
+					return;
 				this.$emit('moveInto', { target: this.folder });
 			},
 			dragStart(e)
 			{
+				if (this.isAllFolders)
+					return;
 				e.dataTransfer.setData("etrk_drag", "f" + this.folder.FolderId);
 				e.dataTransfer.dropEffect = "move";
 			},
 			dragOver(e)
 			{
+				if (this.isAllFolders)
+					return;
 				if (e.dataTransfer.types.indexOf("etrk_drag") > -1)
 				{
 					e.dataTransfer.dropEffect = "move";
@@ -124,6 +145,8 @@
 			},
 			onDrop(e)
 			{
+				if (this.isAllFolders)
+					return;
 				this.isDragTarget = false;
 				let items = GetDraggingItems(e);
 				if (items.length)
@@ -134,14 +157,20 @@
 			},
 			dragEnter(e)
 			{
+				if (this.isAllFolders)
+					return;
 				this.isDragTarget = true;
 			},
 			dragLeave(e)
 			{
+				if (this.isAllFolders)
+					return;
 				this.isDragTarget = false;
 			},
 			onMoveInto(args)
 			{
+				if (this.isAllFolders)
+					return;
 				this.$emit('moveInto', args);
 			}
 		}
@@ -169,7 +198,6 @@
 	.link
 	{
 		font-size: 16px;
-		display: flex;
 		user-select: none;
 		cursor: default;
 		text-decoration: none;
@@ -226,14 +254,10 @@
 
 	.folderIcon
 	{
-		width: 18px;
-		height: 18px;
-		margin-left: 1px;
-		margin-right: 2px;
+		margin-right: 1px;
 	}
 
-	.nodeIcon,
-	.folderIcon
+	.nodeIcon
 	{
 		display: inline-block;
 		flex: 0 0 auto;

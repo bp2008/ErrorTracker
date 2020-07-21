@@ -39,12 +39,12 @@ namespace ErrorTrackerServer.Controllers
 			return Json(response);
 		}
 		/// <summary>
-		/// Gets events (without their tags) from a specific folder.  Optionally filtered by date range.
+		/// Gets events (without their tags), optionally filtering by Folder Id and/or date range.
 		/// </summary>
 		/// <returns></returns>
-		public ActionResult GetEventsInFolder()
+		public ActionResult GetEvents()
 		{
-			GetEventsInFolderRequest request = ApiRequestBase.ParseRequest<GetEventsInFolderRequest>(this);
+			GetEventsRequest request = ApiRequestBase.ParseRequest<GetEventsRequest>(this);
 
 			if (!request.Validate(out Project p, out ApiResponseBase error))
 				return Json(error);
@@ -52,12 +52,22 @@ namespace ErrorTrackerServer.Controllers
 			GetEventSummaryResponse response = new GetEventSummaryResponse();
 			using (DB db = new DB(p.Name))
 			{
+				List<Event> events;
 				if (request.startTime == 0 && request.endTime == 0)
-					response.events = db.GetEventsWithoutTagsInFolder(request.folderId)
-					.Select(ev => new EventSummary(ev))
-					.ToList();
+				{
+					if (request.folderId < 0)
+						events = db.GetAllEventsNoTags();
+					else
+						events = db.GetEventsWithoutTagsInFolder(request.folderId);
+				}
 				else
-					response.events = db.GetEventsWithoutTagsInFolderByDate(request.folderId, request.startTime, request.endTime)
+				{
+					if (request.folderId < 0)
+						events = db.GetEventsWithoutTagsByDate(request.startTime, request.endTime);
+					else
+						events = db.GetEventsWithoutTagsInFolderByDate(request.folderId, request.startTime, request.endTime);
+				}
+				response.events = events
 					.Select(ev => new EventSummary(ev))
 					.ToList();
 			}
@@ -109,7 +119,7 @@ namespace ErrorTrackerServer.Controllers
 		/// <returns></returns>
 		public ActionResult DeleteEvents()
 		{
-			GetEventsRequest request = ApiRequestBase.ParseRequest<GetEventsRequest>(this);
+			EventIdsRequest request = ApiRequestBase.ParseRequest<EventIdsRequest>(this);
 
 			if (!request.Validate(out Project p, out ApiResponseBase error))
 				return Json(error);
@@ -171,7 +181,7 @@ namespace ErrorTrackerServer.Controllers
 		public long startTime;
 		public long endTime;
 	}
-	public class GetEventsInFolderRequest : GetEventsByDateRequest
+	public class GetEventsRequest : GetEventsByDateRequest
 	{
 		public int folderId;
 	}
@@ -201,15 +211,15 @@ namespace ErrorTrackerServer.Controllers
 	{
 		public int newFolderId;
 	}
-	public class GetEventsRequest : ProjectRequestBase
+	public class EventIdsRequest : ProjectRequestBase
 	{
 		public long[] eventIds;
 	}
-	public class MoveEventsRequest : GetEventsRequest
+	public class MoveEventsRequest : EventIdsRequest
 	{
 		public int newFolderId;
 	}
-	public class SetEventsColorRequest : GetEventsRequest
+	public class SetEventsColorRequest : EventIdsRequest
 	{
 		[JsonConverter(typeof(HexStringJsonConverter), 3)]
 		public uint color;
