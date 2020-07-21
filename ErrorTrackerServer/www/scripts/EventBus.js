@@ -32,7 +32,8 @@ const EventBus = new Vue({
 		tooltipHtml: "", // HTML shown in a tooltip that follows the cursor.
 		mouseUps: 0, // Counter of mouse up events at the document level.
 		movingItem: null, // String indicating item(s) being moved via the context-menu method which doesn't require HTML5 drag and drop.
-		externalChangesToVisibleEvents: 0 // A counter of external changes to visible events (incremented by FolderBrowser when it moves events into a different folder).
+		externalChangesToVisibleEvents: 0, // A counter of external changes to visible events (incremented by FolderBrowser when it moves events into a different folder).
+		projectFolderPathCache: {}
 	},
 	created()
 	{
@@ -86,6 +87,32 @@ const EventBus = new Vue({
 				this.movingItem = null;
 				this.tooltipHtml = "";
 			}
+		},
+		/**
+		 * Pass the root folder into here each time you retrieve it.
+		 * @param {String} projectName Project Name
+		 * @param {any} folder Folder to traverse
+		 */
+		learnProjectFolderStructure(projectName, folder)
+		{
+			if (!this.projectFolderPathCache[projectName])
+				Vue.set(this.projectFolderPathCache, projectName, {});
+			Vue.set(this.projectFolderPathCache[projectName], folder.FolderId, folder.AbsolutePath);
+			if (folder.Children)
+				for (let i = 0; i < folder.Children.length; i++)
+					this.learnProjectFolderStructure(projectName, folder.Children[i]);
+		},
+		/**
+		 * This method will return the last known absolute folder path for the given Folder Id.
+		 * @param {String} projectName Project Name
+		 * @param {Number} folderId Folder ID to look up.
+		 */
+		getProjectFolderPathFromId(projectName, folderId)
+		{
+			if (this.projectFolderPathCache[projectName])
+				return this.projectFolderPathCache[projectName][folderId];
+			else
+				return null;
 		}
 	}
 });

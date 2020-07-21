@@ -4,7 +4,10 @@
 			<div v-if="!projectName">A project name was not specified in the URL.  <router-link :to="{ name: 'clientHome' }">Return Home</router-link></div>
 			<!-- TODO: Change the currentLocation to depict the folder path when not in the filter list.  Put the Filter List link somewhere to the right instead. -->
 			<template v-else>
-				<router-link :to="{ name: 'clientHome', query: { p: projectName }}" :class="{ pathComponent: true, clickable: onFilters }">{{projectName}}</router-link>
+				<router-link :to="{ name: 'clientHome', query: { p: projectName }}" :class="{ pathComponent: true, clickable: projectNameClickable }">{{projectName}}</router-link>
+				<template v-if="onAdvancedSearch">
+					&gt; <b>Advanced Search</b>
+				</template>
 				<template v-if="onFilters">
 					&gt;
 					<router-link :to="{ name: 'clientFilters', query: { p: projectName }}" :class="{ pathComponent: true, clickable: !onFilters || filterId, filterListLink: true }">Filter List</router-link>
@@ -17,7 +20,7 @@
 				<template v-else>
 					&gt;
 					<code class="inline" v-if="folderPath">{{folderPath}}</code>
-					<code class="inline" v-else>🗄️ All Folders</code>
+					<code class="inline" v-else>Folder {{selectedFolderId}} (path not cached yet)</code>
 				</template>
 			</template>
 		</div>
@@ -25,18 +28,18 @@
 			<vsvg sprite="filter_alt" class="filterIcon" />
 			Edit Filters
 		</router-link>
-		<div v-if="!onFilters" class="searchBar" title="Perform a &quot;Contains&quot; search on the Message, EventType, SubType, and all Tag values.">
+		<div v-if="!onFilters && !onAdvancedSearch" class="searchBar" title="Perform a &quot;Contains&quot; search on the Message, EventType, SubType, and all Tag values.">
 			<input type="search" v-model="searchQuery" class="searchInput" placeholder="Search" @keypress.enter.prevent="doSearch" />
 			<vsvg sprite="search" role="button" tabindex="0" @click="doSearch" @keypress.enter.prevent="doSearch" title="search" class="searchBtn" />
 		</div>
-		<router-link v-if="!onFilters"
+		<router-link v-if="!onFilters && !onAdvancedSearch"
 					 :to="{ name: 'advancedSearch', query: { p: projectName, f: selectedFolderId, matchAll: '1' }}"
 					 class="advancedSearchBtn">
 			<vsvg sprite="settings"
 				  class="filterIcon"
 				  title="advanced search" />
 		</router-link>
-		<SvgButton v-if="!onFilters"
+		<SvgButton v-if="!onFilters && !onAdvancedSearch"
 				   title="Toggle event body position"
 				   :class="{ eventBodyBelow: true, isBelow: eventBodyBelow }"
 				   :sprite="eventBodyBelow_sprite"
@@ -78,9 +81,9 @@
 				type: Number,
 				default: 0
 			},
-			folderPath: {
-				type: String,
-				default: ""
+			onAdvancedSearch: {
+				type: Boolean,
+				default: false
 			}
 		},
 		data()
@@ -109,6 +112,14 @@
 			eventBodyBelow_sprite()
 			{
 				return this.eventBodyBelow ? "view_compact" : "view_column";
+			},
+			folderPath()
+			{
+				return EventBus.getProjectFolderPathFromId(this.projectName, this.selectedFolderId);
+			},
+			projectNameClickable()
+			{
+				return this.onFilters || this.onAdvancedSearch;
 			}
 		},
 		methods:

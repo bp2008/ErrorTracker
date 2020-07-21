@@ -1,5 +1,5 @@
 ﻿<template>
-	<router-link v-if="to" :to="to" class="link"><slot /></router-link>
+	<router-link v-if="to" :to="to" class="link" replace><slot /></router-link>
 	<a v-else="href" role="button" @click="clickFn" class="link"><slot /></a>
 </template>
 

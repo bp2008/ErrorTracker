@@ -1,39 +1,43 @@
 ﻿<template>
-	<div class="advancedSearchHome">
-		<div class="inputSection conditions">
-			<label class="inputLabel">Advanced Search Conditions</label>
-			<div v-if="loading" class="loadingOverlay">
-				<div class="loading"><ScaleLoader /> Loading…</div>
+	<div>
+		<ControlBar :projectName="projectName" :onAdvancedSearch="true" :selectedFolderId="selectedFolderId" />
+		<div class="advancedSearchHome">
+			<div class="inputSection conditions">
+				<label class="inputLabel">Advanced Search Conditions</label>
+				<div v-if="loading" class="loadingOverlay">
+					<div class="loading"><ScaleLoader /> Loading…</div>
+				</div>
+				<div class="searchInWrapper">Search in: <input type="button" :value="folderPath" @click="changeFolder" /></div>
+				<div class="matchAllWrapper"><label><input type="checkbox" v-model="internal_matchAll" /> All conditions must match</label></div>
+				<div class="conditionList">
+					<FilterCondition v-for="condition in internal_conditions"
+									 :key="condition.FilterConditionId"
+									 :condition="condition"
+									 @delete="deleteCondition"
+									 class="condition" />
+				</div>
+				<div>
+					<input type="button" value="New Condition" @click="newCondition" />
+				</div>
 			</div>
-			<div class="matchAllWrapper"><label><input type="checkbox" v-model="internal_matchAll" /> All conditions must match</label></div>
-			<div class="conditionList">
-				<FilterCondition v-for="condition in internal_conditions"
-								 :key="condition.FilterConditionId"
-								 :condition="condition"
-								 @delete="deleteCondition"
-								 class="condition" />
+			<div class="buttonBar">
+				<input type="button" value="Copy conditions from a Filter" @click="copyConditionsFromFilter" />
+				<input type="button" value="Create new Filter from these conditions" @click="newFilter" />
 			</div>
-			<div>
-				<input type="button" value="New Condition" @click="newCondition" />
+			<div class="buttonBar">
+				<router-link :to="searchRoute" class="execSearchButton">
+					<vsvg sprite="search" role="presentation" class="searchIcon" />
+					Execute Search
+				</router-link>
 			</div>
-		</div>
-		<div class="buttonBar">
-			<input type="button" value="Copy conditions from a Filter" @click="copyConditionsFromFilter" />
-			<input type="button" value="Create new Filter from these conditions" @click="newFilter" />
-		</div>
-		<div class="buttonBar">
-			<router-link :to="searchRoute" class="execSearchButton">
-				<vsvg sprite="search" role="presentation" class="searchIcon" />
-				Execute Search
-			</router-link>
-		</div>
-		<div class="notes">
-			<div class="notesHeading">Advanced Search Notes</div>
-			<div class="notesBody">
-				<ul>
-					<li>In <b>conditions</b>, the <code class="inline">Field Name</code> and <code class="inline">Query</code> fields are case-insensitive.</li>
-					<li>A <b>condition's</b> <code class="inline">Field Name</code> field can be <code class="inline">EventType</code>, <code class="inline">SubType</code>, <code class="inline">Message</code>, <code class="inline">Date</code>, <code class="inline">Folder</code>, <code class="inline">Color</code>, or any application-specific tag key. An empty <code class="inline">Field Name</code> will fail the condition.</li>
-				</ul>
+			<div class="notes">
+				<div class="notesHeading">Advanced Search Notes</div>
+				<div class="notesBody">
+					<ul>
+						<li>In <b>conditions</b>, the <code class="inline">Field Name</code> and <code class="inline">Query</code> fields are case-insensitive.</li>
+						<li>A <b>condition's</b> <code class="inline">Field Name</code> field can be <code class="inline">EventType</code>, <code class="inline">SubType</code>, <code class="inline">Message</code>, <code class="inline">Date</code>, <code class="inline">Folder</code>, <code class="inline">Color</code>, or any application-specific tag key. An empty <code class="inline">Field Name</code> will fail the condition.</li>
+					</ul>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -42,17 +46,23 @@
 <script>
 	import { GetFilter, AddFilter } from 'appRoot/api/FilterData';
 	import FilterCondition from 'appRoot/vues/client/filters/FilterCondition.vue';
+	import ControlBar from 'appRoot/vues/client/controls/ControlBar.vue';
 	import { CopyArray } from 'appRoot/scripts/Util';
-	import { ModalConfirmDialog, TextInputDialog, SelectFilterDialog } from 'appRoot/scripts/ModalDialog';
+	import { ModalConfirmDialog, TextInputDialog, SelectFilterDialog, SelectFolderDialog } from 'appRoot/scripts/ModalDialog';
 	import svg1 from 'appRoot/images/sprite/search.svg';
+	import EventBus from 'appRoot/scripts/EventBus';
 
 	export default {
-		components: { FilterCondition },
+		components: { FilterCondition, ControlBar },
 		props:
 		{
 			projectName: {
 				type: String,
 				default: ""
+			},
+			selectedFolderId: {
+				type: Number,
+				default: 0
 			},
 			filterId: {
 				type: String,
@@ -89,6 +99,13 @@
 					name: "clientHome",
 					query: this.$route.query
 				};
+			},
+			folderPath()
+			{
+				let path = EventBus.getProjectFolderPathFromId(this.projectName, this.selectedFolderId);
+				if (!path)
+					path = "Folder " + this.selectedFolderId + " (click to load path)";
+				return path;
 			}
 		},
 		methods:
@@ -187,6 +204,14 @@
 								});
 						}
 					});
+			},
+			changeFolder()
+			{
+				SelectFolderDialog(this.projectName, this.selectedFolderId)
+					.then(data =>
+					{
+						console.log(data);
+					});
 			}
 		},
 		watch:
@@ -280,6 +305,7 @@
 			margin-bottom: 4px;
 		}
 
+	.searchInWrapper,
 	.matchAllWrapper
 	{
 		margin: 10px 0px;

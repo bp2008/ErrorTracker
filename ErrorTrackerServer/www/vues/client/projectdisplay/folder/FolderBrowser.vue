@@ -14,7 +14,8 @@
 						:selectedFolderId="selectedFolderId"
 						@menu="onMenu"
 						@moveInto="onMoveInto"
-						class="folderRootNode" />
+						class="folderRootNode"
+						ref="folderNode" />
 			<div v-if="loading || filters_loading" class="loadingOverlay">
 				<div class="loading"><ScaleLoader /> Updating…</div>
 			</div>
@@ -106,7 +107,8 @@
 				rootFolder: null,
 				filters_error: null,
 				filters_loading: false,
-				filters: null
+				filters: null,
+				focusSelectedNodeWhenLoaded: false
 			};
 		},
 		created()
@@ -150,8 +152,17 @@
 					{
 						if (data.success)
 						{
-							data.root.Children.push({ FolderId: -1, Name: "All Folders" });
+							data.root.Children.push({ FolderId: -1, Name: "All Folders", AbsolutePath: "🗄️ All Folders" });
+							EventBus.learnProjectFolderStructure(this.projectName, data.root);
 							this.rootFolder = data.root;
+							if (this.focusSelectedNodeWhenLoaded)
+							{
+								this.focusSelectedNodeWhenLoaded = false;
+								this.$nextTick(() =>
+								{
+									this.focusSelectedNode();
+								});
+							}
 						}
 						else
 						{
@@ -367,14 +378,22 @@
 						toaster.error(err);
 					});
 			},
-			getFolder(folderId)
-			{
-				return getFolderRecursive(this.rootFolder, folderId);
-			},
+			//getFolder(folderId)
+			//{
+			//	return getFolderRecursive(this.rootFolder, folderId);
+			//},
 			getFolderPath(folderId)
 			{
-				let folder = getFolderRecursive(this.rootFolder, folderId);
-				return folder ? folder.AbsolutePath : null;
+				return EventBus.getProjectFolderPathFromId(this.projectName, folderId);
+				//let folder = getFolderRecursive(this.rootFolder, folderId);
+				//return folder ? folder.AbsolutePath : null;
+			},
+			focusSelectedNode()
+			{
+				if (this.$refs.folderNode)
+					this.$refs.folderNode.focusSelectedNode();
+				else
+					this.focusSelectedNodeWhenLoaded = true;
 			}
 		},
 		watch:
@@ -390,22 +409,22 @@
 			}
 		}
 	}
-	function getFolderRecursive(root, folderId)
-	{
-		if (root)
-		{
-			if (root.FolderId === folderId)
-				return root;
-			if (root.Children && root.Children.length)
-				for (let i = 0; i < root.Children.length; i++)
-				{
-					let found = getFolderRecursive(root.Children[i], folderId);
-					if (found)
-						return found;
-				}
-		}
-		return null;
-	}
+	//function getFolderRecursive(root, folderId)
+	//{
+	//	if (root)
+	//	{
+	//		if (root.FolderId === folderId)
+	//			return root;
+	//		if (root.Children && root.Children.length)
+	//			for (let i = 0; i < root.Children.length; i++)
+	//			{
+	//				let found = getFolderRecursive(root.Children[i], folderId);
+	//				if (found)
+	//					return found;
+	//			}
+	//	}
+	//	return null;
+	//}
 </script>
 
 <style scoped>

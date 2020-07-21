@@ -5,6 +5,7 @@ import ConfirmPopup from 'appRoot/vues/common/controls/ConfirmPopup.vue';
 import TextInputPopup from 'appRoot/vues/common/controls/TextInputPopup.vue';
 import ColorInputPopup from 'appRoot/vues/common/controls/ColorInputPopup.vue';
 import SelectFilterPopup from 'appRoot/vues/client/controls/SelectFilterPopup.vue';
+import SelectFolderPopup from 'appRoot/vues/client/controls/SelectFolderPopup.vue';
 
 //////////////////////////////////////////////////
 // Container Registration / Dialog Registration //
@@ -209,4 +210,15 @@ export function SelectFilterDialog(projectName)
 {
 	let args = { projectName };
 	return ModalDialog(SelectFilterPopup, args);
+}
+/**
+ * Opens a dialog box where the user can select a Filter. Returns a promise that resolves with the selected Filter, or a falsy value if canceled.  The promise does not reject.
+ * @param {String} projectName Name of the project to load Filters from.
+ * @param {Number} selectedFolderId ID of the folder which should be selected by default. (e.g. 0)
+ * @returns {Promise} Returns a promise which resolves when the dialog closes. Does not reject.
+ */
+export function SelectFolderDialog(projectName, selectedFolderId)
+{
+	let args = { projectName, selectedFolderId };
+	return ModalDialog(SelectFolderPopup, args);
 }

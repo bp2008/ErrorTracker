@@ -13,7 +13,8 @@
 						@dragenter.native="dragEnter"
 						@dragleave.native="dragLeave"
 						@drop.native="onDrop"
-						:title="linkTitle">
+						:title="linkTitle"
+						ref="myNode">
 				<span class="folderIcon" v-if="isAllFolders">🗄️</span>
 				<span class="folderIcon" v-else-if="selected">📂</span>
 				<span class="folderIcon" v-else>📁</span>
@@ -27,7 +28,8 @@
 						:folder="child"
 						:selectedFolderId="selectedFolderId"
 						@menu="onMenu"
-						@moveInto="onMoveInto" />
+						@moveInto="onMoveInto"
+						ref="childNodes" />
 		</div>
 	</div>
 </template>
@@ -79,10 +81,8 @@
 			{
 				if (EventBus.movingItem)
 					return null;
-				let query = {
-					p: this.projectName,
-					f: this.folder.FolderId
-				};
+				let query = Object.assign({}, this.$route.query);
+				query.f = this.folder.FolderId;
 				return { name: this.$route.name, query };
 			},
 			expanded()
@@ -172,6 +172,26 @@
 				if (this.isAllFolders)
 					return;
 				this.$emit('moveInto', args);
+			},
+			focus()
+			{
+				if (this.$refs.myNode)
+					this.$refs.myNode.$el.focus();
+			},
+			focusSelectedNode()
+			{
+				if (this.selected)
+				{
+					this.focus();
+					return true;
+				}
+				else if (this.$refs.childNodes && this.$refs.childNodes.length)
+				{
+					for (let i = 0; i < this.$refs.childNodes.length; i++)
+						if (this.$refs.childNodes[i].focusSelectedNode())
+							return true;
+				}
+				return false;
 			}
 		}
 	}

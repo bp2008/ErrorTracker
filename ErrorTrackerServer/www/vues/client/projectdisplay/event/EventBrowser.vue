@@ -74,10 +74,6 @@
 				type: String,
 				default: ""
 			},
-			path: {
-				type: String,
-				default: ""
-			},
 			searchArgs: null
 		},
 		created()
@@ -163,6 +159,10 @@
 			searchConditionsStr()
 			{
 				return !this.searchArgs || !this.searchArgs.conditions ? null : JSON.stringify(this.searchArgs.conditions);
+			},
+			path()
+			{
+				return EventBus.getProjectFolderPathFromId(this.projectName, this.selectedFolderId);
 			}
 		},
 		methods:
