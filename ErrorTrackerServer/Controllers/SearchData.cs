@@ -44,7 +44,7 @@ namespace ErrorTrackerServer.Controllers
 			SearchResultsResponse response = new SearchResultsResponse();
 			using (FilterEngine fe = new FilterEngine(p.Name))
 			{
-				response.events = fe.AdvancedSearch(request.conditions, request.matchAny, request.folderId);
+				response.events = fe.AdvancedSearch(request.conditions, request.matchAll, request.folderId);
 				foreach (Event e in response.events)
 					e.ClearTags();
 			}
@@ -74,9 +74,9 @@ namespace ErrorTrackerServer.Controllers
 		/// </summary>
 		public FilterCondition[] conditions;
 		/// <summary>
-		/// If true, only one condition needs to be met.
+		/// If true, all conditions must be met.  If false, only one condition needs to be met.
 		/// </summary>
-		public bool matchAny = false;
+		public bool matchAll = false;
 		/// <summary>
 		/// Folder ID to search.  If -1, all events are searched.
 		/// </summary>

@@ -122,7 +122,7 @@
 					{
 						toaster.error(err);
 						this.loading = false;
-					})
+					});
 			},
 			newFilter()
 			{

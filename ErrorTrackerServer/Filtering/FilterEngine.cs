@@ -452,10 +452,10 @@ namespace ErrorTrackerServer.Filtering
 		/// Given a set of filter conditions, returns a list of matching events.  The Tags of each event may or may not be populated by this search depending to
 		/// </summary>
 		/// <param name="conditions">Array of filter conditions to evaluate. The FilterCondition.Enabled field is disregarded.</param>
-		/// <param name="matchAny">If true, only one of the conditions needs to match. If false, all conditions need to match.</param>
+		/// <param name="matchAll">If true, only one of the conditions needs to match. If false, all conditions need to match.</param>
 		/// <param name="folderId">Folder ID to search.  If -1, all events are searched.</param>
 		/// <returns></returns>
-		public List<Event> AdvancedSearch(FilterCondition[] conditions, bool matchAny, int folderId)
+		public List<Event> AdvancedSearch(FilterCondition[] conditions, bool matchAll, int folderId)
 		{
 			List<Event> matches = new List<Event>();
 			if (conditions == null || conditions.Length == 0)
@@ -464,7 +464,7 @@ namespace ErrorTrackerServer.Filtering
 				condition.Enabled = true;
 			foreach (Event e in GetEventsForSearchDeferred(folderId))
 			{
-				if (matchAny)
+				if (!matchAll)
 				{
 					foreach (FilterCondition condition in conditions)
 					{

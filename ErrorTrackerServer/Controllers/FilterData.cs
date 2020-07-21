@@ -3,6 +3,7 @@ using BPUtil.MVC;
 using ErrorTrackerServer.Database.Model;
 using ErrorTrackerServer.Filtering;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -51,14 +52,11 @@ namespace ErrorTrackerServer.Controllers
 
 			using (DB db = new DB(p.Name))
 			{
-				int highestOrder = 0;
-				foreach (FilterSummary sum in db.GetAllFiltersSummary())
-					if (sum.filter.Order > highestOrder)
-						highestOrder = sum.filter.Order;
 				Filter newFilter = new Filter();
 				newFilter.Name = request.name;
-				newFilter.Order = highestOrder + 1;
-				if (db.AddFilter(newFilter, out string errorMessage))
+				if (Enum.IsDefined(typeof(ConditionHandling), request.conditionHandling))
+					newFilter.ConditionHandling = request.conditionHandling;
+				if (db.AddFilter(newFilter, request.conditions, out string errorMessage))
 				{
 					Logger.Info("Filter " + newFilter.FilterId + " (\"" + newFilter.Name + "\") was added by \"" + session.userName + "\"");
 					return Json(new ApiResponseBase(true));
@@ -265,6 +263,9 @@ namespace ErrorTrackerServer.Controllers
 	public class AddFilterRequest : ProjectRequestBase
 	{
 		public string name;
+		public FilterCondition[] conditions;
+		[JsonConverter(typeof(StringEnumConverter))]
+		public ConditionHandling conditionHandling;
 	}
 	public class EditFilterRequest : ProjectRequestBase
 	{

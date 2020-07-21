@@ -32,7 +32,7 @@ function buildSearchArgsFromRoute(route)
 {
 	return {
 		query: route.query.q,
-		matchAny: route.query.matchAny ? route.query.matchAny === "1" : false,
+		matchAll: route.query.matchAll ? route.query.matchAll === "1" : false,
 		conditions: route.query.scon ? safeJsonParse(route.query.scon) : null
 	};
 }

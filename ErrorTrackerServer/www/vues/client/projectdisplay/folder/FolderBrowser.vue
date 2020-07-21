@@ -132,7 +132,7 @@
 			{
 				let query = Object.assign({}, this.$route.query);
 				delete query.q;
-				delete query.matchAny;
+				delete query.matchAll;
 				delete query.scon;
 				return { name: this.$route.name, query };
 			}

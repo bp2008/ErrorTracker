@@ -25,12 +25,12 @@
 			<vsvg sprite="filter_alt" class="filterIcon" />
 			Edit Filters
 		</router-link>
-		<div v-if="!onFilters" class="searchBar">
+		<div v-if="!onFilters" class="searchBar" title="Perform a &quot;Contains&quot; search on the Message, EventType, SubType, and all Tag values.">
 			<input type="search" v-model="searchQuery" class="searchInput" placeholder="Search" @keypress.enter.prevent="doSearch" />
 			<vsvg sprite="search" role="button" tabindex="0" @click="doSearch" @keypress.enter.prevent="doSearch" title="search" class="searchBtn" />
 		</div>
 		<router-link v-if="!onFilters"
-					 :to="{ name: 'advancedSearch', query: { p: projectName, f: selectedFolderId }}"
+					 :to="{ name: 'advancedSearch', query: { p: projectName, f: selectedFolderId, matchAll: '1' }}"
 					 class="advancedSearchBtn">
 			<vsvg sprite="settings"
 				  class="filterIcon"
@@ -129,10 +129,6 @@
 					q: this.searchQuery
 				};
 				this.$router.push({ name: "clientHome", query });
-			},
-			advancedSearch()
-			{
-				toaster.info("TODO: Advanced Search");
 			}
 		}
 	}

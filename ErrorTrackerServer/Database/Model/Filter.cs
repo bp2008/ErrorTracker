@@ -40,15 +40,15 @@ namespace ErrorTrackerServer.Database.Model
 		/// <summary>
 		/// The filter actions are performed if all conditions are met.
 		/// </summary>
-		All,
+		All = 0,
 		/// <summary>
 		/// The filter actions are performed if any condition is met.
 		/// </summary>
-		Any,
+		Any = 1,
 		/// <summary>
 		/// The filter actions are performed regardless of conditions being met or not.
 		/// </summary>
-		Unconditional
+		Unconditional = 2
 	}
 	public class FullFilter
 	{

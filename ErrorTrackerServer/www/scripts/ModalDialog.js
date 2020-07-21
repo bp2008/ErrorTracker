@@ -4,6 +4,7 @@ const makeModalDialog = create({ component: ModalDialogComponent, wrapper: 'dial
 import ConfirmPopup from 'appRoot/vues/common/controls/ConfirmPopup.vue';
 import TextInputPopup from 'appRoot/vues/common/controls/TextInputPopup.vue';
 import ColorInputPopup from 'appRoot/vues/common/controls/ColorInputPopup.vue';
+import SelectFilterPopup from 'appRoot/vues/client/controls/SelectFilterPopup.vue';
 
 //////////////////////////////////////////////////
 // Container Registration / Dialog Registration //
@@ -198,4 +199,14 @@ export function ColorInputDialog(title, message, initialColor)
 	if (typeof message !== "undefined") args.message = message;
 	if (typeof initialColor !== "undefined") args.initialColor = initialColor;
 	return ModalDialog(ColorInputPopup, args);
+}
+/**
+ * Opens a dialog box where the user can select a Filter. Returns a promise that resolves with the selected Filter, or a falsy value if canceled.  The promise does not reject.
+ * @param {String} projectName Name of the project to load Filters from.
+ * @returns {Promise} Returns a promise which resolves when the dialog closes. Does not reject.
+ */
+export function SelectFilterDialog(projectName)
+{
+	let args = { projectName };
+	return ModalDialog(SelectFilterPopup, args);
 }

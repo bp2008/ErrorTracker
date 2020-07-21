@@ -156,9 +156,9 @@
 			{
 				return !this.searchArgs ? null : this.searchArgs.query;
 			},
-			searchMatchAny()
+			searchMatchAll()
 			{
-				return !this.searchArgs ? null : this.searchArgs.matchAny;
+				return !this.searchArgs ? null : this.searchArgs.matchAll;
 			},
 			searchConditionsStr()
 			{
@@ -184,7 +184,7 @@
 				if (this.searchQuery)
 					promise = SearchSimple(this.projectName, this.selectedFolderId, this.searchQuery);
 				else if (this.searchConditionsStr)
-					promise = SearchAdvanced(this.projectName, this.selectedFolderId, this.searchMatchAny, this.searchArgs.conditions);
+					promise = SearchAdvanced(this.projectName, this.selectedFolderId, this.searchMatchAll, this.searchArgs.conditions);
 				else
 					promise = GetEventsInFolder(this.projectName, this.selectedFolderId, 0, 0);
 				this.handleEventListLoadPromise(promise);
@@ -415,7 +415,7 @@
 			{
 				this.loadEvents();
 			},
-			searchMatchAny()
+			searchMatchAll()
 			{
 				this.loadEvents();
 			},

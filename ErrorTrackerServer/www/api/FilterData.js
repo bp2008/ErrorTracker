@@ -8,9 +8,9 @@ export function GetFilter(projectName, filterId)
 {
 	return ExecAPI("FilterData/GetFilter", { projectName, filterId });
 }
-export function AddFilter(projectName, name)
+export function AddFilter(projectName, name, conditions, conditionHandling)
 {
-	return ExecAPI("FilterData/AddFilter", { projectName, name });
+	return ExecAPI("FilterData/AddFilter", { projectName, name, conditions, conditionHandling });
 }
 export function EditFilter(projectName, filter)
 {

@@ -759,12 +759,13 @@ namespace ErrorTrackerServer
 			return f;
 		}
 		/// <summary>
-		/// Tries to add the specified filter to the database, returning true if successful or false if an error occurred (see errorMessage out param).
+		/// Tries to add the specified filter to the database, returning true if successful or false if an error occurred (see errorMessage out param). The filter is added at the end/bottom of the filter list.
 		/// </summary>
 		/// <param name="newFilter">Filter to add.  The Name field must be set before passing it in here.  The FilterId field will be set upon successful addition to the database.</param>
+		/// <param name="conditions">Array of conditions to add to the new filter. May be null or empty.</param>
 		/// <param name="errorMessage">Error message will be set if this method returns false.</param>
 		/// <returns></returns>
-		public bool AddFilter(Filter newFilter, out string errorMessage)
+		public bool AddFilter(Filter newFilter, FilterCondition[] conditions, out string errorMessage)
 		{
 			if (!StringUtil.IsPrintableName(newFilter?.Name))
 			{
@@ -781,7 +782,24 @@ namespace ErrorTrackerServer
 					if (existingFilters.Count > 0)
 						emsg = "A filter already exists with that name.";
 					else
+					{
+						int highestOrder = 0;
+						foreach (FilterSummary sum in GetAllFiltersSummary())
+							if (sum.filter.Order > highestOrder)
+								highestOrder = sum.filter.Order;
+						newFilter.Order = highestOrder + 1;
+
 						conn.Value.Insert(newFilter);
+
+						if (conditions != null && conditions.Length > 0)
+						{
+							foreach (FilterCondition c in conditions)
+							{
+								c.FilterId = newFilter.FilterId;
+								conn.Value.Insert(c);
+							}
+						}
+					}
 				}
 				catch
 				{
