@@ -6,7 +6,8 @@
 			<template v-else>
 				<router-link :to="{ name: 'clientHome', query: { p: projectName }}" :class="{ pathComponent: true, clickable: projectNameClickable }">{{projectName}}</router-link>
 				<template v-if="onAdvancedSearch">
-					&gt; <b>Advanced Search</b>
+					&gt;
+					<b>Advanced Search</b>
 				</template>
 				<template v-if="onFilters">
 					&gt;
@@ -19,8 +20,7 @@
 				</template>
 				<template v-else>
 					&gt;
-					<code class="inline" v-if="folderPath">{{folderPath}}</code>
-					<code class="inline" v-else>Folder {{selectedFolderId}} (path not cached yet)</code>
+					<input type="button" :value="folderPath" @click="changeFolder" />
 				</template>
 			</template>
 		</div>
@@ -35,7 +35,7 @@
 		<router-link v-if="!onFilters && !onAdvancedSearch"
 					 :to="{ name: 'advancedSearch', query: { p: projectName, f: selectedFolderId, matchAll: '1' }}"
 					 class="advancedSearchBtn">
-			<vsvg sprite="settings"
+			<vsvg sprite="search_adv2"
 				  class="filterIcon"
 				  title="advanced search" />
 		</router-link>
@@ -53,9 +53,10 @@
 	import svg1 from 'appRoot/images/sprite/view_column.svg';
 	import svg2 from 'appRoot/images/sprite/view_compact.svg';
 	import svg3 from 'appRoot/images/sprite/search.svg';
-	import svg4 from 'appRoot/images/sprite/settings.svg';
+	import svg4 from 'appRoot/images/sprite/search_adv2.svg';
 	import svg5 from 'appRoot/images/sprite/filter_alt.svg';
 	import SvgButton from 'appRoot/vues/common/controls/SvgButton.vue';
+	import { SelectFolderDialog } from 'appRoot/scripts/ModalDialog';
 
 	export default {
 		components: { SvgButton },
@@ -115,7 +116,10 @@
 			},
 			folderPath()
 			{
-				return EventBus.getProjectFolderPathFromId(this.projectName, this.selectedFolderId);
+				let path = EventBus.getProjectFolderPathFromId(this.projectName, this.selectedFolderId);
+				if (!path)
+					path = "Folder " + this.selectedFolderId + " (click to load path)";
+				return path;
 			},
 			projectNameClickable()
 			{
@@ -140,6 +144,14 @@
 					q: this.searchQuery
 				};
 				this.$router.push({ name: "clientHome", query });
+			},
+			changeFolder()
+			{
+				SelectFolderDialog(this.projectName, this.selectedFolderId)
+					.then(data =>
+					{
+						console.log(data);
+					});
 			}
 		}
 	}

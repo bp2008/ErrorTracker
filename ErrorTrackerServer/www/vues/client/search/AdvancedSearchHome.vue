@@ -7,7 +7,6 @@
 				<div v-if="loading" class="loadingOverlay">
 					<div class="loading"><ScaleLoader /> Loading…</div>
 				</div>
-				<div class="searchInWrapper">Search in: <input type="button" :value="folderPath" @click="changeFolder" /></div>
 				<div class="matchAllWrapper"><label><input type="checkbox" v-model="internal_matchAll" /> All conditions must match</label></div>
 				<div class="conditionList">
 					<FilterCondition v-for="condition in internal_conditions"
@@ -48,7 +47,7 @@
 	import FilterCondition from 'appRoot/vues/client/filters/FilterCondition.vue';
 	import ControlBar from 'appRoot/vues/client/controls/ControlBar.vue';
 	import { CopyArray } from 'appRoot/scripts/Util';
-	import { ModalConfirmDialog, TextInputDialog, SelectFilterDialog, SelectFolderDialog } from 'appRoot/scripts/ModalDialog';
+	import { ModalConfirmDialog, TextInputDialog, SelectFilterDialog } from 'appRoot/scripts/ModalDialog';
 	import svg1 from 'appRoot/images/sprite/search.svg';
 	import EventBus from 'appRoot/scripts/EventBus';
 
@@ -99,13 +98,6 @@
 					name: "clientHome",
 					query: this.$route.query
 				};
-			},
-			folderPath()
-			{
-				let path = EventBus.getProjectFolderPathFromId(this.projectName, this.selectedFolderId);
-				if (!path)
-					path = "Folder " + this.selectedFolderId + " (click to load path)";
-				return path;
 			}
 		},
 		methods:
@@ -204,14 +196,6 @@
 								});
 						}
 					});
-			},
-			changeFolder()
-			{
-				SelectFolderDialog(this.projectName, this.selectedFolderId)
-					.then(data =>
-					{
-						console.log(data);
-					});
 			}
 		},
 		watch:
@@ -305,7 +289,6 @@
 			margin-bottom: 4px;
 		}
 
-	.searchInWrapper,
 	.matchAllWrapper
 	{
 		margin: 10px 0px;
