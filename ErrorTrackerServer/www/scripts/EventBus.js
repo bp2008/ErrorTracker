@@ -109,7 +109,11 @@ const EventBus = new Vue({
 		 */
 		getProjectFolderPathFromId(projectName, folderId)
 		{
-			if (this.projectFolderPathCache[projectName])
+			if (folderId < 0)
+				return "🗄️ All Folders";
+			else if (folderId === 0)
+				return "/";
+			else if (this.projectFolderPathCache[projectName])
 				return this.projectFolderPathCache[projectName][folderId];
 			else
 				return null;
