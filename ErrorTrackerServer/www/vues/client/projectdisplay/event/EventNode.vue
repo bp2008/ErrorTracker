@@ -1,7 +1,7 @@
 ﻿<template>
 	<a :href="nodeLink"
 	   @click="nodeClick"
-	   :class="{ eventNode: true, selected: selected }"
+	   :class="{ eventNode: true, selected: selected, read: event.Read, unread: !event.Read }"
 	   :style="nodeStyle"
 	   @contextmenu.prevent="onContextmenu"
 	   :draggable="!event ? 'false' : 'true'"
@@ -177,7 +177,7 @@
 		overflow: hidden;
 		padding: 2px 3px 2px 5px;
 		box-sizing: border-box;
-		border-bottom: 1px solid #b7b7b7;
+		border-bottom: 1px solid #a7a7a7;
 		border-left: 8px solid transparent;
 	}
 
@@ -204,7 +204,7 @@
 	{
 		margin-left: 5px;
 		font-size: 14px;
-		font-weight: bold;
+		/*font-weight: bold;*/
 		flex: 0 0 auto;
 	}
 
@@ -227,6 +227,17 @@
 	{
 		white-space: pre-wrap;
 		display: none;
+	}
+
+	.eventNode.unread .firstLine
+	{
+		font-weight: bold;
+	}
+
+	.eventNode.read
+	{
+		background-color: #F5F7F7;
+		color: #676767;
 	}
 
 	.eventNode:hover

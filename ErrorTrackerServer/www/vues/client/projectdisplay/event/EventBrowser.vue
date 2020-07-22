@@ -44,13 +44,19 @@
 				<li>
 					<a role="button" @click.prevent="deleteEvent(event.data)">Delete</a>
 				</li>
+				<li v-show="event.data && event.data.Read">
+					<a role="button" @click.prevent="markRead(event.data, false)">Mark as unread</a>
+				</li>
+				<li v-show="event.data && !event.data.Read">
+					<a role="button" @click.prevent="markRead(event.data, true)">Mark as read</a>
+				</li>
 			</template>
 		</vue-context>
 	</div>
 </template>
 
 <script>
-	import { GetEvents, SetEventsColor, DeleteEvents } from 'appRoot/api/EventData';
+	import { GetEvents, SetEventsColor, DeleteEvents, SetEventsReadState } from 'appRoot/api/EventData';
 	import { VueContext } from 'vue-context';
 	import EventNode from 'appRoot/vues/client/projectdisplay/event/EventNode.vue';
 	import EventBus from 'appRoot/scripts/EventBus';
@@ -74,7 +80,10 @@
 				type: String,
 				default: ""
 			},
-			searchArgs: null
+			searchArgs: null,
+			openedEventId: {
+				default: null
+			}
 		},
 		created()
 		{
@@ -208,6 +217,7 @@
 								return b.Date - a.Date;
 							});
 							this.events = data.events;
+							this.markOpenedEventAsRead();
 						}
 						else
 						{
@@ -331,7 +341,7 @@
 			},
 			deleteEvent(event)
 			{
-				let selectedEvents = this.selectedEventIds;
+				let selectedEvents = this.selectedEventIdsArray;
 				if (selectedEvents.indexOf(event.EventId) === -1)
 					selectedEvents = [event.EventId]; // The right-clicked event is not one of the selected events.
 				ModalConfirmDialog("Do you want to delete " + selectedEvents.length + " event" + (selectedEvents.length == 1 ? "" : "s") + "?", "Confirm Delete").then(result =>
@@ -355,6 +365,37 @@
 							});
 					}
 				});
+			},
+			markRead(event, read)
+			{
+				let selectedEvents = this.selectedEventIdsArray;
+				if (selectedEvents.indexOf(event.EventId) === -1)
+					selectedEvents = [event.EventId]; // The right-clicked event is not one of the selected events.
+
+				SetEventsReadState(this.projectName, selectedEvents, !!read)
+					.then(data =>
+					{
+						if (data.success)
+						{
+							if (this.events)
+							{
+								let selMap = {};
+								for (let i = 0; i < selectedEvents.length; i++)
+									selMap[selectedEvents[i]] = true;
+								for (let i = 0; i < this.events.length; i++)
+								{
+									if (selMap[this.events[i].EventId])
+										this.events[i].Read = !!read;
+								}
+							}
+						}
+						else
+							toaster.error(data.error);
+					})
+					.catch(err =>
+					{
+						toaster.error(data.error);
+					});
 			},
 			selectAll()
 			{
@@ -395,6 +436,16 @@
 					this.$refs.eventScroller.$el.scrollTop = 0;
 					this.newEvents = 0;
 				}
+			},
+			markOpenedEventAsRead()
+			{
+				if (this.openedEventId && this.events)
+					for (let i = 0; i < this.events.length; i++)
+						if (this.events[i].EventId === this.openedEventId)
+						{
+							console.log("Marking event " + this.openedEventId + " as read");
+							this.events[i].Read = true;
+						}
 			}
 		},
 		watch:
@@ -422,6 +473,10 @@
 			searchConditionsStr()
 			{
 				this.loadEvents();
+			},
+			openedEventId()
+			{
+				this.markOpenedEventAsRead();
 			}
 		}
 	}

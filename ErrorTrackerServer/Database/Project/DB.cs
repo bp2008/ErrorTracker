@@ -77,6 +77,7 @@ namespace ErrorTrackerServer
 						c.CreateTable<FilterCondition>();
 						c.CreateTable<Tag>();
 						c.CreateTable<Folder>();
+						c.CreateTable<ReadState>();
 						c.CreateTable<DbVersion>();
 
 						PerformDbMigrations(c);
@@ -1027,6 +1028,21 @@ namespace ErrorTrackerServer
 			});
 		}
 		/// <summary>
+		/// Remembers that a user has read specific events.
+		/// </summary>
+		/// <param name="userId">ID of the User reading the event.</param>
+		/// <param name="eventIds">IDs of the Events which were read.</param>
+		public void AddReadState(int userId, IEnumerable<long> eventIds)
+		{
+			if (eventIds.Count() > 0)
+				conn.Value.RunInTransaction(() =>
+				{
+					RemoveReadState(userId, eventIds);
+					string query = "INSERT INTO ReadState (UserId, EventId) VALUES " + string.Join(", ", eventIds.Select(eid => "(" + userId + "," + eid + ")"));
+					conn.Value.Execute(query);
+				});
+		}
+		/// <summary>
 		/// Forgets that a user has read a specific event, returning true if successful or false if a matching ReadState was not found.
 		/// </summary>
 		/// <param name="userId">ID of the User which read the event.</param>
@@ -1036,6 +1052,17 @@ namespace ErrorTrackerServer
 		{
 			int affectedRows = conn.Value.Execute("DELETE FROM ReadState WHERE UserId = ? AND EventId = ?", userId, eventId);
 			return affectedRows == 1;
+		}
+		/// <summary>
+		/// Forgets that a user has read specific events.
+		/// </summary>
+		/// <param name="userId">ID of the User which read the event.</param>
+		/// <param name="eventIds">IDs of the Events which were unread.</param>
+		/// <returns></returns>
+		public void RemoveReadState(int userId, IEnumerable<long> eventIds)
+		{
+			if (eventIds.Count() > 0)
+				conn.Value.Execute("DELETE FROM ReadState WHERE UserId = ? AND EventId IN (" + string.Join(",", eventIds) + ")", userId);
 		}
 		/// <summary>
 		/// Removes all read states for the specified User, returning the number of read states that were removed.

@@ -13,7 +13,8 @@
 							  :projectName="projectName"
 							  :selectedFolderId="selectedFolderId"
 							  :selectedEventIds="selectedEventIds"
-							  :searchArgs="searchArgs" />
+							  :searchArgs="searchArgs"
+							  :openedEventId="openedEventId" />
 			</div>
 			<ResizeBar v-if="!eventBodyBelow" :min="100" :max="800" :start="ebStart" :default="400" :offset="fbStart" @change="ebChange" />
 			<div v-if="!eventBodyBelow" class="eventDetailsContainer">

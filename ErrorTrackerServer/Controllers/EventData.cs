@@ -119,7 +119,7 @@ namespace ErrorTrackerServer.Controllers
 			}
 		}
 		/// <summary>
-		/// Deletes events by ID.
+		/// Sets the color of events by ID.
 		/// </summary>
 		/// <returns></returns>
 		public ActionResult SetEventsColor()
@@ -134,6 +134,26 @@ namespace ErrorTrackerServer.Controllers
 				if (db.SetEventsColor(request.eventIds, request.color))
 					return Json(new ApiResponseBase(true));
 				return ApiError("Unable to delete all events with IDs " + string.Join(",", request.eventIds));
+			}
+		}
+		/// <summary>
+		/// Sets the ReadState of events by ID.
+		/// </summary>
+		/// <returns></returns>
+		public ActionResult SetEventsReadState()
+		{
+			SetEventsReadStateRequest request = ApiRequestBase.ParseRequest<SetEventsReadStateRequest>(this);
+
+			if (!request.Validate(out Project p, out ApiResponseBase error))
+				return Json(error);
+
+			using (DB db = new DB(p.Name))
+			{
+				if (request.read)
+					db.AddReadState(session.GetUser().UserId, request.eventIds);
+				else
+					db.RemoveReadState(session.GetUser().UserId, request.eventIds);
+				return Json(new ApiResponseBase(true));
 			}
 		}
 	}
@@ -217,5 +237,9 @@ namespace ErrorTrackerServer.Controllers
 	{
 		[JsonConverter(typeof(HexStringJsonConverter), 3)]
 		public uint color;
+	}
+	public class SetEventsReadStateRequest : EventIdsRequest
+	{
+		public bool read;
 	}
 }

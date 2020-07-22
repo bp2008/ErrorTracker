@@ -20,3 +20,7 @@ export function SetEventsColor(projectName, eventIds, color)
 {
 	return ExecAPI("EventData/SetEventsColor", { projectName, eventIds, color });
 }
+export function SetEventsReadState(projectName, eventIds, read)
+{
+	return ExecAPI("EventData/SetEventsReadState", { projectName, eventIds, read });
+}

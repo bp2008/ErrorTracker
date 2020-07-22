@@ -76,7 +76,7 @@ export default function CreateRouter(store, basePath)
 						props: (route) => ({
 							projectName: route.query.p ? route.query.p.toString() : "",
 							selectedFolderId: route.query.f ? parseInt(route.query.f) : 0,
-							openedEventId: route.query.e ? route.query.e : null,
+							openedEventId: route.query.e ? parseInt(route.query.e) : null,
 							selectedEventIds: route.query.se ? route.query.se : "",
 							searchArgs: buildSearchArgsFromRoute(route)
 						})
@@ -85,8 +85,7 @@ export default function CreateRouter(store, basePath)
 						path: 'filters/:filterId*', component: ClientFiltersHome, name: 'clientFilters'
 						, meta: {
 							title(r)
-							{
-								return (r.query && r.query.p ? (r.query.p + " - ") : "") + "Filters"
+							{							return (r.query && r.query.p ? (r.query.p + " - ") : "") + "Filters"
 							}
 						}
 						, props: (route) => ({
