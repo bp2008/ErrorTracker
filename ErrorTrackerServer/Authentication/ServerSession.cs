@@ -72,7 +72,7 @@ namespace ErrorTrackerServer
 		}
 
 		/// <summary>
-		/// Loads the user data from the database and returns a new instance of the User class.
+		/// Retrieves the User from Settings.data.
 		/// </summary>
 		/// <returns></returns>
 		public User GetUser()

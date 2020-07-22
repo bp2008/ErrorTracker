@@ -19,26 +19,6 @@ namespace ErrorTrackerServer.Controllers
 	public class EventData : UserController
 	{
 		/// <summary>
-		/// Gets all events (without their tags) within the specified date range.
-		/// </summary>
-		/// <returns></returns>
-		public ActionResult GetEventsByDate()
-		{
-			GetEventsByDateRequest request = ApiRequestBase.ParseRequest<GetEventsByDateRequest>(this);
-
-			if (!request.Validate(out Project p, out ApiResponseBase error))
-				return Json(error);
-
-			GetEventSummaryResponse response = new GetEventSummaryResponse();
-			using (DB db = new DB(p.Name))
-			{
-				response.events = db.GetEventsWithoutTagsByDate(request.startTime, request.endTime)
-					.Select(ev => new EventSummary(ev))
-					.ToList();
-			}
-			return Json(response);
-		}
-		/// <summary>
 		/// Gets events (without their tags), optionally filtering by Folder Id and/or date range.
 		/// </summary>
 		/// <returns></returns>
@@ -67,8 +47,11 @@ namespace ErrorTrackerServer.Controllers
 					else
 						events = db.GetEventsWithoutTagsInFolderByDate(request.folderId, request.startTime, request.endTime);
 				}
+
+				HashSet<long> readEventIds = new HashSet<long>(db.GetAllReadEventIds(session.GetUser().UserId));
+
 				response.events = events
-					.Select(ev => new EventSummary(ev))
+					.Select(ev => new EventSummary(ev, readEventIds))
 					.ToList();
 			}
 			return Json(response);
@@ -86,7 +69,11 @@ namespace ErrorTrackerServer.Controllers
 
 			Event ev = null;
 			using (DB db = new DB(p.Name))
+			{
 				ev = db.GetEvent(request.eventId);
+				if (ev != null)
+					db.AddReadState(session.GetUser().UserId, ev.EventId);
+			}
 			if (ev != null)
 			{
 				GetEventDataResponse response = new GetEventDataResponse();
@@ -163,7 +150,13 @@ namespace ErrorTrackerServer.Controllers
 		public string Message;
 		[JsonConverter(typeof(HexStringJsonConverter), 3)]
 		public uint Color;
-		public EventSummary(Event ev)
+		/// <summary>
+		/// True if the requesting user has read this event already.
+		/// </summary>
+		public bool Read;
+		private HashSet<long> readEventIds;
+
+		public EventSummary(Event ev, HashSet<long> readEventIds)
 		{
 			EventId = ev.EventId;
 			EventType = ev.EventType.ToString();
@@ -173,6 +166,7 @@ namespace ErrorTrackerServer.Controllers
 			if (Message != null && Message.Length > 150)
 				Message = Message.Substring(0, 150);
 			Color = ev.Color;
+			Read = readEventIds.Contains(ev.EventId);
 		}
 	}
 

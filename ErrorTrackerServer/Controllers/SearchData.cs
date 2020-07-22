@@ -28,9 +28,11 @@ namespace ErrorTrackerServer.Controllers
 			SearchResultsResponse response = new SearchResultsResponse();
 			using (FilterEngine fe = new FilterEngine(p.Name))
 			{
-				response.events = fe.Search(request.query, request.folderId);
-				foreach (Event e in response.events)
-					e.ClearTags();
+				HashSet<long> readEventIds = new HashSet<long>(fe.db.GetAllReadEventIds(session.GetUser().UserId));
+
+				response.events = fe.Search(request.query, request.folderId)
+					.Select(ev => ProduceEventSummary(ev, readEventIds))
+					.ToList();
 			}
 			return Json(response);
 		}
@@ -44,16 +46,23 @@ namespace ErrorTrackerServer.Controllers
 			SearchResultsResponse response = new SearchResultsResponse();
 			using (FilterEngine fe = new FilterEngine(p.Name))
 			{
-				response.events = fe.AdvancedSearch(request.conditions, request.matchAll, request.folderId);
-				foreach (Event e in response.events)
-					e.ClearTags();
+				HashSet<long> readEventIds = new HashSet<long>(fe.db.GetAllReadEventIds(session.GetUser().UserId));
+
+				response.events = fe.AdvancedSearch(request.conditions, request.matchAll, request.folderId)
+					.Select(ev => ProduceEventSummary(ev, readEventIds))
+					.ToList();
 			}
 			return Json(response);
+		}
+		private EventSummary ProduceEventSummary(Event ev, HashSet<long> readEventIds)
+		{
+			ev.ClearTags();
+			return new EventSummary(ev, readEventIds);
 		}
 	}
 	public class SearchResultsResponse : ApiResponseBase
 	{
-		public List<Event> events;
+		public List<EventSummary> events;
 		public SearchResultsResponse() : base(true, null) { }
 	}
 	public class SearchSimpleRequest : ProjectRequestBase

@@ -1,9 +1,5 @@
 ﻿import ExecAPI from 'appRoot/api/api';
 
-export function GetEventsByDate(projectName, startTime, endTime)
-{
-	return ExecAPI("EventData/GetEventsByDate", { projectName, startTime, endTime });
-}
 export function GetEvents(projectName, folderId, startTime, endTime)
 {
 	return ExecAPI("EventData/GetEvents", { projectName, folderId, startTime, endTime });
