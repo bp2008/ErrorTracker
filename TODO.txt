@@ -4,12 +4,6 @@
 	* Consider: Email Notifications of new events (weekly summary)
 	* User Reset Password (via email)
 
-* Button/control bar at top of project display (just below top bar, fixed height <= 50px including bottom border)
-	* Move Filters and Compact Layout buttons here.
-	* Event Search using modified filter condition GUI
-		* Keep search parameters in vuex store?
-		* Search history array or just one state w/reset button?
-
 * Event Summaries in client home when no project is selected
 	* Total Event Count
 	* Unique Event Count (using Repeat System)

@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ErrorTrackerServer.Database.Model
+namespace ErrorTrackerServer.Database.Project.Model
 {
 	/// <summary>
 	/// Represents the action that is taken when a filter is triggered.

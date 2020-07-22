@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace ErrorTrackerServer.Database.Model
+namespace ErrorTrackerServer.Database.Project.Model
 {
 	/// <summary>
 	/// A folder which events must be sorted into.

@@ -1,6 +1,6 @@
 ﻿using BPUtil;
 using ErrorTrackerServer.Controllers;
-using ErrorTrackerServer.Database.Model;
+using ErrorTrackerServer.Database.Project.Model;
 using SQLite;
 using System;
 using System.Collections.Concurrent;
@@ -62,23 +62,25 @@ namespace ErrorTrackerServer
 		}
 		private void CreateOrMigrate(SQLiteConnection c)
 		{
-			if (!initializedDatabases.TryGetValue(ProjectNameLower, out bool initialized) || !initialized)
+			bool initialized;
+			if (!initializedDatabases.TryGetValue(ProjectNameLower, out initialized) || !initialized)
 			{
-				initializedDatabases[ProjectNameLower] = true;
 				lock (createMigrateLock) // It is a minor (insignificant) inefficiency having a single lock for all database file initialization.
 				{
 					if (!initializedDatabases.TryGetValue(ProjectNameLower, out initialized) || !initialized)
-						return;
+					{
+						initializedDatabases[ProjectNameLower] = true;
 
-					c.CreateTable<Event>();
-					c.CreateTable<Filter>();
-					c.CreateTable<FilterAction>();
-					c.CreateTable<FilterCondition>();
-					c.CreateTable<Tag>();
-					c.CreateTable<Folder>();
-					c.CreateTable<DbVersion>();
+						c.CreateTable<Event>();
+						c.CreateTable<Filter>();
+						c.CreateTable<FilterAction>();
+						c.CreateTable<FilterCondition>();
+						c.CreateTable<Tag>();
+						c.CreateTable<Folder>();
+						c.CreateTable<DbVersion>();
 
-					PerformDbMigrations(c);
+						PerformDbMigrations(c);
+					}
 				}
 			}
 		}

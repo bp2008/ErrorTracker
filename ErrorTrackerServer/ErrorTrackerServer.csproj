@@ -98,6 +98,10 @@
     <Compile Include="Controllers\SessionStatus.cs" />
     <Compile Include="Controllers\ChangePW.cs" />
     <Compile Include="Controllers\FilterData.cs" />
+    <Compile Include="Database\DBBase.cs" />
+    <Compile Include="Database\Global\GlobalDb.cs" />
+    <Compile Include="Database\Global\Model\DbVersion.cs" />
+    <Compile Include="Database\Project\Model\ReadState.cs" />
     <Compile Include="Filtering\DeferredActionCollection.cs" />
     <Compile Include="Filtering\FilterEngine.cs" />
     <Compile Include="Controllers\FolderData.cs" />
@@ -109,16 +113,16 @@
     <Compile Include="Controllers\UserData.cs" />
     <Compile Include="Controllers\SettingsData.cs" />
     <Compile Include="Controllers\Wallpaper.cs" />
-    <Compile Include="Database\DB.cs" />
-    <Compile Include="Database\FolderStructure.cs" />
+    <Compile Include="Database\Project\DB.cs" />
+    <Compile Include="Database\Project\FolderStructure.cs" />
     <Compile Include="Database\HexStringJsonConverter.cs" />
-    <Compile Include="Database\Model\DbVersion.cs" />
-    <Compile Include="Database\Model\Event.cs" />
-    <Compile Include="Database\Model\Filter.cs" />
-    <Compile Include="Database\Model\FilterAction.cs" />
-    <Compile Include="Database\Model\FilterCondition.cs" />
-    <Compile Include="Database\Model\Folder.cs" />
-    <Compile Include="Database\Model\Tag.cs" />
+    <Compile Include="Database\Project\Model\DbVersion.cs" />
+    <Compile Include="Database\Project\Model\Event.cs" />
+    <Compile Include="Database\Project\Model\Filter.cs" />
+    <Compile Include="Database\Project\Model\FilterAction.cs" />
+    <Compile Include="Database\Project\Model\FilterCondition.cs" />
+    <Compile Include="Database\Project\Model\Folder.cs" />
+    <Compile Include="Database\Project\Model\Tag.cs" />
     <Compile Include="EditSpec\FieldEditSpec.cs" />
     <Compile Include="Code\ErrorTrackerSvc.cs">
       <SubType>Component</SubType>

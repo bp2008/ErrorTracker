@@ -1,7 +1,7 @@
 ﻿using BPUtil;
 using BPUtil.MVC;
 using ErrorTrackerServer.Database;
-using ErrorTrackerServer.Database.Model;
+using ErrorTrackerServer.Database.Project.Model;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

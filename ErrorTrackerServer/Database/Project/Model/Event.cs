@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ErrorTrackerServer.Database.Model
+namespace ErrorTrackerServer.Database.Project.Model
 {
 	/// <summary>
 	/// Represents one Event.  Do not deserialize untrusted data directly to this, as the Tag keys will not have been validated.

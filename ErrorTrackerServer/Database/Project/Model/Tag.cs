@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ErrorTrackerServer.Database.Model
+namespace ErrorTrackerServer.Database.Project.Model
 {
 	/// <summary>
 	/// A Key/Value pair indicating an attribute of an event. Example keys: "IP Address", "User Name", "URL"
