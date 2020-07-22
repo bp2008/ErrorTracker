@@ -32,8 +32,17 @@ namespace ErrorTrackerServer
 					Permanent = true
 				};
 				Settings.data.TryAddUser(defaultAdmin);
+				defaultAdmin.InitializeUserId();
 				Settings.data.Save();
 			}
+
+			// Initialize User IDs.
+			bool setAny = false;
+			foreach (User user in Settings.data.GetAllUsers())
+				if (user.InitializeUserId())
+					setAny = true;
+			if (setAny)
+				Settings.data.Save();
 
 			InitializeComponent();
 

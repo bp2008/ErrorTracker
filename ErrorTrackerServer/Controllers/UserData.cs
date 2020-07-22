@@ -63,6 +63,7 @@ namespace ErrorTrackerServer.Controllers
 
 			if (Settings.data.TryAddUser(user))
 			{
+				user.InitializeUserId();
 				Settings.data.Save();
 				Logger.Info("User \"" + user.Name + "\" was added by \"" + session.userName + "\"");
 				return Json(new ApiResponseBase(true));
@@ -98,15 +99,15 @@ namespace ErrorTrackerServer.Controllers
 		/// <summary>
 		/// A list containing the current users.
 		/// </summary>
-		public List<ProjectDataObject> users;
+		public List<UserDataObject> users;
 		/// <summary>
 		/// Contains metadata about user data fields for the purpose of creating a field-editing GUI.
 		/// </summary>
 		public List<FieldEditSpec> editSpec;
 		public GetUserDataResponse() : base(true, null)
 		{
-			users = Settings.data.GetAllUsers().Select(u => new ProjectDataObject(u)).ToList();
-			ProjectDataObject uoDefault = new ProjectDataObject(new User());
+			users = Settings.data.GetAllUsers().Select(u => new UserDataObject(u)).ToList();
+			UserDataObject uoDefault = new UserDataObject(new User());
 			editSpec = uoDefault.GetType().GetFields().Select(f =>
 			{
 				return new FieldEditSpec(f, uoDefault);
@@ -124,14 +125,14 @@ namespace ErrorTrackerServer.Controllers
 		/// <summary>
 		/// An object containing the new user data.
 		/// </summary>
-		public ProjectDataObject userData;
+		public UserDataObject userData;
 	}
 	public class AddUserRequest : ApiRequestBase
 	{
 		/// <summary>
 		/// An object containing the new user data.
 		/// </summary>
-		public ProjectDataObject userData;
+		public UserDataObject userData;
 	}
 	public class RemoveUserRequest : ApiRequestBase
 	{
@@ -141,15 +142,15 @@ namespace ErrorTrackerServer.Controllers
 		public string userName;
 	}
 
-	public class ProjectDataObject
+	public class UserDataObject
 	{
 		public string Name;
 		public string Email;
 		public string SetPassword;
 		public bool IsAdmin = false;
 		public string[] AllowedProjects;
-		public ProjectDataObject() { }
-		public ProjectDataObject(User u)
+		public UserDataObject() { }
+		public UserDataObject(User u)
 		{
 			Name = u.Name;
 			Email = u.Email;

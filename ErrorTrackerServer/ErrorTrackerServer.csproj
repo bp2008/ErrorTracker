@@ -98,7 +98,6 @@
     <Compile Include="Controllers\SessionStatus.cs" />
     <Compile Include="Controllers\ChangePW.cs" />
     <Compile Include="Controllers\FilterData.cs" />
-    <Compile Include="Database\DBBase.cs" />
     <Compile Include="Database\Global\GlobalDb.cs" />
     <Compile Include="Database\Global\Model\DbVersion.cs" />
     <Compile Include="Database\Project\Model\ReadState.cs" />

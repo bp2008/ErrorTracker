@@ -1012,6 +1012,68 @@ namespace ErrorTrackerServer
 			return rowsUpdated == 1;
 		}
 		#endregion
+		#region ReadState Management
+		/// <summary>
+		/// Remembers that a user has read a specific event.
+		/// </summary>
+		/// <param name="userId">ID of the User reading the event.</param>
+		/// <param name="eventId">ID of the Event which was read.</param>
+		public void AddReadState(int userId, long eventId)
+		{
+			conn.Value.RunInTransaction(() =>
+			{
+				if (!ExistsReadState(userId, eventId))
+					conn.Value.Insert(new ReadState() { UserId = userId, EventId = eventId });
+			});
+		}
+		/// <summary>
+		/// Forgets that a user has read a specific event, returning true if successful or false if a matching ReadState was not found.
+		/// </summary>
+		/// <param name="userId">ID of the User which read the event.</param>
+		/// <param name="eventId">ID of the Event which was read.</param>
+		/// <returns></returns>
+		public bool RemoveReadState(int userId, long eventId)
+		{
+			int affectedRows = conn.Value.Execute("DELETE FROM ReadState WHERE UserId = ? AND EventId = ?", userId, eventId);
+			return affectedRows == 1;
+		}
+		/// <summary>
+		/// Removes all read states for the specified User, returning the number of read states that were removed.
+		/// </summary>
+		/// <param name="userId">User ID to forget read history for.</param>
+		/// <returns></returns>
+		public int RemoveAllReadStates(int userId)
+		{
+			return conn.Value.Execute("DELETE FROM ReadState WHERE UserId = ?", userId);
+		}
+		/// <summary>
+		/// Returns true if the user has read the event.
+		/// </summary>
+		/// <param name="userId">ID of the User which read the event.</param>
+		/// <param name="eventId">ID of the Event which was read.</param>
+		/// <returns></returns>
+		public bool ExistsReadState(int userId, long eventId)
+		{
+			return conn.Value.Query<ReadState>("SELECT * FROM ReadState WHERE UserId = ? AND EventId = ?", userId, eventId).Count > 0;
+		}
+		/// <summary>
+		/// Returns an array of EventId for Events which the user has read.
+		/// </summary>
+		/// <param name="userId">ID of the User to query read state for.</param>
+		/// <returns></returns>
+		public long[] GetAllReadEventIds(int userId)
+		{
+			return conn.Value.Query<ReadState>("SELECT * FROM ReadState WHERE UserId = ?", userId).Select(r => r.EventId).ToArray();
+		}
+		/// <summary>
+		/// Returns a List of all ReadState currently in this database.
+		/// </summary>
+		/// <returns></returns>
+		public List<ReadState> GetAllReadStates()
+		{
+			return conn.Value.Query<ReadState>("SELECT * FROM ReadState");
+		}
+		#endregion
 
 		#region IDisposable
 		private bool disposedValue;

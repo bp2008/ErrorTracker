@@ -11,6 +11,14 @@ namespace ErrorTrackerServer
 	public class User
 	{
 		/// <summary>
+		/// Unique integer identifier for the user. This is primarily used when a database needs to refer to a User. The web admin interface keys on the Name field.
+		/// </summary>
+		public int UserId;
+		/// <summary>
+		/// Lock used when auto generating a UserId.
+		/// </summary>
+		private static object userIdLock = new object();
+		/// <summary>
 		/// The user name (unique, case-insensitive).
 		/// </summary>
 		public string Name;
@@ -185,6 +193,28 @@ namespace ErrorTrackerServer
 		public void SetAllowedProjects(List<string> newAllowedProjects)
 		{
 			Settings._UpdateList(newAllowedProjects, Internal_AllowedProjects, allowedProjectsLock);
+		}
+		/// <summary>
+		/// Assigns a unique UserId, only if one is not already set. Returns true if the UserId was set by the method call.
+		/// </summary>
+		public bool InitializeUserId()
+		{
+			if (UserId == 0)
+			{
+				lock (userIdLock)
+				{
+					if (UserId == 0)
+					{
+						int[] allUserIds = Settings.data.GetAllUsers().Select(u => u.UserId).ToArray();
+						int max = 0;
+						if (allUserIds.Length > 0)
+							max = Math.Max(0, allUserIds.Max());
+						UserId = max + 1;
+						return true;
+					}
+				}
+			}
+			return false;
 		}
 	}
 }

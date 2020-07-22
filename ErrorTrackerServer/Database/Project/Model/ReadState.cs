@@ -20,7 +20,7 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// Identifier for the event which was read by a user.
 		/// </summary>
 		[Indexed]
-		public short UserId { get; set; }
+		public int UserId { get; set; }
 		/// <summary>
 		/// Identifier for the event which was read by a user.
 		/// </summary>
