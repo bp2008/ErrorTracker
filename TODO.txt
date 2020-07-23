@@ -3,13 +3,6 @@
 	* Consider: Email Notifications of new events (daily summary)
 	* Consider: Email Notifications of new events (weekly summary)
 	* User Reset Password (via email)
-	
-* Add GUI for showing events similar to the current event based on HashValue strings.
-
-* Event Summaries in client home when no project is selected
-	* Total Event Count
-	* Unique Event Count (using Repeat System)
-
 
 * App-wide database file
 	* Login History Database

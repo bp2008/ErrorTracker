@@ -18,12 +18,12 @@
 			</div>
 			<ResizeBar v-if="!eventBodyBelow" :min="100" :max="800" :start="ebStart" :default="400" :offset="fbStart" @change="ebChange" />
 			<div v-if="!eventBodyBelow" class="eventDetailsContainer">
-				<EventDetails :projectName="projectName" :openedEventId="openedEventId" />
+				<EventDetails :projectName="projectName" :openedEventId="openedEventId" :selectedFolderId="selectedFolderId" />
 			</div>
 		</div>
 		<ResizeBar v-if="eventBodyBelow" :horizontal="true" :min="100" :max="1800" :start="tbStart" :default="400" @change="tbChange" />
 		<div v-if="eventBodyBelow" class="eventDetailsContainer" :style="eventDetailsStyle">
-			<EventDetails :projectName="projectName" :openedEventId="openedEventId" />
+			<EventDetails :projectName="projectName" :openedEventId="openedEventId" :selectedFolderId="selectedFolderId" />
 		</div>
 	</div>
 </template>

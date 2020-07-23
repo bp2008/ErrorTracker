@@ -28,7 +28,7 @@
 					<p>for &quot;<b>{{searchArgs.query}}</b>&quot;</p>
 				</template>
 				<template v-else>
-					<p>for [advanced query]</p>
+					<p>for <router-link :to="{ name: 'advancedSearch', query: $route.query }">[advanced query]</router-link></p>
 				</template>
 				<p>in <code class="inline">{{selectedFolderPath}}</code></p>
 				<p><vsvg sprite="arrow_right_alt" class="arrowRight" /></p>

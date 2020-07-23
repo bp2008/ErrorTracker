@@ -20,7 +20,7 @@ namespace ErrorTrackerServer
 		/// <summary>
 		/// Database version number useful for performing migrations. This number should only be incremented when migrations are in place to support upgrading all previously existing versions to this version.
 		/// </summary>
-		public const int dbVersion = 3;
+		public const int dbVersion = 4;
 		/// <summary>
 		/// Project name.
 		/// </summary>
@@ -102,13 +102,14 @@ namespace ErrorTrackerServer
 
 			// Version 1 -> 2 added the HashValue column to Event
 			// Version 2 -> 3 began enforcing that all events have a hash value when they are added to the database.
-			// Both migrations therefore simply require existing hash values to all be recomputed.
-			if (version.CurrentVersion == 1 || version.CurrentVersion == 2)
+			// Version 3 -> 4 changed the hashing function to trim unwanted base64 padding characters from the end of every hash string.
+			// These migrations therefore simply require existing hash values to all be recomputed.
+			if (version.CurrentVersion == 1 || version.CurrentVersion == 2 || version.CurrentVersion == 3)
 			{
 				c.RunInTransaction(() =>
 				{
 					version = c.Query<DbVersion>("SELECT * From DbVersion").FirstOrDefault();
-					if (version.CurrentVersion == 1 || version.CurrentVersion == 2)
+					if (version.CurrentVersion == 1 || version.CurrentVersion == 2 || version.CurrentVersion == 3)
 					{
 						MigrateComputeHashValuesForAllEvents(c);
 						version.CurrentVersion = 3;
@@ -273,7 +274,10 @@ namespace ErrorTrackerServer
 			{
 				events = conn.Value.Query<Event>("SELECT * FROM Event WHERE EventId = ?", eventId);
 				if (events.Count > 0)
+				{
 					tags = conn.Value.Query<Tag>("SELECT Tag.* FROM Tag WHERE EventId = ?", eventId);
+					events[0].MatchingEvents = conn.Value.ExecuteScalar<long>("SELECT COUNT(EventId) FROM Event WHERE HashValue = ?", events[0].HashValue);
+				}
 			});
 			if (events.Count > 0)
 			{
@@ -519,6 +523,33 @@ namespace ErrorTrackerServer
 					conn.Value.Execute("UPDATE Event SET HashValue = ? WHERE EventId = ?", ev.HashValue, ev.EventId);
 				}
 			}
+		}
+
+		/// <summary>
+		/// Counts the number of events in the entire project.
+		/// </summary>
+		/// <returns></returns>
+		public long CountEvents()
+		{
+			return conn.Value.ExecuteScalar<long>("SELECT COUNT(*) FROM Event");
+		}
+
+		/// <summary>
+		/// Counts the number of unique events in the entire project (uniqueness determined by matching HashValue).
+		/// </summary>
+		/// <returns></returns>
+		public long CountUniqueEvents()
+		{
+			return conn.Value.ExecuteScalar<long>("SELECT COUNT(DISTINCT HashValue) FROM Event");
+		}
+
+		/// <summary>
+		/// Counts the number of unique events in the entire project (uniqueness determined by matching HashValue).
+		/// </summary>
+		/// <returns></returns>
+		public long CountEventsWithHashValue(string HashValue)
+		{
+			return conn.Value.ExecuteScalar<long>("SELECT COUNT(EventId) FROM Event WHERE HashValue = ?", HashValue);
 		}
 		#endregion
 		#region Folder Management

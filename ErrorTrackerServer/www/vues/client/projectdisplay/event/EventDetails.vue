@@ -11,6 +11,7 @@
 				<span class="eventType">{{event.EventType}}:</span>
 				<span class="subType" v-text="event.SubType" />
 			</div>
+			<div v-if="routeToMatchingEvents"><router-link :to="routeToMatchingEvents">{{event.MatchingEvents}} events like this</router-link></div>
 			<div class="date">
 				<!--<span class="dateHeading">Date</span>:-->
 				<span class="dateValue" v-text="eventDateFormat(new Date(event.Date))" />
@@ -41,7 +42,7 @@
 	import EventBus from 'appRoot/scripts/EventBus';
 
 	export default {
-		components: { },
+		components: {},
 		props:
 		{
 			projectName: { // pre-validated
@@ -50,6 +51,10 @@
 			},
 			openedEventId: {
 				default: null
+			},
+			selectedFolderId: {
+				type: Number,
+				default: 0
 			}
 		},
 		created()
@@ -82,6 +87,33 @@
 					};
 				}
 				return {};
+			},
+			routeToMatchingEvents()
+			{
+				if (this.event && this.event.MatchingEvents > 1)
+				{
+					// Build advanced search query that will find matching events using the same logic as Event.ComputeHash().
+					let conditions = [
+						{ "Enabled": true, "TagKey": "EventType", "Operator": "Equals", "Query": this.event.EventType },
+						{ "Enabled": true, "TagKey": "SubType", "Operator": "Equals", "Query": this.event.SubType }
+					];
+					let messageChars = 250;
+					if (this.event.Message.length <= messageChars)
+						conditions.push({ "Enabled": true, "TagKey": "Message", "Operator": "Equals", "Query": this.event.Message });
+					else
+						conditions.push({ "Enabled": true, "TagKey": "Message", "Operator": "StartsWith", "Query": this.event.Message.substr(0, messageChars) });
+
+					let query = {
+						p: this.projectName
+						, f: -1
+						, matchAll: "1"
+						, scon: JSON.stringify(conditions)
+					};
+
+					return { name: this.$route.name, query };
+				}
+				else
+					return null;
 			}
 		},
 		methods:

@@ -13,8 +13,9 @@
 			<div class="heading">Select a Project</div>
 			<div class="bodySection">
 				<div v-if="projects && projects.length > 0">
-					<div v-for="p in projects" :key="p" class="projectListItem">
-						<router-link :to="{ name: 'clientHome', query: { p: p }}">{{p}}</router-link>
+					<div v-for="p in projects" :key="p.Name" class="projectListItem">
+						<router-link :to="{ name: 'clientHome', query: { p: p.Name }}">{{p.Name}}</router-link>
+						<div class="projectMetadata">{{p.EventCount}} Events, {{p.UniqueEventCount}} Unique</div>
 					</div>
 				</div>
 				<div v-else>
@@ -89,8 +90,8 @@
 					let pName = this.projectName.toLowerCase();
 					for (let i = 0; i < this.projects.length; i++)
 					{
-						if (this.projects[i].toLowerCase() === pName)
-							return this.projects[i];
+						if (this.projects[i].Name.toLowerCase() === pName)
+							return this.projects[i].Name;
 					}
 				}
 				return null;
@@ -183,4 +184,20 @@
 				{
 					margin-bottom: 0px;
 				}
+
+	.projectListItem
+	{
+		margin-bottom: 20px;
+	}
+
+		.projectListItem:last-child
+		{
+			margin-bottom: 0px;
+		}
+
+	.projectMetadata
+	{
+		margin-top: 2px;
+		margin-left: 20px;
+	}
 </style>

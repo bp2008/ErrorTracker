@@ -60,11 +60,20 @@ namespace ErrorTrackerServer.Database.Project.Model
 		[JsonConverter(typeof(HexStringJsonConverter), 3)]
 		public uint Color { get; set; } = 0xEBEBEB;
 		/// <summary>
-		/// Tags associated with the event. Keys must be non-null and contain at least one alphanumeric character. Keys must not exactly match any of the reserved Key values "EventType", "SubType", "Message", "Date", "Folder", "Color".
+		/// Tags associated with the event.
+		/// Keys must be non-null and contain at least one alphanumeric character.
+		/// Keys must not exactly match any of the reserved Key values "EventType", "SubType", "Message", "Date", "Folder", "Color".
 		/// </summary>
 		[Ignore]
 		[JsonProperty("Tags")]
 		private Dictionary<string, Tag> _tags { get; set; }
+		/// <summary>
+		/// The number of events which share this Event's HashValue (includes this event).
+		/// Should be less than 1 only if this field has not been populated.
+		/// This value is not persisted in the database and must be recomputed when retrieving full event records.
+		/// </summary>
+		[Ignore]
+		public long MatchingEvents { get; set; }
 		public override string ToString()
 		{
 			return EventType + ": " + SubType + ": " + Message;
@@ -174,7 +183,8 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// <para>Computes the base64 encoded (without padding) MD5 hash value of this event, which is always 22 characters long.  Sets it as the value of the <see cref="HashValue" /> property.</para>
 		/// <para>Returns true if the value of the Hash property changed as a result of calling this method.</para>
 		/// <para>Only some of the event data is included in the hash so that similar events can be identified by sharing the hash value.</para>
-		/// <para>If the hashing implementation or hashed data ever changes, the database version should be incremented and during the migration all Events should have their Hash properties recomputed.</para>
+		/// <para>If the hashing implementation or hashed data ever changes, the database version should be incremented and during the migration all Events should have their Hash properties recomputed.
+		/// There is also a feature in the client app (EventDetails.vue) where the app generates an advanced search query to find matching events using the same logic as this hashing function here.</para>
 		/// </summary>
 		/// <returns></returns>
 		public bool ComputeHash()
@@ -185,6 +195,7 @@ namespace ErrorTrackerServer.Database.Project.Model
 				+ (Message == null || Message.Length <= messageChars ? Message : Message.Substring(messageChars));
 			byte[] md5 = Hash.GetMD5Bytes(strToHash);
 			string base64 = Convert.ToBase64String(md5);
+			base64 = base64.Substring(0, 22);
 			if (HashValue != base64)
 			{
 				HashValue = base64;
