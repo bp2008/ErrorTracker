@@ -246,7 +246,7 @@ export default function CreateStore()
 					let pcfg = GetProjectConfig(state, projectName, true);
 					if (pcfg && pcfg.folderBrowserSize)
 						return pcfg.folderBrowserSize;
-					return 175;
+					return 250;
 				};
 			},
 			eventBrowserSize(state)

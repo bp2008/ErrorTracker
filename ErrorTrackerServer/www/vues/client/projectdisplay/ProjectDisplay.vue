@@ -7,7 +7,7 @@
 			<div class="folderBrowserContainer" :style="folderBrowserStyle">
 				<FolderBrowser :projectName="projectName" :selectedFolderId="selectedFolderId" :searchArgs="searchArgs" />
 			</div>
-			<ResizeBar :min="50" :max="600" :start="fbStart" :default="175" @change="fbChange" />
+			<ResizeBar :min="50" :max="600" :start="fbStart" :default="250" @change="fbChange" />
 			<div class="eventBrowserContainer" :style="eventBrowserStyle" @keydown="onEventBrowserKeydown" tabindex="0">
 				<EventBrowser ref="eventBrowser"
 							  :projectName="projectName"

@@ -265,9 +265,15 @@
     <PostBuildEvent>echo *****************
 echo If the following build fails, you may need to run "npm install" from the ErrorTrackerServer project directory.
 echo *****************
-xcopy "$(ProjectDir)www\*.*" "$(TargetDir)www\*.*" /E /C /R /Y /I
+rmdir /S /Q www
+xcopy "$(ProjectDir)www\*.*" "$(TargetDir)www\*.*" /C /R /Y /I
+del /Q "$(TargetDir)www\Globals.scss" &gt;nul 2&gt;&amp;1
+del /Q "$(TargetDir)www\jsconfig.json" &gt;nul 2&gt;&amp;1
+del /Q "$(TargetDir)www\main.js" &gt;nul 2&gt;&amp;1
+xcopy "$(ProjectDir)www\images\*.*" "$(TargetDir)www\images\*.*" /C /R /Y /I
 cd "$(ProjectDir)"
-node "$(ProjectDir)node_modules\webpack\bin\webpack" --env=$(ConfigurationName)</PostBuildEvent>
+node "$(ProjectDir)node_modules\webpack\bin\webpack" --env=$(ConfigurationName)
+xcopy "$(ProjectDir)www\dist\*.*" "$(TargetDir)www\dist\*.*" /C /R /Y /I</PostBuildEvent>
   </PropertyGroup>
   <Import Project="..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets" Condition="Exists('..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

@@ -16,9 +16,6 @@
 
 * Consider: Add an event stream which notifies browsers of new events and of changes made to events.  This is probably hard to do correctly, but would be extremely helpful.
 
-
-* Customizable Server Name
-
 * UNDO stack.
 	* Maybe with confirmation (if no REDO stack)
 	* With context menu items.
