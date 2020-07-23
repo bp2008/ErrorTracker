@@ -217,6 +217,7 @@ namespace ErrorTrackerServer
 			{
 				affectedRows = conn.Value.Execute("DELETE FROM Event WHERE EventId IN (" + string.Join(",", eventIds) + ")");
 				conn.Value.Execute("DELETE FROM Tag WHERE EventId IN (" + string.Join(",", eventIds) + ")");
+				conn.Value.Execute("DELETE FROM ReadState WHERE EventId IN (" + string.Join(",", eventIds) + ")");
 			});
 			if (affectedRows == eventIds.Length)
 				return true;
