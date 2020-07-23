@@ -1,5 +1,20 @@
 ﻿<template>
 	<div class="folderBrowser">
+		<div v-if="isSearch" class="searchResultsSection">
+			<h3 class="searchingHeading">
+				<vsvg sprite="search" role="presentation" class="searchIcon" />
+				Search Results
+			</h3>
+			<template v-if="searchArgs.query">
+				<p>for &quot;<b>{{searchArgs.query}}</b>&quot;</p>
+			</template>
+			<template v-else>
+				<p>for <router-link :to="{ name: 'advancedSearch', query: $route.query }">[advanced query]</router-link></p>
+			</template>
+			<div>in <code class="inline">{{selectedFolderPath}}</code></div>
+			<div><vsvg sprite="arrow_right_alt" class="arrowRight" /></div>
+			<router-link :to="closeSearchResultsRoute" class="searchResultsClose">Close Search Results</router-link>
+		</div>
 		<div v-if="error" class="error">
 			{{error}}
 			<div class="tryAgain"><input type="button" value="Try Again" @click="loadFolders" /></div>
@@ -19,21 +34,6 @@
 			<div v-if="loading || filters_loading" class="loadingOverlay">
 				<div class="loading"><ScaleLoader /> Updating…</div>
 			</div>
-			<router-link v-if="isSearch" :to="closeSearchResultsRoute" class="searchResultsOverlay">
-				<h3 class="searchingHeading">
-					<vsvg sprite="search" role="presentation" class="searchIcon" />
-					Search Results
-				</h3>
-				<template v-if="searchArgs.query">
-					<p>for &quot;<b>{{searchArgs.query}}</b>&quot;</p>
-				</template>
-				<template v-else>
-					<p>for <router-link :to="{ name: 'advancedSearch', query: $route.query }">[advanced query]</router-link></p>
-				</template>
-				<p>in <code class="inline">{{selectedFolderPath}}</code></p>
-				<p><vsvg sprite="arrow_right_alt" class="arrowRight" /></p>
-				<p>Click here to close Search Results</p>
-			</router-link>
 		</div>
 		<div v-else-if="loading || filters_loading" class="loading"><ScaleLoader /> Loading…</div>
 		<div v-else>
@@ -498,8 +498,7 @@
 		text-align: center;
 	}
 
-	.loadingOverlay,
-	.searchResultsOverlay
+	.loadingOverlay
 	{
 		position: absolute;
 		top: 0px;
@@ -528,17 +527,29 @@
 			border-radius: 4px;
 		}
 
-	.searchResultsOverlay
+	.searchResultsSection
 	{
 		padding: 10px;
-		background-color: #f8f8f8;
+		padding-bottom: 20px;
+		background-color: #e0eff3;
 		text-align: center;
-		cursor: pointer;
-		text-decoration: none;
-		color: inherit;
+		border-bottom: 1px solid #000000;
+		margin-bottom: 10px;
 	}
 
-		.searchResultsOverlay:hover
+
+	.searchResultsClose
+	{
+		display: inline-block;
+		cursor: pointer;
+		padding: 10px;
+		border: 1px solid #909090;
+		background-color: #F5F7F7;
+		color: inherit;
+		text-decoration: none;
+	}
+
+		.searchResultsClose:hover
 		{
 			background-color: #FFFFFF;
 		}
