@@ -394,6 +394,16 @@ namespace ErrorTrackerServer.Filtering
 				{
 					return true;
 				}
+				else if (action.Operator == FilterActionType.MarkRead)
+				{
+					deferredActions.SetReadState(e, true);
+					return false;
+				}
+				else if (action.Operator == FilterActionType.MarkUnread)
+				{
+					deferredActions.SetReadState(e, false);
+					return false;
+				}
 				else
 					throw new Exception("Unsupported filter action operator: " + action.Operator);
 			}

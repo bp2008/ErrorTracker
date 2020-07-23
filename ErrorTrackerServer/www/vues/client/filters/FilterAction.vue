@@ -10,6 +10,8 @@
 				<option value="Delete">delete event</option>
 				<option value="SetColor">set event color</option>
 				<option value="StopExecution">stop execution against matched event</option>
+				<option value="MarkRead">mark read</option>
+				<option value="MarkUnread">mark unread</option>
 			</select>
 		</div>
 		<input v-if="action.Operator === 'MoveTo'"

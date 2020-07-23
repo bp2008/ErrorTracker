@@ -29,6 +29,16 @@
 			<div class="bodySection">
 				<div>Under Construction</div>
 			</div>
+			<div class="heading">Tips</div>
+			<div class="bodySection">
+				<div>
+					<ul>
+						<li>Most aspects of event management are shared by all users.  Think of it like sharing an email account with others where everyone uses IMAP.  If you move, delete, or recolor an event, it happens for all users.</li>
+						<li>Read/Unread state is unique to each user, however if you set this state via a Filter Action, it will affect all current users.</li>
+						<li>At this time, changes made by other users may not be seen until you refresh the page.</li>
+					</ul>
+				</div>
+			</div>
 		</div>
 	</div>
 </template>
@@ -156,6 +166,21 @@
 
 	.bodySection
 	{
-		margin-left: 20px;
+		margin: 0px 20px;
 	}
+
+		.bodySection ul
+		{
+			padding-left: 20px;
+		}
+
+			.bodySection ul li
+			{
+				margin-bottom: 10px;
+			}
+
+				.bodySection ul li:last-child
+				{
+					margin-bottom: 0px;
+				}
 </style>

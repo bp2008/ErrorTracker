@@ -41,6 +41,16 @@ namespace ErrorTrackerServer.Filtering
 		{
 			eventIdsToDelete.Add(ev.EventId);
 		}
+		ActionAggregator<bool> readStateMap = new ActionAggregator<bool>();
+		/// <summary>
+		/// Schedules a MarkRead or MarkUnread action.
+		/// </summary>
+		/// <param name="ev"></param>
+		/// <param name="read">If true, the event will be marked as read.  If false, the event will be marked as unread.</param>
+		public void SetReadState(Event ev, bool read)
+		{
+			readStateMap.Set(ev.EventId, read);
+		}
 		/// <summary>
 		/// Executes all scheduled actions and resets the state of this collection so it can be reused in a new filtering operation.  Returns true if all scheduled actions executed successfully.
 		/// </summary>
@@ -76,6 +86,22 @@ namespace ErrorTrackerServer.Filtering
 				long[] idsToDelete = eventIdsToDelete.ToArray();
 				if (!db.DeleteEvents(idsToDelete))
 					success = false;
+
+				// SetReadState
+				foreach (KeyValuePair<bool, List<long>> kvp in readStateMap.ReverseMap())
+				{
+					long[] eventIds = kvp.Value.Where(id => !eventIdsToDelete.Contains(id)).ToArray();
+					if (eventIds.Length > 0)
+					{
+						foreach (User user in Settings.data.GetAllUsers())
+						{
+							if (kvp.Key)
+								db.AddReadState(user.UserId, eventIds);
+							else
+								db.RemoveReadState(user.UserId, eventIds);
+						}
+					}
+				}
 
 				return success;
 			}

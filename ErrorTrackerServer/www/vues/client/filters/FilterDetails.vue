@@ -69,6 +69,7 @@
 								<li><b>Actions</b> are executed in the order they are defined above.</li>
 								<li>The <b>action</b> <code class="inline">stop execution against matched event</code> prevents other <b>filters</b> and <b>actions</b> from executing against the matched event for the remainder of the current filtering operation.</li>
 								<li>The <b>action</b> <code class="inline">move event to</code> requires an absolute folder path (e.g. <code class="inline">/ignored/spam</code>).  If the path is invalid or fails to resolve (case-insensitive), the event will not be moved.</li>
+								<li><b>Actions</b> affect all users.</li>
 							</ul>
 						</div>
 					</div>

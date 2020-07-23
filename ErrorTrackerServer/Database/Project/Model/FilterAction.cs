@@ -42,18 +42,26 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// <summary>
 		/// This filter action moves the event to a specific folder.
 		/// </summary>
-		MoveTo,
+		MoveTo = 0,
 		/// <summary>
 		/// This filter action causes the event to be automatically deleted.
 		/// </summary>
-		Delete,
+		Delete = 1,
 		/// <summary>
 		/// This filter action assigns the event's color.
 		/// </summary>
-		SetColor,
+		SetColor = 2,
 		/// <summary>
 		/// When processing multiple filters against an event, this filter action causes all remaining unexecuted filters to be canceled. 
 		/// </summary>
-		StopExecution
+		StopExecution = 3,
+		/// <summary>
+		/// When processing multiple filters against an event, this filter action causes all remaining unexecuted filters to be canceled. 
+		/// </summary>
+		MarkRead = 4,
+		/// <summary>
+		/// When processing multiple filters against an event, this filter action causes all remaining unexecuted filters to be canceled. 
+		/// </summary>
+		MarkUnread = 5
 	}
 }
