@@ -19,6 +19,7 @@
 				<span class="folderIcon" v-else-if="selected">📂</span>
 				<span class="folderIcon" v-else>📁</span>
 				<span class="name">{{ folder.Name }}</span>
+				<span class="unread" v-if="folder.Unread">({{folder.Unread}})</span>
 			</FolderLink>
 		</div>
 		<div class="children" v-show="expanded">
@@ -259,6 +260,11 @@
 	{
 		padding: 1px 2px;
 		flex: 1 1 auto;
+	}
+
+	.unread
+	{
+		font-weight: bold;
 	}
 
 	.nodeIcon

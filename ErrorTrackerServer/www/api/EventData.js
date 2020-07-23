@@ -2,7 +2,16 @@
 
 export function GetEvents(projectName, folderId, startTime, endTime)
 {
-	return ExecAPI("EventData/GetEvents", { projectName, folderId, startTime, endTime });
+	return ExecAPI("EventData/GetEvents", { projectName, folderId, startTime, endTime })
+		.then(data =>
+		{
+			// Preprocess events array:
+			// Add FolderId fields.
+			if (data.success && data.events && data.events.length)
+				for (let i = 0; i < data.events.length; i++)
+					data.events[i].FolderId = folderId;
+			return data;
+		});
 }
 export function GetEvent(projectName, eventId)
 {
@@ -23,4 +32,8 @@ export function SetEventsColor(projectName, eventIds, color)
 export function SetEventsReadState(projectName, eventIds, read)
 {
 	return ExecAPI("EventData/SetEventsReadState", { projectName, eventIds, read });
+}
+export function CountUnreadEventsByFolder(projectName)
+{
+	return ExecAPI("EventData/CountUnreadEventsByFolder", { projectName });
 }

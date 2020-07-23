@@ -156,6 +156,23 @@ namespace ErrorTrackerServer.Controllers
 				return Json(new ApiResponseBase(true));
 			}
 		}
+		/// <summary>
+		/// Gets the number of unread events in every folder that contains unread events.
+		/// </summary>
+		/// <returns></returns>
+		public ActionResult CountUnreadEventsByFolder()
+		{
+			ProjectRequestBase request = ApiRequestBase.ParseRequest<ProjectRequestBase>(this);
+
+			if (!request.Validate(out Project p, out ApiResponseBase error))
+				return Json(error);
+
+			using (DB db = new DB(p.Name))
+			{
+				Dictionary<int, uint> folderIdToUnreadEventCount = db.CountUnreadEventsByFolder(session.GetUser().UserId);
+				return Json(new CountUnreadEventsByFolderResponse(folderIdToUnreadEventCount));
+			}
+		}
 	}
 
 	/// <summary>
@@ -241,5 +258,16 @@ namespace ErrorTrackerServer.Controllers
 	public class SetEventsReadStateRequest : EventIdsRequest
 	{
 		public bool read;
+	}
+	public class CountUnreadEventsByFolderResponse : ApiResponseBase
+	{
+		/// <summary>
+		/// A map of folderId to unread event count. Folders with no unread events may not be in the map.
+		/// </summary>
+		public Dictionary<int, uint> folderIdToUnreadEventCount;
+		public CountUnreadEventsByFolderResponse(Dictionary<int, uint> folderIdToUnreadEventCount) : base(true, null)
+		{
+			this.folderIdToUnreadEventCount = folderIdToUnreadEventCount;
+		}
 	}
 }

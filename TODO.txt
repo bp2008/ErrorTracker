@@ -3,13 +3,13 @@
 	* Consider: Email Notifications of new events (daily summary)
 	* Consider: Email Notifications of new events (weekly summary)
 	* User Reset Password (via email)
+	
+* Add GUI for showing events similar to the current event based on HashValue strings.
 
 * Event Summaries in client home when no project is selected
 	* Total Event Count
 	* Unique Event Count (using Repeat System)
 
-* Event Read State
-	* Folders list unread count
 
 * App-wide database file
 	* Login History Database
@@ -23,7 +23,6 @@
 
 * Consider: Add an event stream which notifies browsers of new events and of changes made to events.  This is probably hard to do correctly, but would be extremely helpful.
 
-* Add GUI for showing events similar to the current event based on HashValue strings.
 
 * Customizable Server Name
 

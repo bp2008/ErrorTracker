@@ -209,4 +209,9 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// </summary>
 		Debug = 2
 	}
+	public class EventsInFolderCount
+	{
+		public int FolderId { get; set; }
+		public uint Count { get; set; }
+	}
 }

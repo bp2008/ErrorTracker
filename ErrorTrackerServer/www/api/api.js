@@ -1,4 +1,5 @@
 ﻿import { CloseAllDialogs } from 'appRoot/scripts/ModalDialog';
+import { HTMLToText } from 'appRoot/scripts/Util';
 
 /**
  * Executes an API call to the specified method, using the specified arguments.  Returns a promise which resolves with any graceful response from the server.  Rejects if an error occurred that prevents the normal functioning of the API (e.g. the server was unreachable or returned an entirely unexpected response such as HTTP 500).
@@ -46,6 +47,7 @@ export default function ExecAPI(method, args)
 			{
 				let errText = "API response was " + response.status + " " + response.statusText;
 				console.error(errText);
+				logResponseBodyHtmlAsError(response);
 				return Promise.reject(new ApiError(errText));
 			}
 		})
@@ -57,6 +59,18 @@ export default function ExecAPI(method, args)
 		{
 			console.error(err);
 			return Promise.reject(err);
+		});
+}
+function logResponseBodyHtmlAsError(response)
+{
+	response.text()
+		.then(data =>
+		{
+			console.log(HTMLToText(data).trim());
+		})
+		.catch(err =>
+		{
+			console.error("Unable to retrieve response body", err);
 		});
 }
 ///**

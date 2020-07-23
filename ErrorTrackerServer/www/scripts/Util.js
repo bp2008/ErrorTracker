@@ -565,6 +565,18 @@ export function HtmlAttributeEncode(str)
 	}
 	return sb.join("");
 }
+var htmlToTextConvert = document.createElement('div');
+/**
+ * Given a string of HTML, returns the innerText representation.
+ * @param {String} html HTML to get text out of
+ */
+export function HTMLToText(html)
+{
+	htmlToTextConvert.innerHTML = html;
+	let text = htmlToTextConvert.innerText;
+	htmlToTextConvert.innerHTML = "";
+	return text;
+}
 export function AppendArrays(a, b)
 {
 	var c = new Array(a.length + b.length);

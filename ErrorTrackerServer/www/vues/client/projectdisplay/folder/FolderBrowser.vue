@@ -76,7 +76,7 @@
 
 <script>
 	import { GetFolderStructure, AddFolder, RenameFolder, MoveFolder, DeleteFolder, RunFilterOnFolder, RunEnabledFiltersOnFolder } from 'appRoot/api/FolderData';
-	import { MoveEvents } from 'appRoot/api/EventData';
+	import { MoveEvents, CountUnreadEventsByFolder } from 'appRoot/api/EventData';
 	import { GetAllFilters } from 'appRoot/api/FilterData';
 	import { VueContext } from 'vue-context';
 	import { TextInputDialog, ModalConfirmDialog } from 'appRoot/scripts/ModalDialog';
@@ -113,11 +113,13 @@
 		},
 		created()
 		{
+			EventBus.$on("eventReadStateChanged", this.eventReadStateChanged);
 			this.loadFilters();
 			this.loadFolders();
 		},
 		beforeDestroy()
 		{
+			EventBus.$off("eventReadStateChanged", this.eventReadStateChanged);
 			EventBus.stopMovingItem();
 		},
 		computed:
@@ -153,6 +155,7 @@
 						if (data.success)
 						{
 							data.root.Children.push({ FolderId: -1, Name: "All Folders", AbsolutePath: "🗄️ All Folders" });
+							predefineFolderUnreadEventCounts(data.root);
 							EventBus.learnProjectFolderStructure(this.projectName, data.root);
 							this.rootFolder = data.root;
 							if (this.focusSelectedNodeWhenLoaded)
@@ -163,6 +166,7 @@
 									this.focusSelectedNode();
 								});
 							}
+							this.loadUnreadEventCounts();
 						}
 						else
 						{
@@ -178,6 +182,24 @@
 					.finally(() =>
 					{
 						this.loading = false;
+					});
+			},
+			loadUnreadEventCounts()
+			{
+				CountUnreadEventsByFolder(this.projectName)
+					.then(data =>
+					{
+						if (data.success)
+						{
+							if (this.rootFolder)
+								setFolderUnreadEventCounts(this.rootFolder, data.folderIdToUnreadEventCount);
+						}
+						else
+							toaster.warning(data.error);
+					})
+					.catch(err =>
+					{
+						toaster.warning(err.message);
 					});
 			},
 			newFolder(folder)
@@ -347,6 +369,7 @@
 						{
 							toaster.success("Filter execution completed");
 							EventBus.externalChangesToVisibleEvents++;
+							this.loadFolders();
 						}
 						else
 							toaster.error(data.error);
@@ -368,6 +391,7 @@
 						{
 							toaster.success("Filter execution completed");
 							EventBus.externalChangesToVisibleEvents++;
+							this.loadFolders();
 						}
 						else
 							toaster.error(data.error);
@@ -394,6 +418,17 @@
 					this.$refs.folderNode.focusSelectedNode();
 				else
 					this.focusSelectedNodeWhenLoaded = true;
+			},
+			eventReadStateChanged(event)
+			{
+				let folder = getFolderRecursive(this.rootFolder, event.FolderId);
+				if (folder)
+				{
+					if (event.Read)
+						folder.Unread--;
+					else
+						folder.Unread++;
+				}
 			}
 		},
 		watch:
@@ -409,22 +444,39 @@
 			}
 		}
 	}
-	//function getFolderRecursive(root, folderId)
-	//{
-	//	if (root)
-	//	{
-	//		if (root.FolderId === folderId)
-	//			return root;
-	//		if (root.Children && root.Children.length)
-	//			for (let i = 0; i < root.Children.length; i++)
-	//			{
-	//				let found = getFolderRecursive(root.Children[i], folderId);
-	//				if (found)
-	//					return found;
-	//			}
-	//	}
-	//	return null;
-	//}
+	function getFolderRecursive(root, folderId)
+	{
+		if (root)
+		{
+			if (root.FolderId === folderId)
+				return root;
+			if (root.Children && root.Children.length)
+				for (let i = 0; i < root.Children.length; i++)
+				{
+					let found = getFolderRecursive(root.Children[i], folderId);
+					if (found)
+						return found;
+				}
+		}
+		return null;
+	}
+	function predefineFolderUnreadEventCounts(folder)
+	{
+		folder.Unread = 0;
+		if (folder.Children && folder.Children.length)
+			for (let i = 0; i < folder.Children.length; i++)
+				predefineFolderUnreadEventCounts(folder.Children[i]);
+	}
+	function setFolderUnreadEventCounts(folder, folderIdToUnreadEventCount)
+	{
+		let unread = folderIdToUnreadEventCount[folder.FolderId];
+		if (unread)
+			folder.Unread = unread;
+
+		if (folder.Children && folder.Children.length)
+			for (let i = 0; i < folder.Children.length; i++)
+				setFolderUnreadEventCounts(folder.Children[i], folderIdToUnreadEventCount);
+	}
 </script>
 
 <style scoped>

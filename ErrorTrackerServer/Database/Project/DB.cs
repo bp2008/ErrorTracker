@@ -426,6 +426,61 @@ namespace ErrorTrackerServer
 			return conn.Value.ExecuteScalar<long>("SELECT COUNT(*) FROM Event WHERE Event.FolderId = ?", folderId);
 		}
 		/// <summary>
+		/// Returns the number of total events in each folder that has events.
+		/// </summary>
+		/// <param name="folderId">ID of the folder.</param>
+		/// <returns></returns>
+		public Dictionary<int, uint> CountEventsByFolder()
+		{
+			List<EventsInFolderCount> counts = conn.Value.Query<EventsInFolderCount>("SELECT FolderId, COUNT(EventId) as Count "
+				+ "FROM Event "
+				+ "GROUP BY FolderId");
+
+			return ConvertToDictionary(counts);
+		}
+		/// <summary>
+		/// Returns the number of unread events in each folder that has unread events.
+		/// </summary>
+		/// <param name="folderId">ID of the folder.</param>
+		/// <returns></returns>
+		public Dictionary<int, uint> CountUnreadEventsByFolder(int userId)
+		{
+			// First, get the count of events by folder
+			Dictionary<int, uint> all = null;
+			Dictionary<int, uint> read = null;
+			conn.Value.RunInTransaction(() =>
+			{
+				all = CountEventsByFolder();
+				read = CountReadEventsByFolder(userId);
+			});
+			int[] folders = all.Keys.ToArray();
+			foreach (int folderId in folders)
+			{
+				if (read.TryGetValue(folderId, out uint r))
+					all[folderId] = all[folderId] - r;
+			}
+			return all;
+		}
+		/// <summary>
+		/// Returns the number of read events in each folder that has read events.
+		/// </summary>
+		/// <param name="folderId">ID of the folder.</param>
+		/// <returns></returns>
+		public Dictionary<int, uint> CountReadEventsByFolder(int userId)
+		{
+			List<EventsInFolderCount> counts = conn.Value.Query<EventsInFolderCount>("SELECT FolderId, COUNT(Event.EventId) as Count "
+				+ "FROM Event "
+				+ "INNER JOIN ReadState ON Event.EventId = ReadState.EventId "
+				+ "WHERE ReadState.UserId = ?"
+				+ "GROUP BY FolderId", userId);
+
+			return ConvertToDictionary(counts);
+		}
+		private Dictionary<int, uint> ConvertToDictionary(List<EventsInFolderCount> counts)
+		{
+			return counts.ToDictionary(c => c.FolderId, c => c.Count);
+		}
+		/// <summary>
 		/// Returns true if the event with the specified ID exists.
 		/// </summary>
 		/// <param name="eventId">Event ID to look up.</param>

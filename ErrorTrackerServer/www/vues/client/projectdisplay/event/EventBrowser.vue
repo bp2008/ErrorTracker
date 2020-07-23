@@ -385,7 +385,12 @@
 								for (let i = 0; i < this.events.length; i++)
 								{
 									if (selMap[this.events[i].EventId])
+									{
+										let was = this.events[i].Read;
 										this.events[i].Read = !!read;
+										if (was !== this.events[i].Read)
+											EventBus.$emit("eventReadStateChanged", this.events[i]);
+									}
 								}
 							}
 						}
@@ -443,8 +448,10 @@
 					for (let i = 0; i < this.events.length; i++)
 						if (this.events[i].EventId === this.openedEventId)
 						{
-							console.log("Marking event " + this.openedEventId + " as read");
+							let was = this.events[i].Read;
 							this.events[i].Read = true;
+							if (!was)
+								EventBus.$emit("eventReadStateChanged", this.events[i]);
 						}
 			}
 		},
