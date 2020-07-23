@@ -187,6 +187,7 @@ namespace ErrorTrackerServer
 					{
 						next = new FolderStructure(newFolder);
 						next.Parent = this;
+						next.folderMap = folderMap; 
 						folderMap.Add(next.FolderId, next);
 						Children.Add(next);
 						SortChildren();
