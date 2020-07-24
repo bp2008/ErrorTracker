@@ -28,6 +28,9 @@
 						:projectName="projectName"
 						:folder="child"
 						:selectedFolderId="selectedFolderId"
+						:isDialog="isDialog"
+						:dialogAllowsAllFolders="dialogAllowsAllFolders"
+						@select="onSelect"
 						@menu="onMenu"
 						@moveInto="onMoveInto"
 						ref="childNodes" />
@@ -56,6 +59,14 @@
 			selectedFolderId: {
 				type: Number,
 				default: 0
+			},
+			isDialog: { // Prevents clicking a folder from causing navigation or completing a dragless event move operation.
+				type: Boolean, // If true, clicking a folder will emit the "select" event.
+				default: false
+			},
+			dialogAllowsAllFolders: {
+				type: Boolean,
+				default: false
 			}
 		},
 		data()
@@ -80,11 +91,11 @@
 			},
 			openFolderRoute()
 			{
-				if (EventBus.movingItem)
+				if (EventBus.movingItem || this.isDialog)
 					return null;
 				let query = Object.assign({}, this.$route.query);
 				query.f = this.folder.FolderId;
-				return { name: this.$route.name, query };
+				return { name: this.$route.name, query, params: this.$route.params };
 			},
 			expanded()
 			{
@@ -123,9 +134,15 @@
 			folderLinkClick()
 			{
 				// called on link click only if openFolderRoute returned falsy
+				if (this.isDialog)
+					this.$emit('select', this.folder);
 				if (this.isAllFolders)
 					return;
 				this.$emit('moveInto', { target: this.folder });
+			},
+			onSelect(folder)
+			{
+				this.$emit('select', folder);
 			},
 			dragStart(e)
 			{

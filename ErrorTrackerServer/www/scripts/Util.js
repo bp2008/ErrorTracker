@@ -772,3 +772,19 @@ export function CopyArray(array)
 		copy[i] = array[i];
 	return copy;
 }
+/**
+ * Changes the "f" parameter in the query string to the specified folderId.
+ * @param {Object} component Vue component instance
+ * @param {Boolean} pushRoute If true, the new route is pushed. If false, the current route is replaced.
+ * @param {Number} folderId ID of a folder to set as selected.
+ */
+export function SetSelectedFolder(component, pushRoute, folderId)
+{
+	let query = Object.assign({}, component.$route.query);
+	query.f = folderId;
+	let route = { name: component.$route.name, query, params: component.$route.params };
+	if (pushRoute)
+		component.$router.push(route);
+	else
+		component.$router.replace(route);
+}

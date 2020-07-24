@@ -44,6 +44,7 @@
 							<FilterAction v-for="action in filter.actions"
 										  :key="action.FilterActionId"
 										  :action="action"
+										  :projectName="projectName"
 										  @delete="deleteAction"
 										  class="action" />
 						</div>

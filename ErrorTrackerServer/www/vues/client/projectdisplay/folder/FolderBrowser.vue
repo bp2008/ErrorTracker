@@ -27,8 +27,11 @@
 			<FolderNode :projectName="projectName"
 						:folder="rootFolder"
 						:selectedFolderId="selectedFolderId"
+						:isDialog="isDialog"
+						:dialogAllowsAllFolders="dialogAllowsAllFolders"
 						@menu="onMenu"
 						@moveInto="onMoveInto"
+						@select="onFolderSelect"
 						class="folderRootNode"
 						ref="folderNode" />
 			<div v-if="loading || filters_loading" class="loadingOverlay">
@@ -97,7 +100,15 @@
 				type: Number,
 				default: 0
 			},
-			searchArgs: null
+			searchArgs: null,
+			isDialog: {
+				type: Boolean,
+				default: false
+			},
+			dialogAllowsAllFolders: {
+				type: Boolean,
+				default: false
+			}
 		},
 		data()
 		{
@@ -154,7 +165,8 @@
 					{
 						if (data.success)
 						{
-							data.root.Children.push({ FolderId: -1, Name: "All Folders", AbsolutePath: "🗄️ All Folders" });
+							if (!this.isDialog || this.dialogAllowsAllFolders)
+								data.root.Children.push({ FolderId: -1, Name: "All Folders", AbsolutePath: "🗄️ All Folders" });
 							predefineFolderUnreadEventCounts(data.root);
 							EventBus.learnProjectFolderStructure(this.projectName, data.root);
 							this.rootFolder = data.root;
@@ -429,6 +441,10 @@
 					else
 						folder.Unread++;
 				}
+			},
+			onFolderSelect(folder)
+			{
+				this.$emit('select', folder);
 			}
 		},
 		watch:
@@ -437,10 +453,6 @@
 			{
 				this.loadFilters();
 				this.loadFolders();
-			},
-			selectedFolderPath()
-			{
-				this.$emit("selectedFolderPathChanged", this.selectedFolderPath);
 			}
 		}
 	}

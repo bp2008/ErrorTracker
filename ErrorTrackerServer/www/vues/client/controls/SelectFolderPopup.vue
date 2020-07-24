@@ -4,7 +4,12 @@
 			<div id="textInputMsgTitle" class="title" role="alert">Select a Folder</div>
 		</div>
 		<div class="dialogBody">
-			<FolderBrowser ref="folderBrowser" :projectName="projectName" :selectedFolderId="selectedFolderId" @selectedFolderPathChanged="selectedFolderPathChanged" />
+			<FolderBrowser ref="folderBrowser"
+						   :projectName="projectName"
+						   :selectedFolderId="currentSelectedFolderId"
+						   :isDialog="isDialog"
+						   :dialogAllowsAllFolders="dialogAllowsAllFolders"
+						   @select="onFolderSelect" />
 		</div>
 		<div class="buttons">
 			<div class="dialogButton okButton" tabindex="0" @click="okClicked" @keydown.space.enter.prevent="okClicked">
@@ -24,12 +29,25 @@
 			projectName: {
 				type: String,
 				default: ""
+			},
+			selectedFolderId: {
+				type: Number,
+				default: 0
+			},
+			isDialog: {
+				type: Boolean,
+				default: false
+			},
+			dialogAllowsAllFolders: {
+				type: Boolean,
+				default: false
 			}
 		},
 		data()
 		{
 			return {
-				path: null
+				folder: null,
+				currentSelectedFolderId: this.selectedFolderId
 			};
 		},
 		created()
@@ -41,10 +59,6 @@
 		},
 		computed:
 		{
-			selectedFolderId()
-			{
-				return this.$route.query.f ? parseInt(this.$route.query.f) : 0;
-			}
 		},
 		methods:
 		{
@@ -59,11 +73,12 @@
 			},
 			okClicked()
 			{
-				this.$emit("close", this.path); // path can be null if no folder was selected after creating the popup.
+				this.$emit("close", this.folder); // path can be null if no folder was selected after creating the popup.
 			},
-			selectedFolderPathChanged(path)
+			onFolderSelect(folder)
 			{
-				this.path = path;
+				this.currentSelectedFolderId = folder ? folder.FolderId : 0;
+				this.folder = folder;
 			}
 		}
 	}

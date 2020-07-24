@@ -212,13 +212,14 @@ export function SelectFilterDialog(projectName)
 	return ModalDialog(SelectFilterPopup, args);
 }
 /**
- * Opens a dialog box where the user can select a Filter. Returns a promise that resolves with the selected Filter, or a falsy value if canceled.  The promise does not reject.
- * @param {String} projectName Name of the project to load Filters from.
+ * Opens a dialog box where the user can select a Filter. Returns a promise that resolves with the selected Folder, or a falsy value if canceled.  The promise does not reject.
+ * @param {String} projectName Name of the project to load Folders from.
  * @param {Number} selectedFolderId ID of the folder which should be selected by default. (e.g. 0)
+ * @param {Boolean} dialogAllowsAllFolders If true, "All Folders" appears as a selectable item.
  * @returns {Promise} Returns a promise which resolves when the dialog closes. Does not reject.
  */
-export function SelectFolderDialog(projectName, selectedFolderId)
+export function SelectFolderDialog(projectName, selectedFolderId, dialogAllowsAllFolders)
 {
-	let args = { projectName, selectedFolderId };
+	let args = { projectName, selectedFolderId, isDialog: true, dialogAllowsAllFolders };
 	return ModalDialog(SelectFolderPopup, args);
 }

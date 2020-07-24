@@ -14,10 +14,12 @@
 				<option value="MarkUnread">mark unread</option>
 			</select>
 		</div>
-		<input v-if="action.Operator === 'MoveTo'"
-			   type="text"
-			   v-model="action.Argument"
-			   class="argumentTextInput" />
+		<div v-if="action.Operator === 'MoveTo'" class="moveToInputs">
+			<input type="text"
+				   v-model="action.Argument"
+				   class="argumentTextInput" />
+			<input type="button" value="Browse" @click="browseFolders" />
+		</div>
 		<div v-else-if="action.Operator === 'SetColor'"
 			 class="argumentColor">
 			<input type="color" v-model="action.Argument" placeholder="hex color (e.g. #EBEBEB)" />
@@ -28,12 +30,17 @@
 
 <script>
 	import { GetReadableTextColorHexForBackgroundColorHex } from 'appRoot/scripts/Util';
+	import { SelectFolderDialog } from 'appRoot/scripts/ModalDialog';
 
 	export default {
 		props:
 		{
 			action: {
 				type: Object,
+				required: true
+			},
+			projectName: {
+				type: String,
 				required: true
 			}
 		},
@@ -58,6 +65,18 @@
 				}
 				return null;
 			}
+		},
+		methods:
+		{
+			browseFolders()
+			{
+				SelectFolderDialog(this.projectName, 0, false)
+					.then(folder =>
+					{
+						if (folder)
+							this.action.Argument = folder.AbsolutePath;
+					});
+			}
 		}
 	}
 </script>
@@ -80,9 +99,17 @@
 		margin-bottom: 5px;
 	}
 
+	.moveToInputs
+	{
+		display: flex;
+		align-items: baseline;
+	}
+
 	.argumentTextInput
 	{
 		margin-top: 5px;
+		margin-right: 5px;
+		flex: 1 1 auto;
 		width: 100%;
 		box-sizing: border-box;
 	}

@@ -57,6 +57,7 @@
 	import svg5 from 'appRoot/images/sprite/filter_alt.svg';
 	import SvgButton from 'appRoot/vues/common/controls/SvgButton.vue';
 	import { SelectFolderDialog } from 'appRoot/scripts/ModalDialog';
+	import { SetSelectedFolder } from 'appRoot/scripts/Util';
 
 	export default {
 		components: { SvgButton },
@@ -147,10 +148,11 @@
 			},
 			changeFolder()
 			{
-				SelectFolderDialog(this.projectName, this.selectedFolderId)
-					.then(data =>
+				SelectFolderDialog(this.projectName, this.selectedFolderId, true)
+					.then(folder =>
 					{
-						console.log(data);
+						if (folder)
+							SetSelectedFolder(this, false, folder.FolderId);
 					});
 			}
 		}
