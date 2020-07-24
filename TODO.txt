@@ -1,5 +1,3 @@
-* Toggle showing unique events (only latest per HashValue).
-
 * Email Configuration
 	* Consider: Email Notifications of new events
 	* Consider: Email Notifications of new events (daily summary)

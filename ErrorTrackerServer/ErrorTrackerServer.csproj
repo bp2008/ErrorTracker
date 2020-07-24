@@ -215,6 +215,7 @@
     <Content Include="www\images\sprite\delete.svg" />
     <Content Include="www\images\sprite\expand_more.svg" />
     <Content Include="www\images\sprite\filter_alt.svg" />
+    <Content Include="www\images\sprite\fingerprint.svg" />
     <Content Include="www\images\sprite\folder.svg" />
     <Content Include="www\images\sprite\folder_open.svg" />
     <Content Include="www\images\sprite\fullscreen.svg" />
@@ -225,6 +226,8 @@
     <Content Include="www\images\sprite\remove.svg" />
     <Content Include="www\images\sprite\remove_computer.svg" />
     <Content Include="www\images\sprite\search.svg" />
+    <Content Include="www\images\sprite\search_adv.svg" />
+    <Content Include="www\images\sprite\search_adv2.svg" />
     <Content Include="www\images\sprite\settings.svg" />
     <Content Include="www\images\sprite\settings_network.svg" />
     <Content Include="www\images\sprite\user.svg" />

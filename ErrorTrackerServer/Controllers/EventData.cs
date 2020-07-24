@@ -48,6 +48,21 @@ namespace ErrorTrackerServer.Controllers
 						events = db.GetEventsWithoutTagsInFolderByDate(request.folderId, request.startTime, request.endTime);
 				}
 
+				if (request.uniqueOnly)
+				{
+					List<Event> unique = new List<Event>();
+					HashSet<string> hashesAdded = new HashSet<string>();
+					foreach (Event e in events.OrderByDescending(e => e.Date))
+					{
+						if (!hashesAdded.Contains(e.HashValue))
+						{
+							hashesAdded.Add(e.HashValue);
+							unique.Add(e);
+						}
+					}
+					events = unique;
+				}
+
 				HashSet<long> readEventIds = new HashSet<long>(db.GetAllReadEventIds(session.GetUser().UserId));
 
 				response.events = events
@@ -207,14 +222,15 @@ namespace ErrorTrackerServer.Controllers
 		}
 	}
 
-	public class GetEventsByDateRequest : ProjectRequestBase
+	public class GetEventsRequest : ProjectRequestBase
 	{
 		public long startTime;
 		public long endTime;
-	}
-	public class GetEventsRequest : GetEventsByDateRequest
-	{
 		public int folderId;
+		/// <summary>
+		/// If true, only the most recent one of each event sharing a HashValue will be returned.
+		/// </summary>
+		public bool uniqueOnly;
 	}
 
 	public class GetEventSummaryResponse : ApiResponseBase

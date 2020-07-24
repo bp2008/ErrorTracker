@@ -1,6 +1,6 @@
 ﻿<template>
 	<div :class="{ projectDisplay: true, eventBodyBelow: eventBodyBelow }">
-		<ControlBar :projectName="projectName" :selectedFolderId="selectedFolderId" />
+		<ControlBar :projectName="projectName" :selectedFolderId="selectedFolderId" :uniqueOnly="uniqueOnly" />
 		<div v-if="(error)" class="error">{{error}}</div>
 		<div v-else-if="loading" class="loading"><ScaleLoader /> Loading…</div>
 		<div v-else class="body" :style="bodyStyle">
@@ -14,16 +14,23 @@
 							  :selectedFolderId="selectedFolderId"
 							  :selectedEventIds="selectedEventIds"
 							  :searchArgs="searchArgs"
-							  :openedEventId="openedEventId" />
+							  :openedEventId="openedEventId"
+							  :uniqueOnly="uniqueOnly" />
 			</div>
 			<ResizeBar v-if="!eventBodyBelow" :min="100" :max="800" :start="ebStart" :default="400" :offset="fbStart" @change="ebChange" />
 			<div v-if="!eventBodyBelow" class="eventDetailsContainer">
-				<EventDetails :projectName="projectName" :openedEventId="openedEventId" :selectedFolderId="selectedFolderId" />
+				<EventDetails :projectName="projectName"
+							  :openedEventId="openedEventId"
+							  :selectedFolderId="selectedFolderId"
+							  :uniqueOnly="uniqueOnly" />
 			</div>
 		</div>
 		<ResizeBar v-if="eventBodyBelow" :horizontal="true" :min="100" :max="1800" :start="tbStart" :default="400" @change="tbChange" />
 		<div v-if="eventBodyBelow" class="eventDetailsContainer" :style="eventDetailsStyle">
-			<EventDetails :projectName="projectName" :openedEventId="openedEventId" :selectedFolderId="selectedFolderId" />
+			<EventDetails :projectName="projectName"
+						  :openedEventId="openedEventId"
+						  :selectedFolderId="selectedFolderId"
+						  :uniqueOnly="uniqueOnly" />
 		</div>
 	</div>
 </template>
@@ -56,6 +63,10 @@
 				default: ""
 			},
 			searchArgs: null,
+			uniqueOnly: {
+				type: Boolean,
+				default: false
+			}
 		},
 		data()
 		{

@@ -1,8 +1,8 @@
 ﻿import ExecAPI from 'appRoot/api/api';
 
-export function GetEvents(projectName, folderId, startTime, endTime)
+export function GetEvents(projectName, folderId, startTime, endTime, uniqueOnly)
 {
-	return ExecAPI("EventData/GetEvents", { projectName, folderId, startTime, endTime })
+	return ExecAPI("EventData/GetEvents", { projectName, folderId, startTime, endTime, uniqueOnly })
 		.then(data =>
 		{
 			// Preprocess events array:

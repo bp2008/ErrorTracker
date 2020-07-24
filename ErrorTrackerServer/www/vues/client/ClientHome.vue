@@ -7,7 +7,8 @@
 							:selectedFolderId="selectedFolderId"
 							:openedEventId="openedEventId"
 							:selectedEventIds="selectedEventIds"
-							:searchArgs="searchArgs" />
+							:searchArgs="searchArgs"
+							:uniqueOnly="uniqueOnly" />
 		</div>
 		<div v-else>
 			<div class="heading">Select a Project</div>
@@ -67,7 +68,11 @@
 				type: String,
 				default: ""
 			},
-			searchArgs: null
+			searchArgs: null,
+			uniqueOnly: {
+				type: Boolean,
+				default: false
+			}
 		},
 		data()
 		{

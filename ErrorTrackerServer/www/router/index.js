@@ -78,14 +78,16 @@ export default function CreateRouter(store, basePath)
 							selectedFolderId: route.query.f ? parseInt(route.query.f) : 0,
 							openedEventId: route.query.e ? parseInt(route.query.e) : null,
 							selectedEventIds: route.query.se ? route.query.se : "",
-							searchArgs: buildSearchArgsFromRoute(route)
+							searchArgs: buildSearchArgsFromRoute(route),
+							uniqueOnly: route.query.uo === "1"
 						})
 					},
 					{
 						path: 'filters/:filterId*', component: ClientFiltersHome, name: 'clientFilters'
 						, meta: {
 							title(r)
-							{							return (r.query && r.query.p ? (r.query.p + " - ") : "") + "Filters"
+							{
+								return (r.query && r.query.p ? (r.query.p + " - ") : "") + "Filters"
 							}
 						}
 						, props: (route) => ({

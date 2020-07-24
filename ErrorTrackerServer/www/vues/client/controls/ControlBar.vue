@@ -2,7 +2,6 @@
 	<div id="controlBar" class="controlBar">
 		<div class="currentLocation">
 			<div v-if="!projectName">A project name was not specified in the URL.  <router-link :to="{ name: 'clientHome' }">Return Home</router-link></div>
-			<!-- TODO: Change the currentLocation to depict the folder path when not in the filter list.  Put the Filter List link somewhere to the right instead. -->
 			<template v-else>
 				<router-link :to="{ name: 'clientHome', query: { p: projectName }}" :class="{ pathComponent: true, clickable: projectNameClickable }">{{projectName}}</router-link>
 				<template v-if="onAdvancedSearch">
@@ -33,11 +32,18 @@
 			<vsvg sprite="search" role="button" tabindex="0" @click="doSearch" @keypress.enter.prevent="doSearch" title="search" class="searchBtn" />
 		</div>
 		<router-link v-if="!onFilters && !onAdvancedSearch"
-					 :to="{ name: 'advancedSearch', query: { p: projectName, f: selectedFolderId, matchAll: '1' }}"
-					 class="advancedSearchBtn">
+					 :to="routeToAdvancedSearch"
+					 class="advancedSearchBtn"
+					 title="advanced search">
 			<vsvg sprite="search_adv2"
-				  class="filterIcon"
-				  title="advanced search" />
+				  class="filterIcon" />
+		</router-link>
+		<router-link v-if="!onFilters && !onAdvancedSearch"
+					 :to="routeToToggleUniqueOnly"
+					 :class="{ uniqueOnlyBtn: true, active: uniqueOnly }"
+					 :title="uniqueOnlyTooltip">
+			<vsvg sprite="fingerprint"
+				  class="filterIcon" />
 		</router-link>
 		<SvgButton v-if="!onFilters && !onAdvancedSearch"
 				   title="Toggle event body position"
@@ -55,6 +61,7 @@
 	import svg3 from 'appRoot/images/sprite/search.svg';
 	import svg4 from 'appRoot/images/sprite/search_adv2.svg';
 	import svg5 from 'appRoot/images/sprite/filter_alt.svg';
+	import svg6 from 'appRoot/images/sprite/fingerprint.svg';
 	import SvgButton from 'appRoot/vues/common/controls/SvgButton.vue';
 	import { SelectFolderDialog } from 'appRoot/scripts/ModalDialog';
 	import { SetSelectedFolder } from 'appRoot/scripts/Util';
@@ -84,6 +91,10 @@
 				default: 0
 			},
 			onAdvancedSearch: {
+				type: Boolean,
+				default: false
+			},
+			uniqueOnly: {
 				type: Boolean,
 				default: false
 			}
@@ -125,6 +136,30 @@
 			projectNameClickable()
 			{
 				return this.onFilters || this.onAdvancedSearch;
+			},
+			routeToAdvancedSearch()
+			{
+				let query = {
+					p: this.projectName,
+					f: this.selectedFolderId,
+					matchAll: '1'
+				};
+				if (this.uniqueOnly)
+					query.uo = "1";
+				return { name: 'advancedSearch', query };
+			},
+			routeToToggleUniqueOnly()
+			{
+				let query = Object.assign({}, this.$route.query);
+				query.uo = this.uniqueOnly ? "0" : "1";
+				return { name: this.$route.name, query };
+			},
+			uniqueOnlyTooltip()
+			{
+				if (this.uniqueOnly)
+					return "Showing only the newest event in each matching set.";
+				else
+					return "Showing all events in each matching set.";
 			}
 		},
 		methods:
@@ -144,6 +179,8 @@
 					f: this.selectedFolderId,
 					q: this.searchQuery
 				};
+				if (this.uniqueOnly)
+					query.uo = "1";
 				this.$router.push({ name: "clientHome", query });
 			},
 			changeFolder()
@@ -223,8 +260,14 @@
 			background-color: #f12323;
 		}
 
+	.eventBodyBelow
+	{
+		margin-left: 3px;
+	}
+
 	.filterBtn,
-	.advancedSearchBtn
+	.advancedSearchBtn,
+	.uniqueOnlyBtn
 	{
 		display: flex;
 		align-items: center;
@@ -234,26 +277,41 @@
 		font-weight: bold;
 		border: 1px solid #000000;
 		padding: 1px 5px 1px 1px;
-		margin: 0px 5px;
+		margin: 0px 2px 0px 3px;
 	}
 
+	.advancedSearchBtn
+	{
+		margin-left: 5px;
+		color: #000000;
+		padding: 1px;
+	}
+
+	.uniqueOnlyBtn
+	{
+		color: rgba(0,0,0,0.15);
+		padding: 1px;
+	}
+
+		.uniqueOnlyBtn.active
+		{
+			color: #0000FF;
+			background-color: rgba(255,255,255.75);
+		}
+
 		.filterBtn:hover,
-		.advancedSearchBtn:hover
+		.advancedSearchBtn:hover,
+		.uniqueOnlyBtn:hover
 		{
 			background-color: rgba(0,0,0,0.05);
 		}
 
 		.filterBtn:active,
-		.advancedSearchBtn:active
+		.advancedSearchBtn:active,
+		.uniqueOnlyBtn:active
 		{
 			background-color: rgba(0,0,0,0.085);
 		}
-
-	.advancedSearchBtn
-	{
-		color: #000000;
-		padding: 1px;
-	}
 
 	.filterIcon
 	{
@@ -304,12 +362,6 @@
 	{
 		/*		color: #0000ee;*/
 		fill: currentColor;
-	}
-
-	.advancedSearchBtn
-	{
-		flex: 0 1 auto;
-		margin: 0px 5px;
 	}
 
 	.eventBodyBelow.isBelow

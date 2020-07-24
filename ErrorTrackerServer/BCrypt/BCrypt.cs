@@ -610,7 +610,6 @@ namespace BCrypt.Net
 			if (maximumBytes <= 0)
 				throw new ArgumentException("Invalid maximum bytes value", "maximumBytes");
 
-			// TODO: update to use a List<byte> - it's only ever 16 bytes, so it's not a big deal
 			StringBuilder rs = new StringBuilder();
 			while (position < sourceLength - 1 && outputLength < maximumBytes)
 			{

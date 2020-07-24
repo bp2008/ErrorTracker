@@ -83,6 +83,10 @@
 			searchArgs: null,
 			openedEventId: {
 				default: null
+			},
+			uniqueOnly: {
+				type: Boolean,
+				default: false
 			}
 		},
 		created()
@@ -195,7 +199,7 @@
 				else if (this.searchConditionsStr)
 					promise = SearchAdvanced(this.projectName, this.selectedFolderId, this.searchMatchAll, this.searchArgs.conditions);
 				else
-					promise = GetEvents(this.projectName, this.selectedFolderId, 0, 0);
+					promise = GetEvents(this.projectName, this.selectedFolderId, 0, 0, this.uniqueOnly);
 				this.handleEventListLoadPromise(promise);
 			},
 			handleEventListLoadPromise(promise)
@@ -480,6 +484,11 @@
 			searchConditionsStr()
 			{
 				this.loadEvents();
+			},
+			uniqueOnly()
+			{
+				if (!this.searchQuery && !this.searchConditionsStr)
+					this.loadEvents();
 			},
 			openedEventId()
 			{

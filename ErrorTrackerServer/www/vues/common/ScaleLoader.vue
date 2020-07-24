@@ -79,7 +79,6 @@ SOFTWARE.
 					animationIterationCount: 'infinite',
 					animationTimingFunction: 'cubic-bezier(.2,.68,.18,1.08)',
 					animationFillMode: 'both'
-					// TODO
 					// animation: ['sk-waveStretchDelay', '1s', 'infinite', 'cubic-bezier(.2,.68,.18,1.08)'].join(' '),
 					// animationFillMode: "both"
 				},

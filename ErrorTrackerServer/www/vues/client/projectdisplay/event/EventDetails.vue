@@ -55,6 +55,10 @@
 			selectedFolderId: {
 				type: Number,
 				default: 0
+			},
+			uniqueOnly: {
+				type: Boolean,
+				default: false
 			}
 		},
 		created()
@@ -109,6 +113,8 @@
 						, matchAll: "1"
 						, scon: JSON.stringify(conditions)
 					};
+					if (this.uniqueOnly)
+						query.uo = "1";
 
 					return { name: this.$route.name, query };
 				}
