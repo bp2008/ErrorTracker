@@ -192,7 +192,7 @@ namespace ErrorTrackerServer.Database.Project.Model
 			const int messageChars = 250;
 			string strToHash = ((int)EventType).ToString() + "\n"
 				+ SubType + "\n"
-				+ (Message == null || Message.Length <= messageChars ? Message : Message.Substring(messageChars));
+				+ (Message == null || Message.Length <= messageChars ? Message : Message.Substring(0, messageChars));
 			byte[] md5 = Hash.GetMD5Bytes(strToHash);
 			string base64 = Convert.ToBase64String(md5);
 			base64 = base64.Substring(0, 22);

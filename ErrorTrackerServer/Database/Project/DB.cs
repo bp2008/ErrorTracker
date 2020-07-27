@@ -20,7 +20,7 @@ namespace ErrorTrackerServer
 		/// <summary>
 		/// Database version number useful for performing migrations. This number should only be incremented when migrations are in place to support upgrading all previously existing versions to this version.
 		/// </summary>
-		public const int dbVersion = 4;
+		public const int dbVersion = 5;
 		/// <summary>
 		/// Project name.
 		/// </summary>
@@ -103,6 +103,7 @@ namespace ErrorTrackerServer
 			// Version 1 -> 2 added the HashValue column to Event
 			// Version 2 -> 3 began enforcing that all events have a hash value when they are added to the database.
 			// Version 3 -> 4 changed the hashing function to trim unwanted base64 padding characters from the end of every hash string.
+			// Version 4 -> 5 fixed a bug in the hashing function.
 			// These migrations therefore simply require existing hash values to all be recomputed.
 			if (version.CurrentVersion == 1 || version.CurrentVersion == 2 || version.CurrentVersion == 3)
 			{
