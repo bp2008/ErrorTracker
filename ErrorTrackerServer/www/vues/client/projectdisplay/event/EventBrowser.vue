@@ -21,7 +21,9 @@
 						   :event="item"
 						   :selected="isEventSelected(item)"
 						   :selectionState="selectionState"
-						   @menu="onMenu" />
+						   @menu="onMenu"
+						   @navUp="onNavUp"
+						   @navDown="onNavDown" />
 			</RecycleScroller>
 			<div v-if="loading" class="loadingOverlay">
 				<div class="loading"><ScaleLoader /> Updating…</div>
@@ -220,6 +222,11 @@
 							{
 								return b.Date - a.Date;
 							});
+							for (let i = 0; i < data.events.length; i++)
+							{
+								// Our infinite scroller component prevents us keeping references to the components, so here we define a function on the event objects that we can overwrite within EventNode.vue to provide access to the component.
+								data.events[i].keyboardNav = () => { };
+							}
 							this.events = data.events;
 							this.markOpenedEventAsRead();
 						}
@@ -457,6 +464,35 @@
 							if (!was)
 								EventBus.$emit("eventReadStateChanged", this.events[i]);
 						}
+			},
+			onNavUp({ domEvent, event })
+			{
+				this.onNav(domEvent, event, -1);
+			},
+			onNavDown({ domEvent, event })
+			{
+				this.onNav(domEvent, event, 1);
+			},
+			onNav(domEvent, event, offset)
+			{
+				if (this.events)
+				{
+					for (let i = 0; i < this.events.length; i++)
+					{
+						let ev = this.events[i];
+						if (ev.EventId === event.EventId)
+						{
+							i += offset;
+							if (i >= this.events.length)
+								i = this.events.length - 1;
+							if (i < 0)
+								i = 0;
+							ev = this.events[i];
+							ev.keyboardNav(domEvent);
+							return;
+						}
+					}
+				}
 			}
 		},
 		watch:

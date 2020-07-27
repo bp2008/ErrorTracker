@@ -5,7 +5,10 @@
 	   :style="nodeStyle"
 	   @contextmenu.prevent="onContextmenu"
 	   :draggable="!event ? 'false' : 'true'"
-	   @dragstart="dragStart">
+	   @dragstart="dragStart"
+	   @keydown.up.prevent="upPressed"
+	   @keydown.down.prevent="downPressed"
+	   ref="link">
 		<div class="firstLine">
 			<span class="types">
 				<span class="eventType">{{event.EventType}}</span>:
@@ -46,6 +49,10 @@
 			return {
 			};
 		},
+		created()
+		{
+			this.bindKeyboardNav();
+		},
 		computed:
 		{
 			nodeLink()
@@ -62,6 +69,11 @@
 		},
 		methods:
 		{
+			bindKeyboardNav()
+			{
+				if (this.event)
+					this.event.keyboardNav = this.nodeClick; // keyboardNav is called by EventBrowser.vue
+			},
 			eventDateFormat(date)
 			{
 				if (typeof window.overrideEventNodeDateFormat === "function")
@@ -74,6 +86,9 @@
 			},
 			nodeClick(e)
 			{
+				if (this.$refs.link)
+					this.$refs.link.focus();
+
 				let query = Object.assign({}, this.$route.query);
 
 				let selectedEvents = query.se ? query.se.split(',') : [];
@@ -162,6 +177,21 @@
 					dragContextString = "e" + selectedEvents.join(",e");
 				e.dataTransfer.setData("etrk_drag", dragContextString);
 				e.dataTransfer.dropEffect = "move";
+			},
+			upPressed(e)
+			{
+				this.$emit("navUp", { domEvent: e, event: this.event });
+			},
+			downPressed(e)
+			{
+				this.$emit("navDown", { domEvent: e, event: this.event });
+			}
+		},
+		watch:
+		{
+			event()
+			{
+				this.bindKeyboardNav();
 			}
 		}
 	}
