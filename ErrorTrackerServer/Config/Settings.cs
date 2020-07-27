@@ -52,6 +52,18 @@ namespace ErrorTrackerServer
 		/// (Optional) Geolocation web service endpoint base URL.
 		/// </summary>
 		public string geolocationWebServiceBaseUrl = "";
+		/// <summary>
+		/// (Optional) Array of IP addresses which are trusted to provide the true IP address of a remote client via a header.
+		/// </summary>
+		public string[] trustedProxyIPs = new string[0];
+		/// <summary>
+		/// (Optional) If true, the X-Real-IP header will be used to learn the true IP address of remote clients, only if the header is received from a trusted proxy IP. Changes require server restart.
+		/// </summary>
+		public bool useXRealIP = false;
+		/// <summary>
+		/// (Optional) If true, the X-Forwarded-For header will be used to learn the true IP address of remote clients, only if the header is received from a trusted proxy IP. Changes require server restart.
+		/// </summary>
+		public bool useXForwardedFor = false;
 
 		public string GetWWWDirectoryBase()
 		{

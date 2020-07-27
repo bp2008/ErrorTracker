@@ -50,6 +50,9 @@ namespace ErrorTrackerServer.Controllers
 			}
 			Settings.data.loginStyle = request.settings.loginStyle.ToString();
 			Settings.data.geolocationWebServiceBaseUrl = request.settings.geolocationWebServiceBaseUrl.ToString();
+			Settings.data.trustedProxyIPs = request.settings.trustedProxyIPs;
+			Settings.data.useXRealIP = request.settings.useXRealIP;
+			Settings.data.useXForwardedFor = request.settings.useXForwardedFor;
 			Settings.data.Save();
 
 			SetSettingsResponse response = new SetSettingsResponse(true, null);
@@ -135,6 +138,9 @@ namespace ErrorTrackerServer.Controllers
 		[JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
 		public LoginStyle loginStyle;
 		public string geolocationWebServiceBaseUrl;
+		public string[] trustedProxyIPs = new string[0];
+		public bool useXRealIP = false;
+		public bool useXForwardedFor = false;
 		public SettingsObject() { }
 		public SettingsObject(Settings settings)
 		{
@@ -146,6 +152,9 @@ namespace ErrorTrackerServer.Controllers
 			certificatePassword = settings.certificatePassword;
 			Enum.TryParse(settings.loginStyle, out loginStyle);
 			geolocationWebServiceBaseUrl = settings.geolocationWebServiceBaseUrl;
+			trustedProxyIPs = settings.trustedProxyIPs;
+			useXRealIP = settings.useXRealIP;
+			useXForwardedFor = settings.useXForwardedFor;
 		}
 	}
 	public enum LoginStyle

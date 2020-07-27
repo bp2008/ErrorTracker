@@ -49,7 +49,7 @@
 				<li v-if="folder.data && folder.data.FolderId > -1">
 					<span class="menuComment">{{folder.data.AbsolutePath}}</span>
 				</li>
-				<li v-show="folder.data && folder.data.FolderId > 0">
+				<li v-show="folder.data && folder.data.FolderId >= 0">
 					<a role="button" @click.prevent="newFolder(folder.data)">New Folder</a>
 				</li>
 				<li v-show="folder.data && folder.data.FolderId > 0">

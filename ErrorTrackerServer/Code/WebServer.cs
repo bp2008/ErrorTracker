@@ -22,6 +22,10 @@ namespace ErrorTrackerServer
 			if (Debugger.IsAttached)
 				webpackProxy = new WebpackProxy(9000, Globals.ApplicationDirectoryBase + "../../");
 #endif
+
+			this.XForwardedForHeader = Settings.data.useXForwardedFor;
+			this.XRealIPHeader = Settings.data.useXRealIP;
+
 			MvcJson.SerializeObject = JsonConvert.SerializeObject;
 			MvcJson.DeserializeObject = JsonConvert.DeserializeObject;
 			mvcMain = new MVCMain(Assembly.GetExecutingAssembly(), typeof(Controllers.Auth).Namespace, ex => Logger.Debug(ex));
@@ -111,6 +115,21 @@ namespace ErrorTrackerServer
 
 		protected override void stopServer()
 		{
+		}
+
+
+		/// <summary>
+		/// This method must return true for the <see cref="XForwardedForHeader"/> and <see cref="XRealIPHeader"/> flags to be honored.  This method should only return true if the provided remote IP address is trusted to provide the related headers.
+		/// </summary>
+		/// <param name="remoteIpAddress"></param>
+		/// <returns></returns>
+		public override bool IsTrustedProxyServer(IPAddress remoteIpAddress)
+		{
+			string ip = remoteIpAddress.ToString();
+			string[] trustedProxyIPs = Settings.data.trustedProxyIPs;
+			if (trustedProxyIPs != null && trustedProxyIPs.Contains(ip, true))
+				return true;
+			return false;
 		}
 	}
 }
