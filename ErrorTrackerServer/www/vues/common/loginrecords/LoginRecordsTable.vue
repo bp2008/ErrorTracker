@@ -11,6 +11,7 @@
 <script>
 	import { GetLoginRecordsForSelf, GetLoginRecordsForUser, GetLoginRecordsGlobal } from 'appRoot/api/LoginRecordData';
 	import { GetDateStr } from 'appRoot/scripts/Util';
+	import { GeolocateIPDialog } from 'appRoot/scripts/ModalDialog';
 
 	export default {
 		components: {},
@@ -42,9 +43,6 @@
 		created()
 		{
 			this.loadRecords();
-		},
-		computed:
-		{
 		},
 		methods:
 		{
@@ -95,7 +93,7 @@
 			},
 			rowClick(params)
 			{
-				console.log("Clicked", params.row);
+				GeolocateIPDialog(params.row.IPAddress);
 			}
 		}
 	};

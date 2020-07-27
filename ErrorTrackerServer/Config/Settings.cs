@@ -48,6 +48,10 @@ namespace ErrorTrackerServer
 		/// A string indicating an additional css class to apply to the login root element.
 		/// </summary>
 		public string loginStyle = "wallpaper";
+		/// <summary>
+		/// (Optional) Geolocation web service endpoint base URL.
+		/// </summary>
+		public string geolocationWebServiceBaseUrl = "";
 
 		public string GetWWWDirectoryBase()
 		{

@@ -12,3 +12,7 @@ export function GetLoginRecordsGlobal(startDate, endDate)
 {
 	return ExecAPI("LoginRecordData/GetLoginRecordsGlobal", { startDate, endDate });
 }
+export function GeolocateIP(ip)
+{
+	return ExecAPI("LoginRecordData/GeolocateIP", { ip });
+}

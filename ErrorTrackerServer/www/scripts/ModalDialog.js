@@ -6,6 +6,7 @@ import TextInputPopup from 'appRoot/vues/common/controls/TextInputPopup.vue';
 import ColorInputPopup from 'appRoot/vues/common/controls/ColorInputPopup.vue';
 import SelectFilterPopup from 'appRoot/vues/client/controls/SelectFilterPopup.vue';
 import SelectFolderPopup from 'appRoot/vues/client/controls/SelectFolderPopup.vue';
+import GeolocateIPPopup from 'appRoot/vues/common/controls/GeolocateIPPopup.vue';
 
 //////////////////////////////////////////////////
 // Container Registration / Dialog Registration //
@@ -222,4 +223,14 @@ export function SelectFolderDialog(projectName, selectedFolderId, dialogAllowsAl
 {
 	let args = { projectName, selectedFolderId, isDialog: true, dialogAllowsAllFolders };
 	return ModalDialog(SelectFolderPopup, args);
+}
+/**
+ * Opens a dialog box which loads geolocation information for an IP Address. Returns a promise which resolves when the dialog closes. Does not reject.
+ * @param {String} ip IP Address to geolocate.
+ * @returns {Promise} Returns a promise which resolves when the dialog closes. Does not reject.
+ */
+export function GeolocateIPDialog(ip)
+{
+	let args = { ip };
+	return ModalDialog(GeolocateIPPopup, args);
 }

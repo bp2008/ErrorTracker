@@ -49,6 +49,7 @@ namespace ErrorTrackerServer.Controllers
 				requiresRestart = true;
 			}
 			Settings.data.loginStyle = request.settings.loginStyle.ToString();
+			Settings.data.geolocationWebServiceBaseUrl = request.settings.geolocationWebServiceBaseUrl.ToString();
 			Settings.data.Save();
 
 			SetSettingsResponse response = new SetSettingsResponse(true, null);
@@ -133,6 +134,7 @@ namespace ErrorTrackerServer.Controllers
 		public string certificatePassword;
 		[JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
 		public LoginStyle loginStyle;
+		public string geolocationWebServiceBaseUrl;
 		public SettingsObject() { }
 		public SettingsObject(Settings settings)
 		{
@@ -143,6 +145,7 @@ namespace ErrorTrackerServer.Controllers
 			certificatePath = settings.certificatePath;
 			certificatePassword = settings.certificatePassword;
 			Enum.TryParse(settings.loginStyle, out loginStyle);
+			geolocationWebServiceBaseUrl = settings.geolocationWebServiceBaseUrl;
 		}
 	}
 	public enum LoginStyle

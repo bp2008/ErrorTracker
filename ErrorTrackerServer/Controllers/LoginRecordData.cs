@@ -19,6 +19,7 @@ namespace ErrorTrackerServer.Controllers
 {
 	public class LoginRecordData : UserController
 	{
+		private static WebRequestUtility proxyClient = new WebRequestUtility("ErrorTrackerServer", 5000);
 		/// <summary>
 		/// Gets login records for the past 2 months for the session's logged-in user, ordered by Date descending.  Does not require admin privilege.
 		/// </summary>
@@ -58,6 +59,29 @@ namespace ErrorTrackerServer.Controllers
 			using (GlobalDb db = new GlobalDb())
 				return Json(new LoginRecordsResponse() { records = db.GetLoginRecordsGlobal(request.startDate, request.endDate) });
 		}
+		/// <summary>
+		/// Gets all login records within a time range, ordered by Date descending.  Session must have admin privilege.
+		/// </summary>
+		/// <returns></returns>
+		public ActionResult GeolocateIP()
+		{
+			GeolocateIPRequest request = ApiRequestBase.ParseRequest<GeolocateIPRequest>(this);
+
+			if (IPAddress.TryParse(request.ip, out IPAddress ip))
+			{
+
+				string url = Settings.data.geolocationWebServiceBaseUrl;
+				if (string.IsNullOrWhiteSpace(url))
+					return ApiError("The geolocation web service endpoint is not configured.");
+				if (!url.EndsWith("/"))
+					url += "/";
+				url += "embed/" + ip.ToString();
+				BpWebResponse proxyResponse = proxyClient.GET(url);
+				return Json(new GeolocateIPResponse() { html = proxyResponse.str });
+			}
+			else
+				return ApiError("Invalid IP Address");
+		}
 	}
 	public class LoginRecordsResponse : ApiResponseBase
 	{
@@ -81,5 +105,17 @@ namespace ErrorTrackerServer.Controllers
 		/// Newest allowable date to return login records for.
 		/// </summary>
 		public long endDate;
+	}
+	public class GeolocateIPRequest : ApiRequestBase
+	{
+		/// <summary>
+		/// IP Address to geolocate.
+		/// </summary>
+		public string ip;
+	}
+	public class GeolocateIPResponse : ApiResponseBase
+	{
+		public string html;
+		public GeolocateIPResponse() : base(true, null) { }
 	}
 }
