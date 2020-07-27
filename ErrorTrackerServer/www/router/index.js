@@ -14,6 +14,7 @@ import AdminHome from 'appRoot/vues/admin/AdminHome.vue';
 import AdminSettings from 'appRoot/vues/admin/AdminSettings.vue';
 import AdminUsers from 'appRoot/vues/admin/AdminUsers.vue';
 import AdminProjects from 'appRoot/vues/admin/AdminProjects.vue';
+import UserLoginHistory from 'appRoot/vues/admin/UserLoginHistory.vue';
 
 Vue.use(VueRouter);
 
@@ -121,7 +122,13 @@ export default function CreateRouter(store, basePath)
 					{ path: 'home', component: AdminHome, name: 'adminHome', meta: { title: "Home" } },
 					{ path: 'settings', component: AdminSettings, name: 'adminSettings', meta: { title: "Settings" } },
 					{ path: 'users', component: AdminUsers, name: 'adminUsers', meta: { title: "Users" } },
-					{ path: 'projects', component: AdminProjects, name: 'adminProjects', meta: { title: "Projects" } }
+					{ path: 'projects', component: AdminProjects, name: 'adminProjects', meta: { title: "Projects" } },
+					{
+						path: 'userLoginHistory/:userName', component: UserLoginHistory, name: 'adminUserLoginHistory', meta: { title: "User Login History" }, props: (route) =>
+						{
+							return { userName: route.params.userName };
+						}
+					}
 				]
 			}
 		],

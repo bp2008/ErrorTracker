@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ErrorTrackerServer.Database.Global
 {
-	public abstract class GlobalDb : IDisposable
+	public class GlobalDb : IDisposable
 	{
 		#region Constructor / Fields
 		/// <summary>
@@ -52,6 +52,7 @@ namespace ErrorTrackerServer.Database.Global
 					{
 						initialized = true;
 
+						c.CreateTable<LoginRecord>();
 						c.CreateTable<DbVersion>();
 
 						PerformDbMigrations(c);
@@ -86,6 +87,48 @@ namespace ErrorTrackerServer.Database.Global
 		}
 		#endregion
 
+		#region LoginRecord
+		/// <summary>
+		/// Adds a record of this login at the current date.
+		/// </summary>
+		/// <param name="userName">User name that was logged in. All lower case for effectively case-insensitive matching of user names.</param>
+		/// <param name="ipAddress">IP Address that provided credentials for the login.</param>
+		/// <param name="sessionId">Session ID that was assigned.</param>
+		public void AddLoginRecord(string userName, string ipAddress, string sessionId)
+		{
+			conn.Value.Insert(new LoginRecord(userName.ToLower(), ipAddress, sessionId, TimeUtil.GetTimeInMsSinceEpoch()));
+		}
+		/// <summary>
+		/// Gets a list of LoginRecord filtered by user name, ordered by date descending.
+		/// </summary>
+		/// <param name="userName">User Name (treated as case-insensitive)</param>
+		/// <returns></returns>
+		public List<LoginRecord> GetLoginRecordsByUserName(string userName)
+		{
+			return conn.Value.Query<LoginRecord>("SELECT * FROM LoginRecord WHERE UserName = ? ORDER BY Date DESC", userName.ToLower());
+		}
+		/// <summary>
+		/// Gets a list of LoginRecord filtered by user name, ordered by date descending.
+		/// </summary>
+		/// <param name="userName">User Name (treated as case-insensitive)</param>
+		/// <param name="startDate">Oldest allowable date to return login records for (ms since unix epoch). If startDate and endDate are both 0, these values are ignored.</param>
+		/// <param name="endDate">Newest allowable date to return login records for (ms since unix epoch). If startDate and endDate are both 0, these values are ignored.</param>
+		/// <returns></returns>
+		public List<LoginRecord> GetLoginRecordsByUserName(string userName, long startDate, long endDate)
+		{
+			return conn.Value.Query<LoginRecord>("SELECT * FROM LoginRecord WHERE UserName = ? AND Date >= ? AND Date <= ? ORDER BY Date DESC", userName.ToLower(), startDate, endDate);
+		}
+		/// <summary>
+		/// Gets a list of LoginRecord for the specified date range, ordered by date descending.
+		/// </summary>
+		/// <param name="startDate">Oldest allowable date to return login records for (ms since unix epoch). If startDate and endDate are both 0, these values are ignored.</param>
+		/// <param name="endDate">Newest allowable date to return login records for (ms since unix epoch). If startDate and endDate are both 0, these values are ignored.</param>
+		/// <returns></returns>
+		public List<LoginRecord> GetLoginRecordsGlobal(long startDate, long endDate)
+		{
+			return conn.Value.Query<LoginRecord>("SELECT * FROM LoginRecord WHERE Date >= ? AND Date <= ? ORDER BY Date DESC", startDate, endDate);
+		}
+		#endregion
 
 
 		#region IDisposable

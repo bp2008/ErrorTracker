@@ -7,6 +7,10 @@
 			<div class="buttonRow">
 				<input type="button" value="Add User" @click="addUser" />
 			</div>
+			<div class="heading">Login History</div>
+			<div class="bodySection">
+				<LoginRecordsTable :allUsers="true" />
+			</div>
 		</div>
 	</div>
 </template>
@@ -16,9 +20,10 @@
 	import { GetUserData } from 'appRoot/api/UserData';
 	import { ModalDialog } from 'appRoot/scripts/ModalDialog';
 	import EditUser from 'appRoot/vues/admin/controls/EditUser.vue';
+	import LoginRecordsTable from 'appRoot/vues/common/loginrecords/LoginRecordsTable.vue';
 
 	export default {
-		components: { Editor },
+		components: { Editor, LoginRecordsTable },
 		data()
 		{
 			return {
@@ -117,5 +122,24 @@
 		margin-top: 30px;
 		border-top: 1px solid #AAAAAA;
 		padding-top: 10px;
+	}
+
+	.heading
+	{
+		font-size: 20px;
+		border-bottom: 1px solid #000000;
+		margin-bottom: 10px;
+		margin-top: 30px;
+		max-width: 400px;
+	}
+
+		.heading:first-child
+		{
+			margin-top: 0px;
+		}
+
+	.bodySection
+	{
+		margin: 0px 20px;
 	}
 </style>

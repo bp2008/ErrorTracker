@@ -27,10 +27,6 @@
 			<div class="bodySection">
 				<router-link :to="{ name: 'changePassword' }">Change Password</router-link>
 			</div>
-			<div class="heading">Login History</div>
-			<div class="bodySection">
-				<div>Under Construction</div>
-			</div>
 			<div class="heading">Tips</div>
 			<div class="bodySection">
 				<div>
@@ -41,6 +37,10 @@
 					</ul>
 				</div>
 			</div>
+			<div class="heading">Login History</div>
+			<div class="bodySection">
+				<LoginRecordsTable />
+			</div>
 		</div>
 	</div>
 </template>
@@ -48,9 +48,10 @@
 <script>
 	import { GetProjectList } from 'appRoot/api/ProjectList';
 	import ProjectDisplay from 'appRoot/vues/client/projectdisplay/ProjectDisplay.vue';
+	import LoginRecordsTable from 'appRoot/vues/common/loginrecords/LoginRecordsTable.vue';
 
 	export default {
-		components: { ProjectDisplay },
+		components: { ProjectDisplay, LoginRecordsTable },
 		props:
 		{
 			projectName: {

@@ -1,5 +1,6 @@
 ﻿using BPUtil;
 using BPUtil.MVC;
+using ErrorTrackerServer.Database.Global;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -59,6 +60,8 @@ namespace ErrorTrackerServer.Controllers
 						// Delete challenge data -- it is no longer needed and should not be reused.
 						session.authChallenge = null;
 						session.userName = user.Name;
+						using (GlobalDb db = new GlobalDb())
+							db.AddLoginRecord(user.Name, Context.httpProcessor.RemoteIPAddressStr, session.sid);
 						return Json(new LoginSuccessResponse(session));
 					}
 				}

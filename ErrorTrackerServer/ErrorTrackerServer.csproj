@@ -94,11 +94,13 @@
     <Compile Include="Controllers\BaseControllers\UserController.cs" />
     <Compile Include="Controllers\BaseControllers\AdminController.cs" />
     <Compile Include="Controllers\BaseControllers\ETController.cs" />
+    <Compile Include="Controllers\LoginRecordData.cs" />
     <Compile Include="Controllers\SearchData.cs" />
     <Compile Include="Controllers\SessionStatus.cs" />
     <Compile Include="Controllers\ChangePW.cs" />
     <Compile Include="Controllers\FilterData.cs" />
     <Compile Include="Database\Global\GlobalDb.cs" />
+    <Compile Include="Database\Global\Model\LoginRecord.cs" />
     <Compile Include="Database\Global\Model\DbVersion.cs" />
     <Compile Include="Database\Project\Model\ReadState.cs" />
     <Compile Include="Filtering\DeferredActionCollection.cs" />
@@ -143,6 +145,7 @@
     <None Include="packages.config" />
     <None Include="www\Globals.scss" />
     <None Include="www\jsconfig.json" />
+    <None Include="www\vues\admin\UserLoginHistory.vue" />
     <None Include="www\vues\admin\controls\AddProject.vue" />
     <None Include="www\vues\admin\controls\EditProject.vue" />
     <None Include="www\vues\admin\controls\EditUser.vue" />
@@ -185,6 +188,7 @@
     <None Include="www\vues\common\editor\Editor.vue" />
     <None Include="www\vues\common\editor\PropEdit.vue" />
     <None Include="www\vues\common\Footer.vue" />
+    <None Include="www\vues\common\loginrecords\LoginRecordsTable.vue" />
     <None Include="www\vues\common\ScaleLoader.vue" />
     <None Include="www\vues\common\Template.vue" />
     <None Include="www\vues\Login.vue" />
@@ -192,6 +196,7 @@
   <ItemGroup>
     <Content Include="webpack.config.js" />
     <Content Include="www\404.html" />
+    <Content Include="www\api\LoginRecordData.js" />
     <Content Include="www\api\FilterData.js" />
     <Content Include="www\api\FolderData.js" />
     <Content Include="www\api\EventData.js" />
@@ -223,6 +228,7 @@
     <Content Include="www\images\sprite\group.svg" />
     <Content Include="www\images\sprite\input.svg" />
     <Content Include="www\images\sprite\network.svg" />
+    <Content Include="www\images\sprite\open_in_new.svg" />
     <Content Include="www\images\sprite\remove.svg" />
     <Content Include="www\images\sprite\remove_computer.svg" />
     <Content Include="www\images\sprite\search.svg" />

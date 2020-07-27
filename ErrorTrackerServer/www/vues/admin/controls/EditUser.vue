@@ -6,6 +6,9 @@
 		<div class="deleteButtonRow" v-if="!isAddingUser">
 			<input type="button" value="Delete User" @click="Remove" />
 		</div>
+		<div class="loginHistoryButtonRow" v-if="!isAddingUser">
+			<a :href="loginHistoryLink" target="_blank">Login History <vsvg sprite="open_in_new" class="open_in_new" /></a>
+		</div>
 		<div class="buttonRow">
 			<input v-if="!isAddingUser" type="button" value="Save" @click="Save" />
 			<input v-if="isAddingUser" type="button" value="Add User" @click="Add" />
@@ -18,6 +21,7 @@
 	import Editor from 'appRoot/vues/common/editor/Editor.vue';
 	import { SetUserData, AddUser, RemoveUser } from 'appRoot/api/UserData';
 	import { ModalConfirmDialog } from 'appRoot/scripts/ModalDialog';
+	import svg1 from 'appRoot/images/sprite/open_in_new.svg';
 
 	export default {
 		components: { Editor },
@@ -53,6 +57,11 @@
 		},
 		computed:
 		{
+			loginHistoryLink()
+			{
+				console.log(this.$router.resolve({ name: 'adminUserLoginHistory', params: { userName: this.user.Name } }));
+				return this.$router.resolve({ name: 'adminUserLoginHistory', params: { userName: this.user.Name } }).href;
+			}
 		},
 		methods:
 		{
@@ -145,9 +154,18 @@
 		font-size: 20px;
 	}
 
-	.deleteButtonRow
+	.deleteButtonRow,
+	.loginHistoryButtonRow
 	{
 		margin-top: 20px;
 		margin-bottom: 20px;
+	}
+
+	.open_in_new
+	{
+		width: 16px;
+		height: 16px;
+		fill: currentColor;
+		vertical-align: middle;
 	}
 </style>
