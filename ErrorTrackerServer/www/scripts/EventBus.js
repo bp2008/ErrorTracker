@@ -9,6 +9,8 @@
 // If you need to import something here, make sure that EventBus.js is imported very early in the application initialization.  A good place would be just after importing babel-polyfill (which should typically be the first thing imported).
 /////////////////////////////////////////
 
+import { MoveEventsMap } from 'appRoot/api/EventData';
+import { MoveFolder } from 'appRoot/api/FolderData';
 
 /**
  * This object can be used to provide "global" event handling.  Based on https://alligator.io/vuejs/global-event-bus/
@@ -33,10 +35,22 @@ const EventBus = new Vue({
 		mouseUps: 0, // Counter of mouse up events at the document level.
 		movingItem: null, // String indicating item(s) being moved via the context-menu method which doesn't require HTML5 drag and drop.
 		externalChangesToVisibleEvents: 0, // A counter of external changes to visible events (incremented by FolderBrowser when it moves events into a different folder).
-		projectFolderPathCache: {}
+		externalChangesToFolders: 0, // A counter of external changes to folders (incremented by EventBus when undoing or redoing folder moves).
+		projectFolderPathCache: {},
+		undoStack: {}, // Stacks of operations which can be undone, keyed by projectName
+		redoStack: {}, // Stacks of operations recently undone which can be redone, keyed by projectName.
+		undoRedoLocked: false,
+		eventSummaryMap: {} // A map of eventId to EventSummary
 	},
 	created()
 	{
+		let ss = sessionStorage.getItem("et_eb_undoStack");
+		if (ss)
+			this.undoStack = JSON.parse(ss);
+		ss = sessionStorage.getItem("et_eb_redoStack");
+		if (ss)
+			this.redoStack = JSON.parse(ss);
+
 		window.addEventListener('resize', this.OnResize);
 		window.addEventListener('scroll', this.OnScroll);
 		document.addEventListener('mousemove', this.OnMouseMove);
@@ -117,6 +131,161 @@ const EventBus = new Vue({
 				return this.projectFolderPathCache[projectName][folderId];
 			else
 				return null;
+		},
+		/**
+		 * Send each event summary you retrieve to here.
+		 * @param {Object} eventSummary An event summary.
+		 */
+		learnEventSummary(eventSummary)
+		{
+			Vue.set(this.eventSummaryMap, eventSummary.EventId, eventSummary);
+		},
+		/**
+		 * Call when an operation is performed that can be undone.
+		 * @param {String} projectName The name of the project.
+		 * @param {Object} operation The operation which was performed.
+		 */
+		getEventSummary(eventId)
+		{
+			return this.eventSummaryMap[eventId];
+		},
+		/**
+		 * Call when an operation is performed that can be undone.
+		 * @param {String} projectName The name of the project.
+		 * @param {Object} operation The operation which was performed.
+		 */
+		NotifyPerformedUndoableOperation(projectName, operation)
+		{
+			Vue.set(this.redoStack, projectName, []);
+			if (!this.undoStack[projectName])
+				Vue.set(this.undoStack, projectName, []);
+			this.undoStack[projectName].push(operation);
+			this.saveUndoRedoStacks();
+		},
+		saveUndoRedoStacks()
+		{
+			sessionStorage.setItem("et_eb_undoStack", JSON.stringify(this.undoStack));
+			sessionStorage.setItem("et_eb_redoStack", JSON.stringify(this.redoStack));
+		},
+		/**
+		 * Gets the next operation that could be undone.
+		 * @param {String} projectName The name of the project.
+		 */
+		NextUndoOperation(projectName)
+		{
+			let stk = this.undoStack[projectName];
+			return stk && stk.length > 0 ? stk[stk.length - 1] : null;
+		},
+		/**
+		 * Gets the next operation that could be redone.
+		 * @param {String} projectName The name of the project.
+		 */
+		NextRedoOperation(projectName)
+		{
+			let stk = this.redoStack[projectName];
+			return stk && stk.length > 0 ? stk[stk.length - 1] : null;
+		},
+		/**
+		 * Undoes the last operation on the undo stack and moves it to the redo stack. Returns a promise that resolves or rejects when the operation is finished.
+		 * @param {String} projectName The name of the project.
+		 */
+		PerformUndo(projectName)
+		{
+			if (this.undoRedoLocked)
+				return new Promise((resolve, reject) =>
+				{
+					reject(new Error("An undo or redo operation is already in progress. Please try again later."));
+				});
+			let undo = this.undoStack[projectName];
+			let redo = this.redoStack[projectName];
+			if (!undo || !redo)
+				return;
+			if (undo.length > 0)
+			{
+				let item = undo.splice(undo.length - 1, 1)[0];
+				redo.push(item);
+				this.saveUndoRedoStacks();
+
+				if (item.type === "MoveEvents")
+				{
+					// Undo Event Move
+					// Original operation described by:
+					// item.moves: [{ eventId, from, to }, ...]
+					let map = {};
+					for (let i = 0; i < item.moves.length; i++)
+						map[item.moves[i].eventId] = item.moves[i].from;
+					this.undoRedoLocked = true;
+					return MoveEventsMap(projectName, map)
+						.finally(() =>
+						{
+							this.externalChangesToVisibleEvents++;
+							this.undoRedoLocked = false;
+						});
+				}
+				else if (item.type === "MoveFolder")
+				{
+					// Undo Folder Move
+					// Original operation described by:
+					// item.from
+					// item.to
+					// item.folderId
+					this.undoRedoLocked = true;
+					return MoveFolder(projectName, item.folderId, item.from)
+						.finally(() =>
+						{
+							this.externalChangesToFolders++;
+							this.undoRedoLocked = false;
+						});
+				}
+			}
+		},
+		/**
+		 * Redoes the last operation on the redo stack and moves it to the undo stack. Returns a promise that resolves or rejects when the operation is finished.
+		 * @param {String} projectName The name of the project.
+		 */
+		PerformRedo(projectName)
+		{
+			if (this.undoRedoLocked)
+				return new Promise((resolve, reject) =>
+				{
+					reject(new Error("An undo or redo operation is already in progress. Please try again later."));
+				});
+			let undo = this.undoStack[projectName];
+			let redo = this.redoStack[projectName];
+			if (!undo || !redo)
+				return;
+			if (redo.length > 0)
+			{
+				let item = redo.splice(redo.length - 1, 1)[0];
+				undo.push(item);
+				this.saveUndoRedoStacks();
+
+				if (item.type === "MoveEvents")
+				{
+					// Redo Event Move
+					let map = {};
+					for (let i = 0; i < item.moves.length; i++)
+						map[item.moves[i].eventId] = item.moves[i].to;
+					this.undoRedoLocked = true;
+					return MoveEventsMap(projectName, map)
+						.finally(() =>
+						{
+							this.externalChangesToVisibleEvents++;
+							this.undoRedoLocked = false;
+						});
+				}
+				else if (item.type === "MoveFolder")
+				{
+					// Redo Folder Move
+					this.undoRedoLocked = true;
+					return MoveFolder(projectName, item.folderId, item.to)
+						.finally(() =>
+						{
+							this.externalChangesToFolders++;
+							this.undoRedoLocked = false;
+						});
+				}
+			}
 		}
 	}
 });

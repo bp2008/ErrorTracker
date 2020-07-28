@@ -1,6 +1,6 @@
 ﻿<template>
 	<div class="folderNode">
-		<div class="nodeHead" @contextmenu.prevent="onContextmenu">
+		<div class="nodeHead" @contextmenu.stop.prevent="onContextmenu">
 			<vsvg v-if="folder.Children && folder.Children.length" sprite="expand_more" :class="{ nodeIcon: true, visible: true, collapsed: !expanded }"
 				  tabindex="0" @click="toggleExpansion" @keypress.enter.prevent="toggleExpansion" />
 			<div v-else class="nodeIcon"></div>
@@ -157,6 +157,7 @@
 					return;
 				if (e.dataTransfer.types.indexOf("etrk_drag") > -1)
 				{
+					this.isDragTarget = true;
 					e.dataTransfer.dropEffect = "move";
 					e.preventDefault();
 				}

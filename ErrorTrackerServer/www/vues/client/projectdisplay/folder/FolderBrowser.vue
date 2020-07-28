@@ -1,5 +1,6 @@
 ﻿<template>
-	<div class="folderBrowser">
+	<div class="folderBrowser"
+		 @contextmenu.stop.prevent="onContextmenu">
 		<div v-if="isSearch" class="searchResultsSection">
 			<h3 class="searchingHeading">
 				<vsvg sprite="search" role="presentation" class="searchIcon" />
@@ -61,7 +62,7 @@
 				<li v-show="folder.data && folder.data.FolderId > 0">
 					<a role="button" @click.prevent="deleteFolder(folder.data)">Delete</a>
 				</li>
-				<li class="v-context__sub">
+				<li v-show="folder.data" class="v-context__sub">
 					<a role="button">Run Filter</a>
 					<ul class="v-context">
 						<li>
@@ -71,6 +72,15 @@
 							<a role="button" @click.prevent="runFilter(f.filter, folder.data)">{{f.filter.Name}}</a>
 						</li>
 					</ul>
+				</li>
+				<li v-if="nextUndo">
+					<a role="button" @click.prevent="undo()">Undo {{nextUndo.description}}</a>
+				</li>
+				<li v-if="nextRedo">
+					<a role="button" @click.prevent="redo()">Redo {{nextRedo.description}}</a>
+				</li>
+				<li v-if="!nextUndo && !nextRedo && !event.data">
+					<span class="menuComment">no context menu items</span>
 				</li>
 			</template>
 		</vue-context>
@@ -150,6 +160,18 @@
 				delete query.matchAll;
 				delete query.scon;
 				return { name: this.$route.name, query };
+			},
+			externalChangesToFolders()
+			{
+				return EventBus.externalChangesToFolders;
+			},
+			nextUndo()
+			{
+				return EventBus.NextUndoOperation(this.projectName);
+			},
+			nextRedo()
+			{
+				return EventBus.NextRedoOperation(this.projectName);
 			}
 		},
 		methods:
@@ -259,7 +281,24 @@
 					toaster.warning("Cannot move folder into itself.");
 					return;
 				}
-				this.handleAsyncFolderOp(MoveFolder(this.projectName, folderId, newParentFolderId));
+
+				this.handleAsyncFolderOp(MoveFolder(this.projectName, folderId, newParentFolderId),
+					() =>
+					{
+						let folder = getFolderRecursive(this.rootFolder, folderId);
+						let from = getParentOfFolder(this.rootFolder, folderId);
+						let to = getFolderRecursive(this.rootFolder, newParentFolderId);
+						if (folder && from && to)
+						{
+							EventBus.NotifyPerformedUndoableOperation(this.projectName, {
+								type: "MoveFolder",
+								description: 'Move Folder "' + folder.Name + '" to "' + to.Name + '"',
+								folderId: folderId,
+								from: from.FolderId,
+								to: to.FolderId
+							});
+						}
+					});
 			},
 			onMenu({ e, folder })
 			{
@@ -268,14 +307,21 @@
 				else
 					this.$refs.menu.open(e, folder);
 			},
-			handleAsyncFolderOp(promise)
+			onContextmenu(e)
+			{
+				this.onMenu({ e: e, folder: null });
+			},
+			handleAsyncFolderOp(promise, onSuccess)
 			{
 				this.loading = true;
 				promise
 					.then(data =>
 					{
 						if (data.success)
+						{
+							onSuccess();
 							this.loadFolders();
+						}
 						else
 						{
 							toaster.error(data.error);
@@ -333,7 +379,30 @@
 							let folderPath = this.getFolderPath(newFolderId);
 							if (folderPath == null)
 								folderPath = "unknown folder";
-							toaster.success("Moved " + eventIds.length + " event" + (eventIds.length == 1 ? "" : "s") + " to " + folderPath);
+							let description = eventIds.length + " event" + (eventIds.length == 1 ? "" : "s") + " to " + folderPath;
+
+							// Push onto undo stack
+							let moves = [];
+							for (let i = 0; i < eventIds.length; i++)
+							{
+								let eventSummary = EventBus.getEventSummary(eventIds[i]);
+								let oldFolderId;
+								if (eventSummary)
+									oldFolderId = eventSummary.FolderId;
+								else
+								{
+									oldFolderId = this.selectedFolderId;
+									console.error("Unable to locate cached EventSummary for EventId " + eventIds[i]);
+								}
+								moves.push({ eventId: eventIds[i], from: oldFolderId, to: newFolderId });
+							}
+							EventBus.NotifyPerformedUndoableOperation(this.projectName, {
+								type: "MoveEvents",
+								description: "Move " + description,
+								moves: moves
+							});
+
+							toaster.success("Moved " + description);
 							EventBus.externalChangesToVisibleEvents++;
 						}
 						else
@@ -445,6 +514,14 @@
 			onFolderSelect(folder)
 			{
 				this.$emit('select', folder);
+			},
+			undo()
+			{
+				EventBus.PerformUndo(this.projectName);
+			},
+			redo()
+			{
+				EventBus.PerformRedo(this.projectName);
 			}
 		},
 		watch:
@@ -453,8 +530,28 @@
 			{
 				this.loadFilters();
 				this.loadFolders();
+			},
+			externalChangesToFolders()
+			{
+				this.loadFolders();
 			}
 		}
+	}
+	function getParentOfFolder(root, folderId)
+	{
+		if (root)
+		{
+			if (root.Children && root.Children.length)
+				for (let i = 0; i < root.Children.length; i++)
+				{
+					if (root.Children[i].FolderId === folderId)
+						return root;
+					let found = getParentOfFolder(root.Children[i], folderId);
+					if (found)
+						return found;
+				}
+		}
+		return null;
 	}
 	function getFolderRecursive(root, folderId)
 	{

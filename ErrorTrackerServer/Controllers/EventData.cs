@@ -2,6 +2,7 @@
 using BPUtil.MVC;
 using ErrorTrackerServer.Database;
 using ErrorTrackerServer.Database.Project.Model;
+using ErrorTrackerServer.Filtering;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -116,6 +117,27 @@ namespace ErrorTrackerServer.Controllers
 			}
 		}
 		/// <summary>
+		/// Move events by ID to new folders by ID. Each event can be moved to a different folder.
+		/// </summary>
+		/// <returns></returns>
+		public ActionResult MoveEventsMap()
+		{
+			MoveEventsMapRequest request = ApiRequestBase.ParseRequest<MoveEventsMapRequest>(this);
+
+			if (!request.Validate(out Project p, out ApiResponseBase error))
+				return Json(error);
+
+			DeferredActionCollection dac = new DeferredActionCollection();
+			foreach (KeyValuePair<long, int> kvp in request.eventIdToNewFolderId)
+				dac.MoveEventTo(kvp.Key, kvp.Value);
+			using (DB db = new DB(p.Name))
+			{
+				if (dac.ExecuteDeferredActions(db))
+					return Json(new ApiResponseBase(true));
+				return ApiError("Unable to move all events with IDs " + string.Join(",", request.eventIdToNewFolderId.Keys));
+			}
+		}
+		/// <summary>
 		/// Deletes events by ID.
 		/// </summary>
 		/// <returns></returns>
@@ -196,6 +218,7 @@ namespace ErrorTrackerServer.Controllers
 	public class EventSummary
 	{
 		public long EventId;
+		public int FolderId;
 		public string EventType;
 		public string SubType;
 		public long Date;
@@ -211,6 +234,7 @@ namespace ErrorTrackerServer.Controllers
 		public EventSummary(Event ev, HashSet<long> readEventIds)
 		{
 			EventId = ev.EventId;
+			FolderId = ev.FolderId;
 			EventType = ev.EventType.ToString();
 			SubType = ev.SubType;
 			Date = ev.Date;
@@ -254,10 +278,6 @@ namespace ErrorTrackerServer.Controllers
 	{
 		public long eventId;
 	}
-	public class MoveEventRequest : GetEventRequest
-	{
-		public int newFolderId;
-	}
 	public class EventIdsRequest : ProjectRequestBase
 	{
 		public long[] eventIds;
@@ -265,6 +285,10 @@ namespace ErrorTrackerServer.Controllers
 	public class MoveEventsRequest : EventIdsRequest
 	{
 		public int newFolderId;
+	}
+	public class MoveEventsMapRequest : ProjectRequestBase
+	{
+		public Dictionary<long, int> eventIdToNewFolderId;
 	}
 	public class SetEventsColorRequest : EventIdsRequest
 	{

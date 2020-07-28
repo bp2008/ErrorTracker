@@ -3,7 +3,7 @@
 	   @click="nodeClick"
 	   :class="{ eventNode: true, selected: selected, read: event.Read, unread: !event.Read }"
 	   :style="nodeStyle"
-	   @contextmenu.prevent="onContextmenu"
+	   @contextmenu.stop.prevent="onContextmenu"
 	   :draggable="!event ? 'false' : 'true'"
 	   @dragstart="dragStart"
 	   @keydown.up.prevent="upPressed"

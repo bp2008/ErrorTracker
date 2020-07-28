@@ -20,6 +20,15 @@ namespace ErrorTrackerServer.Filtering
 		{
 			folderMap.Set(ev.EventId, folderId);
 		}
+		/// <summary>
+		/// Schedules a MoveTo action.  Any previously-scheduled MoveEventTo actions for this Event will be unscheduled.
+		/// </summary>
+		/// <param name="eventId">ID of the event to move.</param>
+		/// <param name="folderId">ID of the folder to move the event to.</param>
+		public void MoveEventTo(long eventId, int folderId)
+		{
+			folderMap.Set(eventId, folderId);
+		}
 
 		ActionAggregator<uint> colorMap = new ActionAggregator<uint>();
 		/// <summary>

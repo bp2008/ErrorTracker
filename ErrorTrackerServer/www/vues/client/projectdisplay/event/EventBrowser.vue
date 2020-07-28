@@ -4,7 +4,8 @@
 			{{error}}
 			<div class="tryAgain"><input type="button" value="Try Again" @click="loadEvents" /></div>
 		</div>
-		<div v-else-if="events" class="eventListWrapper">
+		<div v-else-if="events" class="eventListWrapper"
+			 @contextmenu.stop.prevent="onContextmenu">
 			<div class="eventListHeading">
 				<div class="path">{{path}}</div>
 				<div class="eventTotals"><a class="newEvents" v-if="newEvents > 0" title="click to scroll to top" role="button" tabindex="0" @click="scrollToTop" @keypress.enter.prevent="scrollToTop">^ {{newEvents}} new ^</a> {{selectedEventIdsArray.length}}/{{eventCount}}</div>
@@ -37,13 +38,13 @@
 		<!-- Event Context Menu -->
 		<vue-context ref="menu">
 			<template slot-scope="event">
-				<li>
+				<li v-show="event.data">
 					<a role="button" @click.prevent="beginMoveEvent(event.data)">Move</a>
 				</li>
-				<li>
+				<li v-show="event.data">
 					<a role="button" @click.prevent="changeEventColor(event.data)">Change Color</a>
 				</li>
-				<li>
+				<li v-show="event.data">
 					<a role="button" @click.prevent="deleteEvent(event.data)">Delete</a>
 				</li>
 				<li v-show="event.data && event.data.Read">
@@ -51,6 +52,15 @@
 				</li>
 				<li v-show="event.data && !event.data.Read">
 					<a role="button" @click.prevent="markRead(event.data, true)">Mark as read</a>
+				</li>
+				<li v-if="nextUndo">
+					<a role="button" @click.prevent="undo()">Undo {{nextUndo.description}}</a>
+				</li>
+				<li v-if="nextRedo">
+					<a role="button" @click.prevent="redo()">Redo {{nextRedo.description}}</a>
+				</li>
+				<li v-if="!nextUndo && !nextRedo && !event.data">
+					<span class="menuComment">no context menu items</span>
 				</li>
 			</template>
 		</vue-context>
@@ -178,6 +188,14 @@
 			path()
 			{
 				return EventBus.getProjectFolderPathFromId(this.projectName, this.selectedFolderId);
+			},
+			nextUndo()
+			{
+				return EventBus.NextUndoOperation(this.projectName);
+			},
+			nextRedo()
+			{
+				return EventBus.NextRedoOperation(this.projectName);
 			}
 		},
 		methods:
@@ -289,6 +307,10 @@
 					EventBus.stopMovingItem();
 				else
 					this.$refs.menu.open(e, event);
+			},
+			onContextmenu(e)
+			{
+				this.onMenu({ e: e, event: null });
 			},
 			beginMoveEvent(event)
 			{
@@ -493,6 +515,14 @@
 						}
 					}
 				}
+			},
+			undo()
+			{
+				EventBus.PerformUndo(this.projectName);
+			},
+			redo()
+			{
+				EventBus.PerformRedo(this.projectName);
 			}
 		},
 		watch:
@@ -632,5 +662,18 @@
 	.tryAgain
 	{
 		margin-top: 10px;
+	}
+
+	.menuComment
+	{
+		display: block;
+		padding: .5rem 1.5rem;
+		font-weight: 400;
+		color: #999999;
+		font-style: italic;
+		text-decoration: none;
+		white-space: nowrap;
+		background-color: transparent;
+		border: 0;
 	}
 </style>
