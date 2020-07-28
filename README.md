@@ -45,7 +45,7 @@ The first argument should be a reference to the `JsonConvert.SerializeObject` me
 
 The second argument should be a function (or lambda expression) which returns the event submission URL for your project (see **Your First Project** section below).
 
-The third argument should be a function (or lambda expression) which returns the path to a directory on a local hard drive where the client can save events temporarily if the ErrorTracker server is unreachable.
+The third argument should be a function (or lambda expression) which returns the path to a directory on a local hard drive where the client can save events temporarily if the ErrorTracker server is unreachable.  The client will automatically try again to submit these events until they succeed.  Don't worry, ErrorTrackerServer also has logic to reject duplicate submissions.
 
 3) Submit an Event
 
