@@ -95,7 +95,7 @@ You can create a tree of folders into which events can be organized.  Get starte
 #### Event Management
 Events are mainly meant to be moved into different folders automatically by Filters.  Click the "Edit Filters" button in the toolbar to manage filters.  You can also manually move events by dragging and dropping or by using the context menu (right-click an event).
 
-Search functionality is also available in the toolbar.  The basic search box does a case-insensitive "Contains" search on most of the visible Event fields.  Alternatively you can click the Advanced Search button to specify a set of conditions for a more precise search.
+Search functionality is also available in the toolbar.  The basic search box does a case-insensitive "Contains" search on most of the visible Event fields and Tag values.  Alternatively you can click the Advanced Search button to specify a set of conditions for a more precise search.
 
 Tips:  
 * Using the SHIFT and/or CTRL keys, you can select multiple events.
