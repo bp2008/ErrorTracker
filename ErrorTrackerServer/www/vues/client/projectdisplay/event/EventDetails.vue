@@ -11,6 +11,7 @@
 				<span class="eventType">{{event.EventType}}:</span>
 				<span class="subType" v-text="event.SubType" />
 			</div>
+			<div><b>Folder:</b> <router-link :to="routeToFolder">{{folderPath}}</router-link></div>
 			<div v-if="routeToMatchingEvents"><router-link :to="routeToMatchingEvents">{{event.MatchingEvents}} events like this</router-link></div>
 			<div class="date">
 				<!--<span class="dateHeading">Date</span>:-->
@@ -120,6 +121,23 @@
 				}
 				else
 					return null;
+			},
+			folderPath()
+			{
+				if (this.event)
+				{
+					let path = EventBus.getProjectFolderPathFromId(this.projectName, this.event.FolderId);
+					if (path === "/")
+						path = this.projectName + "/";
+					return path;
+				}
+				return null;
+			},
+			routeToFolder()
+			{
+				let query = Object.assign({}, this.$route.query);
+				query.f = this.event.FolderId;
+				return { name: this.$route.name, query };
 			}
 		},
 		methods:
