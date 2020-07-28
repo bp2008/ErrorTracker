@@ -33,7 +33,11 @@ The configuration file also contains a number of other settings as well as your 
 2) Somewhere in your .NET project, create a static instance of the `ErrorClient` class.
 
 ```cs
-private static ErrorClient client = new ErrorClient(JsonConvert.SerializeObject, () => "https://127.0.0.1/Submit?p=MyProject&k=f90ez8feZSFe90sifesLJszfE8", () => "C:\\ErrorTrackerTemp\\");
+private static ErrorClient client = new ErrorClient(
+    JsonConvert.SerializeObject, 
+    () => "https://127.0.0.1/Submit?p=MyProject&k=f90ez8feZSFe90sifesLJszfE8", 
+    () => "C:\\ErrorTrackerTemp\\"
+);
 ```
 The constructor takes 3 arguments.
 
