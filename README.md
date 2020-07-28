@@ -1,5 +1,5 @@
 # ErrorTracker
-A light-weight event/error tracking service written in C#
+A light-weight event/error tracking service written in C#.  This is supposed to be an alternative to using an email client like Thunderbird to monitor errors and other events from .NET Framework applications.  Many commercial services offer this type of product, and there are even some free ones, but none quite matched my needs.
 
 ## Server Installation
 ErrorTrackerServer is a Windows Service with a built-in service manager GUI.
