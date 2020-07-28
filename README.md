@@ -26,7 +26,7 @@ The configuration file also contains a number of other settings as well as your 
 7) To edit the server configuration and manage users and projects, choose the "Admin" menu item at the top. See [Admin Settings Documentation](https://github.com/bp2008/ErrorTracker/wiki/Admin-Settings-Documentation) for more information about ErrorTracker Settings.
 
 ## Client Installation
-`ErrorTrackerClient.dll` is a light-weight library built on .NET Framework 4.5.2 which makes it easy to submit events to ErrorTracker.
+`ErrorTrackerClient.dll` is a light-weight library built on .NET Framework 4.5.2 which makes it easy to robustly submit events to ErrorTracker.
 
 1) Download a client release from from the [releases page](https://github.com/bp2008/ErrorTracker/releases) and include `ErrorTrackerClient.dll` as a dependency in your .NET project.
 
