@@ -80,3 +80,7 @@ If you click your project in the Projects table, a dialog appears with options.
 * **Replace Submission Key** generates a new submission key, invalidating the old one in case you accidentally leak it.
 * **Copy Submission URL** copies the submission URL to the clipboard.
 * **Max Event Age**, if greater than 0, sets the number of days before events are automatically deleted to save space.
+
+## Building From Source
+
+This project was built with Visual Studio 2019 Community Edition and node.js v12.14.1.  You will also need to download my utility library, [bp2008/BPUtil](https://github.com/bp2008/BPUtil), and repair the dependency in the ErrorTrackerServer project.  BPUtil is updated separately and may sometimes be slightly incompatible. Sorry about that.
