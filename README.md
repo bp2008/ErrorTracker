@@ -23,7 +23,7 @@ The configuration file also contains a number of other settings as well as your 
 
 6) You should now be viewing the "Client Home" page, where you may **change the default admin password** to something more secure.
 
-7) To edit the server configuration and manage users and projects, choose the "Admin" menu item in the menu at the top. See [Admin Settings Documentation](https://github.com/bp2008/ErrorTracker/wiki/Admin-Settings-Documentation) for more information about ErrorTracker Settings.
+7) To edit the server configuration and manage users and projects, choose the "Admin" menu item at the top. See [Admin Settings Documentation](https://github.com/bp2008/ErrorTracker/wiki/Admin-Settings-Documentation) for more information about ErrorTracker Settings.
 
 ## Client Installation
 `ErrorTrackerClient.dll` is a light-weight library built on .NET Framework 4.5.2 which makes it easy to submit events to ErrorTracker.
