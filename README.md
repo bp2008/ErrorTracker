@@ -87,7 +87,7 @@ If you click your project in the Projects table, a dialog appears with options.
 
 The Client homepage provides a list of projects.  Click your project to open the Project Display.  This interface is designed to resemble an IMAP email inbox, where instead of emails you have events submitted by your `ErrorClient`.  Every user sees the same events and the same folder structure, but every user has their own read/unread state.
 
-If multiple users are accessing the service at the same time, it is best to choose one user to design the folder structure and do most event management.  There is currently no event stream to notify the browser client of changes made by another user, so if you have other users working simultaneously in your project, you may need to refresh the page periodically.  It is also necesary to refresh the page in order to receive new events.
+If multiple users are accessing the service at the same time, it is best to choose one user to design the folder structure and do most event management.  There is currently no event stream to notify the browser client of changes made by another user, so if you have other users working simultaneously in your project, you may need to refresh the page periodically to see what they did.  It is also necesary to refresh the page in order to receive new events.
 
 #### Folder Management
 You can create a tree of folders into which events can be organized.  Get started by right-clicking the root folder and choosing "New Folder".  Once you have a few folders, you can also drag and drop individual folders to move them.
