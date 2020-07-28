@@ -8,13 +8,7 @@
 
 * Consider: Add an event stream which notifies browsers of new events and of changes made to events.  This is probably hard to do correctly, but would be extremely helpful.
 
-* UNDO stack.
-	* Maybe with confirmation (if no REDO stack)
-	* With context menu items.
-	* By hotkey.
-	* Toast notification.
+* Fix numerous edge cases where unread count is incorrect and where events remain selected after they are no longer available in the event browser.
+	* Empty folder shows 1 selected.
 
-* Consider: REDO stack
-	* With context menu items.
-	* By hotkey.
-	* Toast notification.
+* Include folder path in EventDetails. Maybe linked to the folder.

@@ -177,6 +177,7 @@
     <None Include="www\vues\client\projectdisplay\ResizeBar.vue" />
     <None Include="www\vues\client\projectdisplay\ProjectDisplay.vue" />
     <None Include="www\vues\client\controls\SelectFilterPopup.vue" />
+    <None Include="www\vues\common\controls\ProgressPopup.vue" />
     <None Include="www\vues\common\controls\GeolocateIPPopup.vue" />
     <None Include="www\vues\common\controls\ConfirmPopup.vue" />
     <None Include="www\vues\common\controls\GeolocationEmbed.vue" />

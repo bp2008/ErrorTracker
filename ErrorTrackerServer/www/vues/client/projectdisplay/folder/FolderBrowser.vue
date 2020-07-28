@@ -135,12 +135,16 @@
 		created()
 		{
 			EventBus.$on("eventReadStateChanged", this.eventReadStateChanged);
+			EventBus.$on("eventMoved", this.eventMoved);
+			EventBus.$on("eventDeleted", this.eventDeleted);
 			this.loadFilters();
 			this.loadFolders();
 		},
 		beforeDestroy()
 		{
 			EventBus.$off("eventReadStateChanged", this.eventReadStateChanged);
+			EventBus.$off("eventMoved", this.eventMoved);
+			EventBus.$off("eventDeleted", this.eventDeleted);
 			EventBus.stopMovingItem();
 		},
 		computed:
@@ -172,6 +176,12 @@
 			nextRedo()
 			{
 				return EventBus.NextRedoOperation(this.projectName);
+			},
+			folderIdMap()
+			{
+				let map = {};
+				BuildFolderIdMap(map, this.rootFolder);
+				return map;
 			}
 		},
 		methods:
@@ -381,7 +391,6 @@
 								folderPath = "unknown folder";
 							let description = eventIds.length + " event" + (eventIds.length == 1 ? "" : "s") + " to " + folderPath;
 
-							// Push onto undo stack
 							let moves = [];
 							for (let i = 0; i < eventIds.length; i++)
 							{
@@ -394,8 +403,19 @@
 									oldFolderId = this.selectedFolderId;
 									console.error("Unable to locate cached EventSummary for EventId " + eventIds[i]);
 								}
+								if (eventSummary)
+								{
+									EventBus.$emit("eventMoved", {
+										event: eventSummary,
+										from: oldFolderId,
+										to: newFolderId
+									});
+								}
+								else
+									console.log("Unable to emit eventMoved event because the event summary is not cached for event ID " + eventIds[i]);
 								moves.push({ eventId: eventIds[i], from: oldFolderId, to: newFolderId });
 							}
+							// Push onto undo stack
 							EventBus.NotifyPerformedUndoableOperation(this.projectName, {
 								type: "MoveEvents",
 								description: "Move " + description,
@@ -483,10 +503,10 @@
 						toaster.error(err);
 					});
 			},
-			//getFolder(folderId)
-			//{
-			//	return getFolderRecursive(this.rootFolder, folderId);
-			//},
+			getFolder(folderId)
+			{
+				return this.folderIdMap[folderId];
+			},
 			getFolderPath(folderId)
 			{
 				return EventBus.getProjectFolderPathFromId(this.projectName, folderId);
@@ -511,23 +531,38 @@
 						folder.Unread++;
 				}
 			},
+			eventMoved({ event, from, to })
+			{
+				if (event && !event.Read)
+				{
+					let fromFolder = this.getFolder(from);
+					let toFolder = this.getFolder(to);
+					if (fromFolder)
+						fromFolder.Unread--;
+					if (toFolder)
+						toFolder.Unread++;
+				}
+			},
+			eventDeleted(event)
+			{
+				if (event && !event.Read)
+				{
+					let folder = this.getFolder(event.FolderId);
+					if (folder)
+						folder.Unread--;
+				}
+			},
 			onFolderSelect(folder)
 			{
 				this.$emit('select', folder);
 			},
 			undo()
 			{
-				if (EventBus.NextUndoOperation(this.projectName))
-					EventBus.PerformUndo(this.projectName);
-				else
-					toaster.warning("Nothing to undo");
+				EventBus.PerformUndo(this.projectName);
 			},
 			redo()
 			{
-				if (EventBus.NextRedoOperation(this.projectName))
-					EventBus.PerformRedo(this.projectName);
-				else
-					toaster.warning("Nothing to redo");
+				EventBus.PerformRedo(this.projectName);
 			}
 		},
 		watch:
@@ -574,6 +609,16 @@
 				}
 		}
 		return null;
+	}
+	function BuildFolderIdMap(map, root)
+	{
+		if (root)
+		{
+			map[root.FolderId] = root;
+			if (root.Children && root.Children.length)
+				for (let i = 0; i < root.Children.length; i++)
+					BuildFolderIdMap(map, root.Children[i]);
+		}
 	}
 	function predefineFolderUnreadEventCounts(folder)
 	{

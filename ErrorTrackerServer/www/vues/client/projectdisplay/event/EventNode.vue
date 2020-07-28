@@ -21,7 +21,7 @@
 	</a>
 </template>
 <script>
-	import { GetDateStr, GetTimeStr } from 'appRoot/scripts/Util';
+	import { GetDateStr, GetTimeStr, CopyArray } from 'appRoot/scripts/Util';
 
 	export default {
 		components: {},
@@ -40,6 +40,14 @@
 				default: false
 			},
 			selectionState: {
+				Object,
+				required: true
+			},
+			selectedEventIdsArray: {
+				Object,
+				required: true
+			},
+			selectedEventIdsMap: {
 				Object,
 				required: true
 			}
@@ -91,7 +99,7 @@
 
 				let query = Object.assign({}, this.$route.query);
 
-				let selectedEvents = query.se ? query.se.split(',') : [];
+				let selectedEvents = CopyArray(this.selectedEventIdsArray);
 				let selectedEventsMap = {};
 
 				for (let i = 0; i < selectedEvents.length; i++)
@@ -101,7 +109,7 @@
 					this.selectionState.lastSelectedEventId = parseInt(query.e);
 
 				if (!this.selectionState.lastSelectedEventId && selectedEvents.length > 0)
-					this.selectionState.lastSelectedEventId = parseInt(selectedEvents[0]);
+					this.selectionState.lastSelectedEventId = selectedEvents[0];
 
 				if ((e.shiftKey && this.selectionState.lastSelectedEventId) || e.ctrlKey)
 				{
@@ -138,17 +146,17 @@
 					{
 						// Multi-select toggle item
 						this.selectionState.lastSelectedEventId = this.event.EventId;
-						if (selectedEventsMap[this.event.EventId.toString()])
+						if (selectedEventsMap[this.event.EventId])
 						{
-							let idx = selectedEvents.indexOf(this.event.EventId.toString());
+							let idx = selectedEvents.indexOf(this.event.EventId);
 							if (idx > -1)
 								selectedEvents.splice(idx, 1);
-							selectedEventsMap[this.event.EventId.toString()] = false;
+							selectedEventsMap[this.event.EventId] = false;
 						}
 						else
 						{
-							selectedEvents.push(this.event.EventId.toString());
-							selectedEventsMap[this.event.EventId.toString()] = true;
+							selectedEvents.push(this.event.EventId);
+							selectedEventsMap[this.event.EventId] = true;
 						}
 					}
 					query.se = selectedEvents.join(',');
@@ -172,9 +180,8 @@
 			dragStart(e)
 			{
 				let dragContextString = "e" + this.event.EventId;
-				let selectedEvents = this.$route.query.se ? this.$route.query.se.split(',') : [];
-				if (selectedEvents.indexOf(this.event.EventId.toString()) > -1)
-					dragContextString = "e" + selectedEvents.join(",e");
+				if (this.selectedEventIdsMap[this.event.EventId])
+					dragContextString = "e" + this.selectedEventIdsArray.join(",e");
 				e.dataTransfer.setData("etrk_drag", dragContextString);
 				e.dataTransfer.dropEffect = "move";
 			},

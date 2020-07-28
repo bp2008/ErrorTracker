@@ -72,9 +72,9 @@
 				for (let i = 0; i < this.components.length; i++)
 				{
 					let c = this.components[i];
-					this.components.splice(i, 1);
 					c.onDialogClose(false);
 				}
+				this.components = [];
 			}
 		}
 	}

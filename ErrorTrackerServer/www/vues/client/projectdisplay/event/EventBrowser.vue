@@ -22,6 +22,8 @@
 						   :event="item"
 						   :selected="isEventSelected(item)"
 						   :selectionState="selectionState"
+						   :selectedEventIdsArray="selectedEventIdsArray"
+						   :selectedEventIdsMap="selectedEventIdsMap"
 						   @menu="onMenu"
 						   @navUp="onNavUp"
 						   @navDown="onNavDown" />
@@ -149,10 +151,11 @@
 				if (this.selectedEventIds)
 				{
 					let splitted = this.selectedEventIds.split(',');
+					let eMap = this.eventIdMap;
 					for (let i = 0; i < splitted.length; i++)
 					{
 						let id = parseInt(splitted[i]);
-						if (!isNaN(id))
+						if (!isNaN(id) && eMap[id])
 							arr.push(id);
 					}
 				}
@@ -163,6 +166,15 @@
 				let m = {};
 				for (let i = 0; i < this.selectedEventIdsArray.length; i++)
 					m[this.selectedEventIdsArray[i]] = true;
+				return m;
+			},
+			eventIdMap()
+			{
+				let m = {};
+				let evs = this.events;
+				if (evs)
+					for (let i = 0; i < evs.length; i++)
+						m[evs[i].EventId] = evs[i];
 				return m;
 			},
 			externalChangesToVisibleEvents()
@@ -316,8 +328,8 @@
 			{
 				let dragContextString = "e" + event.EventId;
 				let movingThing = "1 event";
-				let selectedEvents = this.$route.query.se ? this.$route.query.se.split(',') : [];
-				if (selectedEvents.indexOf(event.EventId.toString()) > -1)
+				let selectedEvents = this.selectedEventIdsArray;
+				if (selectedEvents.indexOf(event.EventId) > -1)
 				{
 					dragContextString = "e" + selectedEvents.join(",e");
 					movingThing = selectedEvents.length + " event" + (selectedEvents.length > 1 ? "s" : "");
@@ -331,7 +343,7 @@
 				{
 					if (data)
 					{
-						let selectedEvents = this.$route.query.se ? this.$route.query.se.split(',').map(eidString => parseInt(eidString)) : [];
+						let selectedEvents = this.selectedEventIdsArray;
 						if (selectedEvents.indexOf(event.EventId) === -1)
 							selectedEvents = [event.EventId]; // The right-clicked event is not one of the selected events.
 
@@ -387,6 +399,14 @@
 								if (data.success)
 								{
 									toaster.success("Events deleted");
+									for (let i = 0; i < selectedEvents.length; i++)
+									{
+										let eventSummary = EventBus.getEventSummary(selectedEvents[i]);
+										if (eventSummary)
+											EventBus.$emit("eventDeleted", eventSummary);
+										else
+											console.log("Unable to emit eventDeleted event because the event summary is not cached for event ID " + selectedEvents[i]);
+									}
 									this.loadEvents();
 								}
 								else
@@ -518,17 +538,11 @@
 			},
 			undo()
 			{
-				if (EventBus.NextUndoOperation(this.projectName))
-					EventBus.PerformUndo(this.projectName);
-				else
-					toaster.warning("Nothing to undo");
+				EventBus.PerformUndo(this.projectName);
 			},
 			redo()
 			{
-				if (EventBus.NextRedoOperation(this.projectName))
-					EventBus.PerformRedo(this.projectName);
-				else
-					toaster.warning("Nothing to redo");
+				EventBus.PerformRedo(this.projectName);
 			}
 		},
 		watch:

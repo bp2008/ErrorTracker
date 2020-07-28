@@ -11,6 +11,7 @@
 
 import { MoveEventsMap } from 'appRoot/api/EventData';
 import { MoveFolder } from 'appRoot/api/FolderData';
+import { ProgressDialog } from 'appRoot/scripts/ModalDialog';
 
 /**
  * This object can be used to provide "global" event handling.  Based on https://alligator.io/vuejs/global-event-bus/
@@ -186,16 +187,16 @@ const EventBus = new Vue({
 			return stk && stk.length > 0 ? stk[stk.length - 1] : null;
 		},
 		/**
-		 * Undoes the last operation on the undo stack and moves it to the redo stack. Returns a promise that resolves or rejects when the operation is finished.
+		 * Undoes the last operation on the undo stack and moves it to the redo stack.
 		 * @param {String} projectName The name of the project.
 		 */
 		PerformUndo(projectName)
 		{
 			if (this.undoRedoLocked)
-				return new Promise((resolve, reject) =>
-				{
-					reject(new Error("An undo or redo operation is already in progress. Please try again later."));
-				});
+			{
+				toaster.warning("An undo or redo operation is already in progress. Please try again later.");
+				return;
+			}
 			let undo = this.undoStack[projectName];
 			let redo = this.redoStack[projectName];
 			if (!undo || !redo)
@@ -214,12 +215,40 @@ const EventBus = new Vue({
 					let map = {};
 					for (let i = 0; i < item.moves.length; i++)
 						map[item.moves[i].eventId] = item.moves[i].from;
+					let progressDialog = ProgressDialog("Undoing " + item.description);
 					this.undoRedoLocked = true;
-					return MoveEventsMap(projectName, map)
+					MoveEventsMap(projectName, map)
+						.then(data =>
+						{
+							if (data.success)
+							{
+								for (let i = 0; i < item.moves.length; i++)
+								{
+									let eventSummary = this.getEventSummary(item.moves[i].eventId);
+									if (eventSummary)
+									{
+										this.$emit("eventMoved", {
+											event: eventSummary,
+											from: item.moves[i].to,
+											to: item.moves[i].from
+										});
+									}
+									else
+										console.log("Unable to emit eventMoved event because the event summary is not cached for event ID " + item.moves[i].eventId);
+								}
+							}
+							else
+								toaster.error(data.error);
+						})
+						.catch(err =>
+						{
+							toaster.error(err.message);
+						})
 						.finally(() =>
 						{
 							this.externalChangesToVisibleEvents++;
 							this.undoRedoLocked = false;
+							progressDialog.close();
 						});
 				}
 				else if (item.type === "MoveFolder")
@@ -229,27 +258,49 @@ const EventBus = new Vue({
 					// item.from
 					// item.to
 					// item.folderId
+					let progressDialog = ProgressDialog("Undoing " + item.description);
 					this.undoRedoLocked = true;
-					return MoveFolder(projectName, item.folderId, item.from)
+					MoveFolder(projectName, item.folderId, item.from)
+						.then(data =>
+						{
+							if (data.success)
+							{
+							}
+							else
+								toaster.error(data.error);
+						})
+						.catch(err =>
+						{
+							toaster.error(err.message);
+						})
 						.finally(() =>
 						{
 							this.externalChangesToFolders++;
 							this.undoRedoLocked = false;
+							progressDialog.close();
 						});
 				}
+				else
+				{
+					toaster.error('Unhandled item type on undo stack: "' + item.type + '"');
+				}
+			}
+			else
+			{
+				toaster.warning("Nothing to undo");
 			}
 		},
 		/**
-		 * Redoes the last operation on the redo stack and moves it to the undo stack. Returns a promise that resolves or rejects when the operation is finished.
+		 * Redoes the last operation on the redo stack and moves it to the undo stack.
 		 * @param {String} projectName The name of the project.
 		 */
 		PerformRedo(projectName)
 		{
 			if (this.undoRedoLocked)
-				return new Promise((resolve, reject) =>
-				{
-					reject(new Error("An undo or redo operation is already in progress. Please try again later."));
-				});
+			{
+				toaster.warning("An undo or redo operation is already in progress. Please try again later.");
+				return;
+			}
 			let undo = this.undoStack[projectName];
 			let redo = this.redoStack[projectName];
 			if (!undo || !redo)
@@ -266,25 +317,75 @@ const EventBus = new Vue({
 					let map = {};
 					for (let i = 0; i < item.moves.length; i++)
 						map[item.moves[i].eventId] = item.moves[i].to;
+					let progressDialog = ProgressDialog("Redoing " + item.description);
 					this.undoRedoLocked = true;
-					return MoveEventsMap(projectName, map)
+					MoveEventsMap(projectName, map)
+						.then(data =>
+						{
+							if (data.success)
+							{
+								for (let i = 0; i < item.moves.length; i++)
+								{
+									let eventSummary = this.getEventSummary(item.moves[i].eventId);
+									if (eventSummary)
+									{
+										this.$emit("eventMoved", {
+											event: eventSummary,
+											from: item.moves[i].from,
+											to: item.moves[i].to
+										});
+									}
+									else
+										console.log("Unable to emit eventMoved event because the event summary is not cached for event ID " + item.moves[i].eventId);
+								}
+							}
+							else
+								toaster.error(data.error);
+						})
+						.catch(err =>
+						{
+							toaster.error(err.message);
+						})
 						.finally(() =>
 						{
 							this.externalChangesToVisibleEvents++;
 							this.undoRedoLocked = false;
+							progressDialog.close();
 						});
 				}
 				else if (item.type === "MoveFolder")
 				{
 					// Redo Folder Move
+					let progressDialog = ProgressDialog("Redoing " + item.description);
 					this.undoRedoLocked = true;
-					return MoveFolder(projectName, item.folderId, item.to)
+					MoveFolder(projectName, item.folderId, item.to)
+						.then(data =>
+						{
+							if (data.success)
+							{
+							}
+							else
+								toaster.error(data.error);
+						})
+						.catch(err =>
+						{
+							toaster.error(err.message);
+						})
 						.finally(() =>
 						{
 							this.externalChangesToFolders++;
 							this.undoRedoLocked = false;
+							progressDialog.close();
 						});
 				}
+				else
+				{
+					toaster.error('Unhandled item type on redo stack: "' + item.type + '"');
+				}
+			}
+			else
+			{
+				toaster.warning("Nothing to redo");
 			}
 		}
 	}

@@ -7,6 +7,7 @@ import ColorInputPopup from 'appRoot/vues/common/controls/ColorInputPopup.vue';
 import SelectFilterPopup from 'appRoot/vues/client/controls/SelectFilterPopup.vue';
 import SelectFolderPopup from 'appRoot/vues/client/controls/SelectFolderPopup.vue';
 import GeolocateIPPopup from 'appRoot/vues/common/controls/GeolocateIPPopup.vue';
+import ProgressPopup from 'appRoot/vues/common/controls/ProgressPopup.vue';
 
 //////////////////////////////////////////////////
 // Container Registration / Dialog Registration //
@@ -233,4 +234,22 @@ export function GeolocateIPDialog(ip)
 {
 	let args = { ip };
 	return ModalDialog(GeolocateIPPopup, args);
+}
+/**
+ * Opens a dialog box which shows a loading spinner and a short message. Returns an object with a "close" method which you MUST call later.
+ * @param {String} text Optional text to show in the progress dialog. Default: "Loading…"
+ * @returns {Promise} Returns an object with a "close" method which you MUST call later.
+ */
+export function ProgressDialog(text)
+{
+	let args = { close: false };
+	if (text)
+		args.text = text;
+	ModalDialog(ProgressPopup, args);
+	return {
+		close: () =>
+		{
+			args.close = true;
+		}
+	};
 }
