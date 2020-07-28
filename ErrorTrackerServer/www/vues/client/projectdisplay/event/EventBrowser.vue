@@ -518,11 +518,17 @@
 			},
 			undo()
 			{
-				EventBus.PerformUndo(this.projectName);
+				if (EventBus.NextUndoOperation(this.projectName))
+					EventBus.PerformUndo(this.projectName);
+				else
+					toaster.warning("Nothing to undo");
 			},
 			redo()
 			{
-				EventBus.PerformRedo(this.projectName);
+				if (EventBus.NextRedoOperation(this.projectName))
+					EventBus.PerformRedo(this.projectName);
+				else
+					toaster.warning("Nothing to redo");
 			}
 		},
 		watch:

@@ -79,7 +79,7 @@
 				<li v-if="nextRedo">
 					<a role="button" @click.prevent="redo()">Redo {{nextRedo.description}}</a>
 				</li>
-				<li v-if="!nextUndo && !nextRedo && !event.data">
+				<li v-if="!nextUndo && !nextRedo && !folder.data">
 					<span class="menuComment">no context menu items</span>
 				</li>
 			</template>
@@ -517,11 +517,17 @@
 			},
 			undo()
 			{
-				EventBus.PerformUndo(this.projectName);
+				if (EventBus.NextUndoOperation(this.projectName))
+					EventBus.PerformUndo(this.projectName);
+				else
+					toaster.warning("Nothing to undo");
 			},
 			redo()
 			{
-				EventBus.PerformRedo(this.projectName);
+				if (EventBus.NextRedoOperation(this.projectName))
+					EventBus.PerformRedo(this.projectName);
+				else
+					toaster.warning("Nothing to redo");
 			}
 		},
 		watch:

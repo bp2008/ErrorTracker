@@ -4,7 +4,7 @@
 		<div v-if="(error)" class="error">{{error}}</div>
 		<div v-else-if="loading" class="loading"><ScaleLoader /> Loading…</div>
 		<div v-else class="body" :style="bodyStyle">
-			<div class="folderBrowserContainer" :style="folderBrowserStyle">
+			<div class="folderBrowserContainer" :style="folderBrowserStyle" @keydown="onFolderBrowserKeydown" tabindex="0">
 				<FolderBrowser :projectName="projectName" :selectedFolderId="selectedFolderId" :searchArgs="searchArgs" />
 			</div>
 			<ResizeBar :min="50" :max="600" :start="fbStart" :default="250" @change="fbChange" />
@@ -152,6 +152,30 @@
 					if (this.$refs.eventBrowser)
 					{
 						this.$refs.eventBrowser.selectAll();
+						e.preventDefault();
+					}
+				}
+				return this.checkUndoKeydown(e);
+			},
+			onFolderBrowserKeydown(e)
+			{
+				return this.checkUndoKeydown(e);
+			},
+			checkUndoKeydown(e)
+			{
+				if (this.$refs.eventBrowser)
+				{
+					if (e.ctrlKey && e.keyCode == 89) // 'y'
+					{
+						this.$refs.eventBrowser.redo();
+						e.preventDefault();
+					}
+					else if (e.ctrlKey && e.keyCode == 90) // 'z'
+					{
+						if (e.shiftKey)
+							this.$refs.eventBrowser.redo();
+						else
+							this.$refs.eventBrowser.undo();
 						e.preventDefault();
 					}
 				}
