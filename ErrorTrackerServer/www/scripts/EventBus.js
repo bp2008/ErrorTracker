@@ -236,6 +236,7 @@ const EventBus = new Vue({
 									else
 										console.log("Unable to emit eventMoved event because the event summary is not cached for event ID " + item.moves[i].eventId);
 								}
+								toaster.success("Undid " + item.description);
 							}
 							else
 								toaster.error(data.error);
@@ -265,6 +266,7 @@ const EventBus = new Vue({
 						{
 							if (data.success)
 							{
+								toaster.success("Undid " + item.description);
 							}
 							else
 								toaster.error(data.error);
@@ -338,6 +340,7 @@ const EventBus = new Vue({
 									else
 										console.log("Unable to emit eventMoved event because the event summary is not cached for event ID " + item.moves[i].eventId);
 								}
+								toaster.success("Redid " + item.description);
 							}
 							else
 								toaster.error(data.error);
@@ -363,6 +366,7 @@ const EventBus = new Vue({
 						{
 							if (data.success)
 							{
+								toaster.success("Redid " + item.description);
 							}
 							else
 								toaster.error(data.error);
