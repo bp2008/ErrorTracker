@@ -67,6 +67,8 @@ catch (Exception ex)
 
 ## Your First Project
 
+### Create a Project
+
 From the Admin > Projects page of the web interface, click "Add Project".  Choose the name wisely; if you decide to rename the project later you'll need to manually rename it in the configuration file and also rename the project's database file to match.
 
 ![screenshot](https://i.imgur.com/orxxMl0.png)
@@ -80,6 +82,27 @@ If you click your project in the Projects table, a dialog appears with options.
 * **Replace Submission Key** generates a new submission key, invalidating the old one in case you accidentally leak it.
 * **Copy Submission URL** copies the submission URL to the clipboard.
 * **Max Event Age**, if greater than 0, sets the number of days before events are automatically deleted to save space.
+
+### View the Events
+
+The Client homepage provides a list of projects.  Click your project to open the Project Display.  This interface is designed to resemble an IMAP email inbox, where instead of emails you have events submitted by your `ErrorClient`.  Every user sees the same events and the same folder structure, but every user has their own read/unread state.
+
+If multiple users are accessing the service at the same time, it is best to choose one user to design the folder structure and do most event management.  There is currently no event stream to notify the browser client of changes made by another user, so if you have other users working simultaneously in your project, you may need to refresh the page periodically.  It is also necesary to refresh the page in order to receive new events.
+
+#### Folder Management
+You can create a tree of folders into which events can be organized.  Get started by right-clicking the root folder and choosing "New Folder".  Once you have a few folders, you can also drag and drop individual folders to move them.
+
+#### Event Management
+Events are mainly meant to be moved into different folders automatically by Filters.  Click the "Edit Filters" button in the toolbar to manage filters.  You can also manually move events by dragging and dropping or by using the context menu (right-click an event).
+
+Search functionality is also available in the toolbar.  The basic search box does a case-insensitive "Contains" search on most of the visible Event fields.  Alternatively you can click the Advanced Search button to specify a set of conditions for a more precise search.
+
+Tips:  
+* Using the SHIFT and/or CTRL keys, you can select multiple events.
+* If an event list item is focused, Arrow Up and Down keys will select the previous / next event.
+* CTRL + A to select all events
+* CTRL + Z to undo an operation where you manually moved something.
+* CTRL + SHIFT + Z or CTRL + Y to redo an operation you undid.
 
 ## Building From Source
 
