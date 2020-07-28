@@ -83,6 +83,10 @@ If you click your project in the Projects table, a dialog appears with options.
 * **Copy Submission URL** copies the submission URL to the clipboard.
 * **Max Event Age**, if greater than 0, sets the number of days before events are automatically deleted to save space.
 
+### Add User Permission
+
+For each user that needs to access this project, edit that user and add the project to their list of allowed projects.
+
 ### View the Events
 
 The Client homepage provides a list of projects.  Click your project to open the Project Display.  This interface is designed to resemble an IMAP email inbox, where instead of emails you have events submitted by your `ErrorClient`.  Every user sees the same events and the same folder structure, but every user has their own read/unread state.
