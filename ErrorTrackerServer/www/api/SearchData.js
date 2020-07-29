@@ -1,5 +1,5 @@
 ﻿import ExecAPI from 'appRoot/api/api';
-import PreprocessEventSummaries from 'appRoot/api/EventData';
+import { PreprocessEventSummaries } from 'appRoot/api/EventData';
 
 export function SearchSimple(projectName, folderId, query)
 {
