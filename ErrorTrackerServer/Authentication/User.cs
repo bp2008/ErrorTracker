@@ -51,6 +51,11 @@ namespace ErrorTrackerServer
 		public bool Permanent = false;
 
 		/// <summary>
+		/// Key of custom tag to show in the event list.
+		/// </summary>
+		public string EventListCustomTagKey = null;
+
+		/// <summary>
 		/// Don't query this directly -- use instance methods like <see cref="AllowProject"/> and <see cref="IsProjectAllowed"/> instead to guarantee thread safety.
 		/// (List of users)
 		/// </summary>

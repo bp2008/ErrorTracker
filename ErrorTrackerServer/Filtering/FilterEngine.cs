@@ -60,7 +60,7 @@ namespace ErrorTrackerServer.Filtering
 			if (full.filter.ConditionHandling != ConditionHandling.Unconditional && !full.conditions.Any(c => c.Enabled))
 				return; // No enabled conditions, and this is not an unconditional filter
 
-			foreach (Event e in db.GetEventsWithoutTagsInFolderDeferred(folderId))
+			foreach (Event e in db.GetEventsWithoutTagsInFolderDeferred(folderId, null))
 			{
 				DeferredRunFilterAgainstEvent(full, e); // This method can indicate to stop executing filters against the event, but we are already done either way.
 			}
@@ -73,7 +73,7 @@ namespace ErrorTrackerServer.Filtering
 		public void RunEnabledFiltersAgainstFolder(int folderId)
 		{
 			List<FullFilter> enabledFilters = db.GetFilters(true);
-			foreach (Event e in db.GetEventsWithoutTagsInFolderDeferred(folderId))
+			foreach (Event e in db.GetEventsWithoutTagsInFolderDeferred(folderId, null))
 			{
 				foreach (FullFilter full in enabledFilters)
 				{
@@ -112,7 +112,7 @@ namespace ErrorTrackerServer.Filtering
 			if (full.filter.ConditionHandling != ConditionHandling.Unconditional && !full.conditions.Any(c => c.Enabled))
 				return; // No enabled conditions, and this is not an unconditional filter
 
-			foreach (Event e in db.GetAllEventsNoTagsDeferred())
+			foreach (Event e in db.GetAllEventsNoTagsDeferred(null))
 			{
 				DeferredRunFilterAgainstEvent(full, e); // This method can indicate to stop executing filters against the event, but we are already done either way.
 			}
@@ -125,7 +125,7 @@ namespace ErrorTrackerServer.Filtering
 		public void RunEnabledFiltersAgainstAllEvents()
 		{
 			List<FullFilter> enabledFilters = db.GetFilters(true);
-			foreach (Event e in db.GetAllEventsNoTagsDeferred())
+			foreach (Event e in db.GetAllEventsNoTagsDeferred(null))
 			{
 				foreach (FullFilter full in enabledFilters)
 				{
@@ -416,11 +416,12 @@ namespace ErrorTrackerServer.Filtering
 		/// </summary>
 		/// <param name="query"></param>
 		/// <param name="folderId">Folder ID to search.  If -1, all events are searched.</param>
+		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <returns></returns>
-		public List<Event> Search(string query, int folderId)
+		public List<Event> Search(string query, int folderId, string eventListCustomTagKey)
 		{
 			List<Event> matches = new List<Event>();
-			foreach (Event e in GetEventsForSearchDeferred(folderId))
+			foreach (Event e in GetEventsForSearchDeferred(folderId, eventListCustomTagKey))
 			{
 				if (SearchEvent(e, query))
 					matches.Add(e);
@@ -464,15 +465,16 @@ namespace ErrorTrackerServer.Filtering
 		/// <param name="conditions">Array of filter conditions to evaluate. The FilterCondition.Enabled field is disregarded.</param>
 		/// <param name="matchAll">If true, only one of the conditions needs to match. If false, all conditions need to match.</param>
 		/// <param name="folderId">Folder ID to search.  If -1, all events are searched.</param>
+		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <returns></returns>
-		public List<Event> AdvancedSearch(FilterCondition[] conditions, bool matchAll, int folderId)
+		public List<Event> AdvancedSearch(FilterCondition[] conditions, bool matchAll, int folderId, string eventListCustomTagKey)
 		{
 			List<Event> matches = new List<Event>();
 			if (conditions == null || conditions.Length == 0)
 				return matches;
 			foreach (FilterCondition condition in conditions)
 				condition.Enabled = true;
-			foreach (Event e in GetEventsForSearchDeferred(folderId))
+			foreach (Event e in GetEventsForSearchDeferred(folderId, eventListCustomTagKey))
 			{
 				if (!matchAll)
 				{
@@ -502,12 +504,12 @@ namespace ErrorTrackerServer.Filtering
 			return matches;
 		}
 
-		private IEnumerable<Event> GetEventsForSearchDeferred(int folderId)
+		private IEnumerable<Event> GetEventsForSearchDeferred(int folderId, string eventListCustomTagKey)
 		{
 			if (folderId == -1)
-				return db.GetAllEventsNoTagsDeferred();
+				return db.GetAllEventsNoTagsDeferred(eventListCustomTagKey);
 			else
-				return db.GetEventsWithoutTagsInFolderDeferred(folderId);
+				return db.GetEventsWithoutTagsInFolderDeferred(folderId, eventListCustomTagKey);
 		}
 		#endregion
 

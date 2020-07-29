@@ -30,6 +30,10 @@ namespace ErrorTrackerServer.Controllers
 			if (!request.Validate(out Project p, out ApiResponseBase error))
 				return Json(error);
 
+			string customTagKey = session.GetUser().EventListCustomTagKey;
+			if (customTagKey != null)
+				customTagKey = Tag.ValidateTagKey(customTagKey);
+
 			GetEventSummaryResponse response = new GetEventSummaryResponse();
 			using (DB db = new DB(p.Name))
 			{
@@ -37,16 +41,16 @@ namespace ErrorTrackerServer.Controllers
 				if (request.startTime == 0 && request.endTime == 0)
 				{
 					if (request.folderId < 0)
-						events = db.GetAllEventsNoTags();
+						events = db.GetAllEventsNoTags(customTagKey);
 					else
-						events = db.GetEventsWithoutTagsInFolder(request.folderId);
+						events = db.GetEventsWithoutTagsInFolder(request.folderId, customTagKey);
 				}
 				else
 				{
 					if (request.folderId < 0)
-						events = db.GetEventsWithoutTagsByDate(request.startTime, request.endTime);
+						events = db.GetEventsWithoutTagsByDate(request.startTime, request.endTime, customTagKey);
 					else
-						events = db.GetEventsWithoutTagsInFolderByDate(request.folderId, request.startTime, request.endTime);
+						events = db.GetEventsWithoutTagsInFolderByDate(request.folderId, request.startTime, request.endTime, customTagKey);
 				}
 
 				if (request.uniqueOnly)
@@ -94,6 +98,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				GetEventDataResponse response = new GetEventDataResponse();
 				response.ev = ev;
+				response.eventListCustomTagKey = Tag.ValidateTagKey(session.GetUser().EventListCustomTagKey);
 				return Json(response);
 			}
 			return ApiError("Unable to find event with ID " + request.eventId);
@@ -210,6 +215,22 @@ namespace ErrorTrackerServer.Controllers
 				return Json(new CountUnreadEventsByFolderResponse(folderIdToUnreadEventCount));
 			}
 		}
+		/// <summary>
+		/// Sets the custom tag to be included in event summaries provided to this user. Set null to unset the preference.
+		/// </summary>
+		/// <returns></returns>
+		public ActionResult SetEventListCustomTagKey()
+		{
+			SetEventListCustomTagKeyRequest request = ApiRequestBase.ParseRequest<SetEventListCustomTagKeyRequest>(this);
+
+			if (!request.Validate(out Project p, out ApiResponseBase error))
+				return Json(error);
+
+			session.GetUser().EventListCustomTagKey = Tag.ValidateTagKey(request.eventListCustomTagKey);
+			Settings.data.Save();
+
+			return Json(new ApiResponseBase(true));
+		}
 	}
 
 	/// <summary>
@@ -229,6 +250,9 @@ namespace ErrorTrackerServer.Controllers
 		/// True if the requesting user has read this event already.
 		/// </summary>
 		public bool Read;
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public string CTag;
+		[JsonIgnore]
 		private HashSet<long> readEventIds;
 
 		public EventSummary(Event ev, HashSet<long> readEventIds)
@@ -243,6 +267,8 @@ namespace ErrorTrackerServer.Controllers
 				Message = Message.Substring(0, 150);
 			Color = ev.Color;
 			Read = readEventIds.Contains(ev.EventId);
+			if (ev is EventWithCustomTagValue)
+				CTag = ((EventWithCustomTagValue)ev).CTag;
 		}
 	}
 
@@ -272,6 +298,10 @@ namespace ErrorTrackerServer.Controllers
 		/// The requested event.
 		/// </summary>
 		public Event ev;
+		/// <summary>
+		/// Key of custom tag chosen by this user to appear in EventNode components.
+		/// </summary>
+		public string eventListCustomTagKey;
 		public GetEventDataResponse() : base(true, null) { }
 	}
 	public class GetEventRequest : ProjectRequestBase
@@ -309,5 +339,9 @@ namespace ErrorTrackerServer.Controllers
 		{
 			this.folderIdToUnreadEventCount = folderIdToUnreadEventCount;
 		}
+	}
+	public class SetEventListCustomTagKeyRequest : ProjectRequestBase
+	{
+		public string eventListCustomTagKey;
 	}
 }

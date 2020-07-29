@@ -295,18 +295,32 @@ namespace ErrorTrackerServer
 		/// <summary>
 		/// Returns a collection that iterates through all the Events. If you need to use an Event's tags, you will need to call <see cref="GetEventTags"/> on the Event.
 		/// </summary>
+		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <returns></returns>
-		public List<Event> GetAllEventsNoTags()
+		public List<Event> GetAllEventsNoTags(string eventListCustomTagKey)
 		{
-			return conn.Value.Query<Event>("SELECT * FROM Event");
+			if (eventListCustomTagKey == null)
+				return conn.Value.Query<Event>("SELECT * FROM Event");
+			else
+				return conn.Value.Query<EventWithCustomTagValue>(
+					"SELECT Event.*, Tag.Value as CTag FROM Event "
+					+ "LEFT JOIN Tag ON Event.EventId = Tag.EventId AND Tag.Key = ?", eventListCustomTagKey)
+					.Select(e => (Event)e)
+					.ToList();
 		}
 		/// <summary>
 		/// Returns a collection that iterates through all the Events without needing to load them all into memory first. If you need to use an Event's tags, you will need to call <see cref="GetEventTags"/> on the Event.
 		/// </summary>
+		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <returns></returns>
-		public IEnumerable<Event> GetAllEventsNoTagsDeferred()
+		public IEnumerable<Event> GetAllEventsNoTagsDeferred(string eventListCustomTagKey)
 		{
-			return conn.Value.DeferredQuery<Event>("SELECT * FROM Event");
+			if (eventListCustomTagKey == null)
+				return conn.Value.DeferredQuery<Event>("SELECT * FROM Event");
+			else
+				return conn.Value.DeferredQuery<EventWithCustomTagValue>(
+					"SELECT Event.*, Tag.Value as CTag FROM Event "
+					+ "LEFT JOIN Tag ON Event.EventId = Tag.EventId AND Tag.Key = ?", eventListCustomTagKey);
 		}
 		/// <summary>
 		/// Loads the event's tags from the database only if the event currently has no tags defined. Meant to be used with deferred event getters such as <see cref="GetAllEventsNoTagsDeferred"/>.
@@ -346,11 +360,19 @@ namespace ErrorTrackerServer
 		/// </summary>
 		/// <param name="oldestEpoch">Start date in milliseconds since the unix epoch.</param>
 		/// <param name="newestEpoch">End date in milliseconds since the unix epoch.</param>
+		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <returns></returns>
-		public List<Event> GetEventsWithoutTagsByDate(long oldestEpoch, long newestEpoch)
+		public List<Event> GetEventsWithoutTagsByDate(long oldestEpoch, long newestEpoch, string eventListCustomTagKey)
 		{
-			List<Event> events = conn.Value.Query<Event>("SELECT * FROM Event WHERE Date >= ? AND Date <= ?", oldestEpoch, newestEpoch);
-			return events;
+			if (eventListCustomTagKey == null)
+				return conn.Value.Query<Event>("SELECT * FROM Event WHERE Date >= ? AND Date <= ?", oldestEpoch, newestEpoch);
+			else
+				return conn.Value.Query<EventWithCustomTagValue>(
+					"SELECT Event.*, Tag.Value as CTag FROM Event "
+					+ "LEFT JOIN Tag ON Event.EventId = Tag.EventId AND Tag.Key = ? "
+					+ "WHERE Date >= ? AND Date <= ?", eventListCustomTagKey, oldestEpoch, newestEpoch)
+					.Select(e => (Event)e)
+					.ToList();
 		}
 		/// <summary>
 		/// Gets all events from the specified folder.
@@ -363,7 +385,7 @@ namespace ErrorTrackerServer
 			List<Tag> tags = null;
 			conn.Value.RunInTransaction(() =>
 			{
-				events = GetEventsWithoutTagsInFolder(folderId);
+				events = GetEventsWithoutTagsInFolder(folderId, null);
 				if (events.Count > 0)
 					tags = conn.Value.Query<Tag>("SELECT Tag.* FROM Tag INNER JOIN Event ON Tag.EventId = Event.EventId WHERE Event.FolderId = ?", folderId);
 			});
@@ -376,26 +398,40 @@ namespace ErrorTrackerServer
 		/// Gets all events from the specified folder. Does not populate the Tags field.
 		/// </summary>
 		/// <param name="folderId">Folder ID. Negative ID matches All Folders.</param>
+		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <returns></returns>
-		public List<Event> GetEventsWithoutTagsInFolder(int folderId)
+		public List<Event> GetEventsWithoutTagsInFolder(int folderId, string eventListCustomTagKey)
 		{
 			if (folderId < 0)
-				return GetAllEventsNoTags();
-			else
+				return GetAllEventsNoTags(eventListCustomTagKey);
+			else if (eventListCustomTagKey == null)
 				return conn.Value.Query<Event>("SELECT * FROM Event WHERE Event.FolderId = ?", folderId);
+			else
+				return conn.Value.Query<EventWithCustomTagValue>(
+					"SELECT Event.*, Tag.Value as CTag FROM Event "
+					+ "LEFT JOIN Tag ON Event.EventId = Tag.EventId AND Tag.Key = ? "
+					+ "WHERE Event.FolderId = ?", eventListCustomTagKey, folderId)
+					.Select(e => (Event)e)
+					.ToList();
 		}
 
 		/// <summary>
 		/// Gets all events from the specified folder. Does not populate the Tags field. Does not load all events into memory first.
 		/// </summary>
 		/// <param name="folderId">Folder ID. Negative ID matches All Folders.</param>
+		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <returns></returns>
-		public IEnumerable<Event> GetEventsWithoutTagsInFolderDeferred(int folderId)
+		public IEnumerable<Event> GetEventsWithoutTagsInFolderDeferred(int folderId, string eventListCustomTagKey)
 		{
 			if (folderId < 0)
-				return GetAllEventsNoTagsDeferred();
-			else
+				return GetAllEventsNoTagsDeferred(eventListCustomTagKey);
+			else if (eventListCustomTagKey == null)
 				return conn.Value.DeferredQuery<Event>("SELECT * FROM Event WHERE Event.FolderId = ?", folderId);
+			else
+				return conn.Value.DeferredQuery<EventWithCustomTagValue>(
+					"SELECT Event.*, Tag.Value as CTag FROM Event "
+					+ "LEFT JOIN Tag ON Event.EventId = Tag.EventId AND Tag.Key = ? "
+					+ "WHERE Event.FolderId = ?", eventListCustomTagKey, folderId);
 		}
 
 		/// <summary>
@@ -404,13 +440,21 @@ namespace ErrorTrackerServer
 		/// <param name="folderId">Folder ID. Negative ID matches All Folders.</param>
 		/// <param name="oldestEpoch">Start date in milliseconds since the unix epoch.</param>
 		/// <param name="newestEpoch">End date in milliseconds since the unix epoch.</param>
+		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <returns></returns>
-		public List<Event> GetEventsWithoutTagsInFolderByDate(int folderId, long oldestEpoch, long newestEpoch)
+		public List<Event> GetEventsWithoutTagsInFolderByDate(int folderId, long oldestEpoch, long newestEpoch, string eventListCustomTagKey)
 		{
 			if (folderId < 0)
 				return GetEventsByDate(oldestEpoch, newestEpoch);
-			else
+			else if (eventListCustomTagKey == null)
 				return conn.Value.Query<Event>("SELECT * FROM Event WHERE Event.FolderId = ? AND Date >= ? AND Date <= ?", folderId, oldestEpoch, newestEpoch);
+			else
+				return conn.Value.Query<EventWithCustomTagValue>(
+					"SELECT Event.*, Tag.Value as CTag FROM Event "
+					+ "LEFT JOIN Tag ON Event.EventId = Tag.EventId AND Tag.Key = ? "
+					+ "WHERE Event.FolderId = ? AND Date >= ? AND Date <= ?", eventListCustomTagKey, folderId, oldestEpoch, newestEpoch)
+					.Select(e => (Event)e)
+					.ToList();
 		}
 		/// <summary>
 		/// Given a list of Event and a list of Tag, adds each tag to the appropriate event.

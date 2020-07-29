@@ -47,5 +47,29 @@ namespace ErrorTrackerServer.Database.Project.Model
 			this.Key = Key;
 			this.Value = Value;
 		}
+
+		/// <summary>
+		/// Checks a tag key for validity and always returns a valid tag key.
+		/// </summary>
+		/// <param name="Key"></param>
+		/// <returns></returns>
+		public static string ValidateTagKey(string Key)
+		{
+			if (Key == null)
+				Key = "null";
+			Key = Key.Trim();
+			if (!StringUtil.IsPrintableName(Key))
+				Key = "Undefined";
+			if (Key.Equals("EventType", StringComparison.OrdinalIgnoreCase)
+				|| Key.Equals("SubType", StringComparison.OrdinalIgnoreCase)
+				|| Key.Equals("Message", StringComparison.OrdinalIgnoreCase)
+				|| Key.Equals("Date", StringComparison.OrdinalIgnoreCase)
+				|| Key.Equals("Folder", StringComparison.OrdinalIgnoreCase)
+				|| Key.Equals("Color", StringComparison.OrdinalIgnoreCase))
+				Key = "Tag_" + Key;
+			if (Key.Length > 128)
+				Key = Key.Substring(0, 128);
+			return Key;
+		}
 	}
 }

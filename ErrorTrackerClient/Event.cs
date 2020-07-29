@@ -56,6 +56,7 @@ namespace ErrorTrackerClient
 		/// <para>Key string, case-sensitive.</para>
 		/// <para>Must be non-null and contain at least one alphanumeric character.</para>
 		/// <para>Must not exactly match any of the reserved Key values "EventType", "SubType", "Message", "Date", "Folder", "Color".</para>
+		/// <para>Max length: 128 characters.</para>
 		/// <para>If any of these rules is violated, the Key string will be changed automatically.</para>
 		/// </param>
 		/// <param name="Value">Value of the tag.</param>
@@ -73,6 +74,8 @@ namespace ErrorTrackerClient
 				|| Key.Equals("Folder", StringComparison.OrdinalIgnoreCase)
 				|| Key.Equals("Color", StringComparison.OrdinalIgnoreCase))
 				throw new Exception("Tag Key cannot be \"" + Key + "\" (Key is reserved)");
+			if (Key.Length > 128)
+				throw new Exception("Tag Key is too long. Max length: 128 characters.");
 
 			if (Private_Tags == null)
 				Private_Tags = new Dictionary<string, Tag>();
@@ -89,7 +92,7 @@ namespace ErrorTrackerClient
 		{
 			if (Private_Tags != null)
 			{
-				if (Private_Tags.TryGetValue(Key.ToLower(), out Tag t))
+				if (Private_Tags.TryGetValue(Key.Trim().ToLower(), out Tag t))
 				{
 					Value = t.Value;
 					return true;
@@ -107,7 +110,7 @@ namespace ErrorTrackerClient
 		{
 			if (Private_Tags == null)
 				return false;
-			return Private_Tags.Remove(Key.ToLower());
+			return Private_Tags.Remove(Key.Trim().ToLower());
 		}
 		/// <summary>
 		/// Returns a list of all the tags in arbitrary order.

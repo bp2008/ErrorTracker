@@ -51,3 +51,7 @@ export function CountUnreadEventsByFolder(projectName)
 {
 	return ExecAPI("EventData/CountUnreadEventsByFolder", { projectName });
 }
+export function SetEventListCustomTagKey(projectName, eventListCustomTagKey)
+{
+	return ExecAPI("EventData/SetEventListCustomTagKey", { projectName, eventListCustomTagKey });
+}

@@ -25,12 +25,16 @@ namespace ErrorTrackerServer.Controllers
 			if (!request.Validate(out Project p, out ApiResponseBase error))
 				return Json(error);
 
+			string customTagKey = session.GetUser().EventListCustomTagKey;
+			if (customTagKey != null)
+				customTagKey = Tag.ValidateTagKey(customTagKey);
+
 			SearchResultsResponse response = new SearchResultsResponse();
 			using (FilterEngine fe = new FilterEngine(p.Name))
 			{
 				HashSet<long> readEventIds = new HashSet<long>(fe.db.GetAllReadEventIds(session.GetUser().UserId));
 
-				response.events = fe.Search(request.query, request.folderId)
+				response.events = fe.Search(request.query, request.folderId, customTagKey)
 					.Select(ev => ProduceEventSummary(ev, readEventIds))
 					.ToList();
 			}
@@ -43,12 +47,16 @@ namespace ErrorTrackerServer.Controllers
 			if (!request.Validate(out Project p, out ApiResponseBase error))
 				return Json(error);
 
+			string customTagKey = session.GetUser().EventListCustomTagKey;
+			if (customTagKey != null)
+				customTagKey = Tag.ValidateTagKey(customTagKey);
+
 			SearchResultsResponse response = new SearchResultsResponse();
 			using (FilterEngine fe = new FilterEngine(p.Name))
 			{
 				HashSet<long> readEventIds = new HashSet<long>(fe.db.GetAllReadEventIds(session.GetUser().UserId));
 
-				response.events = fe.AdvancedSearch(request.conditions, request.matchAll, request.folderId)
+				response.events = fe.AdvancedSearch(request.conditions, request.matchAll, request.folderId, customTagKey)
 					.Select(ev => ProduceEventSummary(ev, readEventIds))
 					.ToList();
 			}

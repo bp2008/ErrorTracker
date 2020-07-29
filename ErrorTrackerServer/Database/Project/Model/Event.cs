@@ -93,7 +93,7 @@ namespace ErrorTrackerServer.Database.Project.Model
 		{
 			if (_tags == null)
 				_tags = new Dictionary<string, Tag>();
-			Key = ValidateTagKey(Key);
+			Key = Tag.ValidateTagKey(Key);
 			_tags[Key.ToLower()] = new Tag(Key, Value);
 		}
 
@@ -107,7 +107,7 @@ namespace ErrorTrackerServer.Database.Project.Model
 		{
 			if (_tags != null)
 			{
-				Key = ValidateTagKey(Key);
+				Key = Tag.ValidateTagKey(Key);
 				if (_tags.TryGetValue(Key.ToLower(), out Tag t))
 				{
 					Value = t.Value;
@@ -126,7 +126,7 @@ namespace ErrorTrackerServer.Database.Project.Model
 		{
 			if (_tags == null)
 				return false;
-			Key = ValidateTagKey(Key);
+			Key = Tag.ValidateTagKey(Key);
 			return _tags.Remove(Key.ToLower());
 		}
 		/// <summary>
@@ -141,28 +141,6 @@ namespace ErrorTrackerServer.Database.Project.Model
 			foreach (Tag t in allTags)
 				t.EventId = this.EventId;
 			return allTags;
-		}
-
-		/// <summary>
-		/// Checks a tag key for validity and always returns a valid tag key.
-		/// </summary>
-		/// <param name="Key"></param>
-		/// <returns></returns>
-		private static string ValidateTagKey(string Key)
-		{
-			if (Key == null)
-				Key = "null";
-			Key = Key.Trim();
-			if (!StringUtil.IsPrintableName(Key))
-				Key = "Undefined";
-			if (Key.Equals("EventType", StringComparison.OrdinalIgnoreCase)
-				|| Key.Equals("SubType", StringComparison.OrdinalIgnoreCase)
-				|| Key.Equals("Message", StringComparison.OrdinalIgnoreCase)
-				|| Key.Equals("Date", StringComparison.OrdinalIgnoreCase)
-				|| Key.Equals("Folder", StringComparison.OrdinalIgnoreCase)
-				|| Key.Equals("Color", StringComparison.OrdinalIgnoreCase))
-				Key = "Tag_" + Key;
-			return Key;
 		}
 		public int GetTagCount()
 		{
@@ -224,5 +202,9 @@ namespace ErrorTrackerServer.Database.Project.Model
 	{
 		public int FolderId { get; set; }
 		public uint Count { get; set; }
+	}
+	public class EventWithCustomTagValue : Event
+	{
+		public string CTag { get; set; }
 	}
 }

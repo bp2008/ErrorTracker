@@ -25,7 +25,7 @@
 				<table class="tagTable">
 					<tbody>
 						<tr class="tagRow" v-for="(tag, index) in event.TagList" :key="index">
-							<td class="tagKey" v-text="tag.Key"></td>
+							<td class="tagKey" v-text="tag.Key" @contextmenu.stop.prevent="onTagKeyContextMenu($event, tag)"></td>
 							<td class="tagValue" v-text="tag.Value"></td>
 						</tr>
 					</tbody>
@@ -35,15 +35,27 @@
 		<div v-else class="noEvent">
 			[no event selected]
 		</div>
+		<!-- Event Context Menu -->
+		<vue-context ref="tagKeyMenu">
+			<template slot-scope="tagName">
+				<li if="tagName.data">
+					<a role="button" @click.prevent="setEventListCustomTagKey(tagName.data)">Show &quot;{{tagName.data}}&quot; in Event List</a>
+				</li>
+				<li v-if="eventListCustomTagKey">
+					<a role="button" @click.prevent="setEventListCustomTagKey(null)">Remove &quot;{{eventListCustomTagKey}}&quot; from Event List</a>
+				</li>
+			</template>
+		</vue-context>
 	</div>
 </template>
 <script>
-	import { GetEvent } from 'appRoot/api/EventData';
+	import { GetEvent, SetEventListCustomTagKey } from 'appRoot/api/EventData';
 	import { GetDateStr, GetReadableTextColorHexForBackgroundColorHex } from 'appRoot/scripts/Util';
 	import EventBus from 'appRoot/scripts/EventBus';
+	import { VueContext } from 'vue-context';
 
 	export default {
-		components: {},
+		components: { VueContext },
 		props:
 		{
 			projectName: { // pre-validated
@@ -77,7 +89,8 @@
 				error: null,
 				loading: false,
 				loadingEventId: null,
-				event: null
+				event: null,
+				eventListCustomTagKey: null
 			};
 		},
 		computed:
@@ -155,6 +168,7 @@
 					return;
 				this.loading = true;
 				this.event = null;
+				this.eventListCustomTagKey = null;
 				this.error = null;
 				this.loadingEventId = this.openedEventId;
 
@@ -175,6 +189,7 @@
 							data.ev.TagList = tagList;
 
 							this.event = data.ev;
+							this.eventListCustomTagKey = data.eventListCustomTagKey;
 						}
 						else
 							this.error = data.error;
@@ -202,6 +217,29 @@
 				if (typeof window.overrideEventDetailsDateFormat === "function")
 					return window.overrideEventDetailsDateFormat(date);
 				return GetDateStr(date, false);
+			},
+			onTagKeyContextMenu(e, tag)
+			{
+				this.$refs.tagKeyMenu.open(e, tag.Key);
+			},
+			setEventListCustomTagKey(tagKey)
+			{
+				this.eventListCustomTagKey = tagKey;
+				SetEventListCustomTagKey(this.projectName, tagKey)
+					.then(data =>
+					{
+						if (data.success)
+						{
+							toaster.success("Custom tag key changed.");
+							EventBus.externalChangesToVisibleEvents++;
+						}
+						else
+							toaster.error(data.error);
+					})
+					.catch(err =>
+					{
+						toaster.error(err.message);
+					});
 			}
 		},
 		watch:

@@ -16,8 +16,10 @@
 			</span>
 			<span class="date">{{eventDateFormat(new Date(event.Date))}}</span>
 		</div>
-		<div class="secondLine">{{event.Message}}</div>
-		<div class="json" v-text="JSON.stringify(event,0,2)"></div>
+		<div class="secondLine">
+			<span class="message">{{event.Message}}</span>
+			<span v-if="event.CTag" class="ctag">{{event.CTag}}</span>
+		</div>
 	</a>
 </template>
 <script>
@@ -218,7 +220,8 @@
 		border-left: 8px solid transparent;
 	}
 
-	.firstLine
+	.firstLine,
+	.secondLine
 	{
 		width: 100%;
 		display: flex;
@@ -253,17 +256,27 @@
 	}
 
 	.types,
-	.secondLine
+	.message,
+	.ctag
 	{
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
 	}
 
-	.json
+	.message
 	{
-		white-space: pre-wrap;
-		display: none;
+		flex: 1 1 50%;
+	}
+
+	.ctag
+	{
+		/*background-color: rgba(255,0,0,0.15);*/
+		/*font-weight: bold;*/
+		color: #000000;
+		flex: 1 1 1;
+		max-width: 50%;
+		min-width: 10px;
 	}
 
 	.eventNode.unread .firstLine
