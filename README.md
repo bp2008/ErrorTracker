@@ -1,5 +1,5 @@
 # ErrorTracker
-A light-weight event/error tracking service written in C#
+A light-weight event/error tracking service written in C#.  This is supposed to be an alternative to using an email client like Thunderbird to monitor errors and other events from .NET Framework applications.  Many commercial services offer this type of product, and there are even some free ones, but none quite matched my needs.
 
 ## Server Installation
 ErrorTrackerServer is a Windows Service with a built-in service manager GUI.
@@ -82,6 +82,10 @@ If you click your project in the Projects table, a dialog appears with options.
 * **Replace Submission Key** generates a new submission key, invalidating the old one in case you accidentally leak it.
 * **Copy Submission URL** copies the submission URL to the clipboard.
 * **Max Event Age**, if greater than 0, sets the number of days before events are automatically deleted to save space.
+
+### Add User Permission
+
+For each user that needs to access this project, edit that user and add the project to their list of allowed projects.
 
 ### View the Events
 
