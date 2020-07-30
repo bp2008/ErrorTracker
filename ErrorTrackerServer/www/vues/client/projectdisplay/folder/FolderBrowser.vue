@@ -329,7 +329,8 @@
 					{
 						if (data.success)
 						{
-							onSuccess();
+							if (typeof onSuccess === "function")
+								onSuccess();
 							this.loadFolders();
 						}
 						else
