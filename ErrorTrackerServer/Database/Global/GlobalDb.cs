@@ -38,7 +38,7 @@ namespace ErrorTrackerServer.Database.Global
 		private SQLiteConnection CreateDbConnection()
 		{
 			SQLiteConnection c = new SQLiteConnection(Globals.WritableDirectoryBase + DbFilename, true);
-			c.BusyTimeout = TimeSpan.FromSeconds(10);
+			c.BusyTimeout = TimeSpan.FromSeconds(30);
 			CreateOrMigrate(c);
 			return c;
 		}
