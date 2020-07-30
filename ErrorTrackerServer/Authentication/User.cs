@@ -1,4 +1,6 @@
 ﻿using BPUtil;
+using ErrorTrackerServer.Database.Project.Model;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,9 +53,58 @@ namespace ErrorTrackerServer
 		public bool Permanent = false;
 
 		/// <summary>
-		/// Key of custom tag to show in the event list.
+		/// JSON-serialized dictionary mapping project name to a custom tag key to include in event summaries loaded by this user.
 		/// </summary>
-		public string EventListCustomTagKey = null;
+		public string EventListCustomTagKeys;
+
+		/// <summary>
+		/// Returns the validated tag key for the specified project, or null.
+		/// </summary>
+		/// <param name="projectName">Project name, not case sensitive.</param>
+		/// <returns></returns>
+		public string GetEventListCustomTagKey(string projectName)
+		{
+			projectName = projectName.ToLower();
+			string json = EventListCustomTagKeys;
+			if (string.IsNullOrWhiteSpace(json))
+				return null;
+			Dictionary<string, string> dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+			if (dict.TryGetValue(projectName, out string customTagKey))
+				if (customTagKey != null)
+					return Tag.ValidateTagKey(customTagKey);
+			return null;
+		}
+
+		/// <summary>
+		/// Sets the validated tag key for the specified project.
+		/// </summary>
+		/// <param name="projectName">Project name, not case sensitive.</param>
+		/// <param name="customTagKey">Tag key to set. If null, the record is deleted.</param>
+		/// <returns></returns>
+		public void SetEventListCustomTagKey(string projectName, string customTagKey)
+		{
+			projectName = projectName.ToLower();
+			string json = EventListCustomTagKeys;
+			Dictionary<string, string> dict;
+			if (string.IsNullOrWhiteSpace(json))
+				dict = new Dictionary<string, string>();
+			else
+			{
+				try
+				{
+					dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+				}
+				catch
+				{
+					dict = new Dictionary<string, string>();
+				}
+			}
+			if (customTagKey == null && dict.ContainsKey(projectName))
+				dict.Remove(projectName);
+			else
+				dict[projectName] = Tag.ValidateTagKey(customTagKey);
+			EventListCustomTagKeys = JsonConvert.SerializeObject(dict);
+		}
 
 		/// <summary>
 		/// Don't query this directly -- use instance methods like <see cref="AllowProject"/> and <see cref="IsProjectAllowed"/> instead to guarantee thread safety.

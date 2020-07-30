@@ -30,9 +30,7 @@ namespace ErrorTrackerServer.Controllers
 			if (!request.Validate(out Project p, out ApiResponseBase error))
 				return Json(error);
 
-			string customTagKey = session.GetUser().EventListCustomTagKey;
-			if (customTagKey != null)
-				customTagKey = Tag.ValidateTagKey(customTagKey);
+			string customTagKey = session.GetUser().GetEventListCustomTagKey(p.Name);
 
 			GetEventSummaryResponse response = new GetEventSummaryResponse();
 			using (DB db = new DB(p.Name))
@@ -98,7 +96,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				GetEventDataResponse response = new GetEventDataResponse();
 				response.ev = ev;
-				response.eventListCustomTagKey = Tag.ValidateTagKey(session.GetUser().EventListCustomTagKey);
+				response.eventListCustomTagKey = session.GetUser().GetEventListCustomTagKey(p.Name);
 				return Json(response);
 			}
 			return ApiError("Unable to find event with ID " + request.eventId);
@@ -226,7 +224,7 @@ namespace ErrorTrackerServer.Controllers
 			if (!request.Validate(out Project p, out ApiResponseBase error))
 				return Json(error);
 
-			session.GetUser().EventListCustomTagKey = Tag.ValidateTagKey(request.eventListCustomTagKey);
+			session.GetUser().SetEventListCustomTagKey(p.Name, request.eventListCustomTagKey);
 			Settings.data.Save();
 
 			return Json(new ApiResponseBase(true));
@@ -252,8 +250,6 @@ namespace ErrorTrackerServer.Controllers
 		public bool Read;
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
 		public string CTag;
-		[JsonIgnore]
-		private HashSet<long> readEventIds;
 
 		public EventSummary(Event ev, HashSet<long> readEventIds)
 		{

@@ -28,6 +28,10 @@ namespace ErrorTrackerServer.Controllers
 			if (string.IsNullOrWhiteSpace(request.projectName) || !StringUtil.IsAlphaNumericOrUnderscore(request.projectName))
 				return Json(new ApiResponseBase(false, "project name is invalid"));
 
+			request.projectName = request.projectName.Trim();
+			if(request.projectName.Length > 64)
+				return Json(new ApiResponseBase(false, "project name is too long. Max length: 64 characters."));
+
 			Project p = new Project();
 			p.Name = request.projectName;
 			p.InitializeSubmitKey();
