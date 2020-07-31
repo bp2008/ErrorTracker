@@ -64,6 +64,34 @@ namespace ErrorTrackerServer
 		/// (Optional) If true, the X-Forwarded-For header will be used to learn the true IP address of remote clients, only if the header is received from a trusted proxy IP. Changes require server restart.
 		/// </summary>
 		public bool useXForwardedFor = false;
+		/// <summary>
+		/// SMTP server host name or IP Address.
+		/// </summary>
+		public string smtpHost = "";
+		/// <summary>
+		/// User name for SMTP server authentication.
+		/// </summary>
+		public string smtpUser = "";
+		/// <summary>
+		/// Password for SMTP server authentication.
+		/// </summary>
+		public string smtpPass = "";
+		/// <summary>
+		/// Port number for SMTP server.
+		/// </summary>
+		public int smtpPort = 587;
+		/// <summary>
+		/// If true, SSL will be used for the SMTP connection.
+		/// </summary>
+		public bool smtpSsl = true;
+		/// <summary>
+		/// Email address to send email from.
+		/// </summary>
+		public string smtpSendFrom = "";
+		/// <summary>
+		/// Email address to send error reports to.
+		/// </summary>
+		public string defaultErrorEmail = "";
 
 		public string GetWWWDirectoryBase()
 		{

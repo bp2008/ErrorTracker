@@ -1,5 +1,6 @@
 ﻿using BPUtil;
 using BPUtil.MVC;
+using ErrorTrackerServer.Code;
 using ErrorTrackerServer.Database.Project.Model;
 using ErrorTrackerServer.Filtering;
 using Newtonsoft.Json;
@@ -57,55 +58,98 @@ namespace ErrorTrackerServer.Controllers
 			foreach (ErrorTrackerClient.ReadOnlyTag tag in clientEvent.GetAllTags())
 				ev.SetTag(tag.Key, tag.Value);
 
-			using (FilterEngine fe = new FilterEngine(p.Name))
+			string error = InsertIntoProject(p, ev);
+			if (error == null && p.CloneTo != null)
 			{
-				// If our response is not received by the client, they will most likely submit again, causing a duplicate to be received.
-				// Check for duplicate submissions.
-				List<Event> events = fe.db.GetEventsByDate(ev.Date, ev.Date);
-				bool anyDupe = events.Any(existing =>
+				foreach (string pName in p.CloneTo)
 				{
-					if (existing.Date == ev.Date
-					&& existing.EventType == ev.EventType
-					&& existing.SubType == ev.SubType
-					&& existing.Message == ev.Message
-					&& existing.GetTagCount() == ev.GetTagCount())
+					Project pCloneTarget = Settings.data.GetProject(pName);
+					if (pCloneTarget != null && pCloneTarget != p)
 					{
-						// All else is the same. Compare tags.
-						List<Tag> existingTags = existing.GetAllTags();
-						existingTags.Sort(CompareTags);
-
-						List<Tag> newTags = ev.GetAllTags();
-						newTags.Sort(CompareTags);
-
-						for (int i = 0; i < existingTags.Count; i++)
-							if (existingTags[i].Key != newTags[i].Key || existingTags[i].Value != newTags[i].Value)
-								return false;
-
-						return true;
+						string cloneError = InsertIntoProject(pCloneTarget, ev);
+						if (cloneError != null)
+							error = cloneError;
 					}
-					return false;
-				});
-
-				// Skip adding the event if it is a duplicate.
-				if (anyDupe)
-					return this.PlainText("OK");
-
-				// Add the event to the database.
-				fe.db.AddEvent(ev);
-
-				// Run Filters
-				try
-				{
-					fe.RunEnabledFiltersAgainstEvent(ev);
-				}
-				catch (Exception ex)
-				{
-					Logger.Debug(ex);
-					return this.PlainText("FILTER ERROR");
 				}
 			}
-			return this.PlainText("OK");
+			if (error == null)
+				return this.PlainText("OK");
+			else
+			{
+				Emailer.SendError("An error \"" + error + "\" occurred while handling event submission.\r\nPOST Body:\r\n" + str, false);
+				return this.PlainText(error);
+			}
 		}
+
+		/// <summary>
+		/// Clones the event and adds it (if necessary) to the project, then runs all enabled filters against it. Returns a string that is null if there was no error, or an error code such as "FILTER ERROR" if there was an error.
+		/// </summary>
+		/// <param name="p">Project to insert the event into.</param>
+		/// <param name="eventOriginal">Event to clone and insert.  The event object is not changed by this method.</param>
+		/// <returns>Returns a string that is null if there was no error, or an error code such as "FILTER ERROR" if there was an error.</returns>
+		private string InsertIntoProject(Project p, Event eventOriginal)
+		{
+			try
+			{
+				Event ev = JsonConvert.DeserializeObject<Event>(JsonConvert.SerializeObject(eventOriginal));
+				using (FilterEngine fe = new FilterEngine(p.Name))
+				{
+					// If our response is not received by the client, they will most likely submit again, causing a duplicate to be received.
+					// Check for duplicate submissions.
+					List<Event> events = fe.db.GetEventsByDate(ev.Date, ev.Date);
+					bool anyDupe = events.Any(existing =>
+					{
+						if (existing.Date == ev.Date
+						&& existing.EventType == ev.EventType
+						&& existing.SubType == ev.SubType
+						&& existing.Message == ev.Message
+						&& existing.GetTagCount() == ev.GetTagCount())
+						{
+							// All else is the same. Compare tags.
+							List<Tag> existingTags = existing.GetAllTags();
+							existingTags.Sort(CompareTags);
+
+							List<Tag> newTags = ev.GetAllTags();
+							newTags.Sort(CompareTags);
+
+							for (int i = 0; i < existingTags.Count; i++)
+								if (existingTags[i].Key != newTags[i].Key || existingTags[i].Value != newTags[i].Value)
+									return false;
+
+							return true;
+						}
+						return false;
+					});
+
+					// Skip adding the event if it is a duplicate.
+					if (anyDupe)
+						return null;
+
+					// Add the event to the database.
+					fe.db.AddEvent(ev);
+
+					// Run Filters
+					try
+					{
+						fe.RunEnabledFiltersAgainstEvent(ev);
+					}
+					catch (Exception ex)
+					{
+						Logger.Debug(ex);
+						Emailer.SendError(Context, "Filter Error", ex);
+						return "FILTER ERROR";
+					}
+				}
+				return null;
+			}
+			catch (Exception ex)
+			{
+				Logger.Debug(ex);
+				Emailer.SendError(Context, "Unhandled exception thrown when inserting event into project \"" + p.Name + "\".", ex);
+				return "UNHANDLED EXCEPTION";
+			}
+		}
+
 		private static int CompareTags(Tag a, Tag b)
 		{
 			int diff = a.Key.CompareTo(b.Key);

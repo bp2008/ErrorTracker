@@ -28,7 +28,12 @@ namespace ErrorTrackerServer
 
 			MvcJson.SerializeObject = JsonConvert.SerializeObject;
 			MvcJson.DeserializeObject = JsonConvert.DeserializeObject;
-			mvcMain = new MVCMain(Assembly.GetExecutingAssembly(), typeof(Controllers.Auth).Namespace, ex => Logger.Debug(ex));
+			mvcMain = new MVCMain(Assembly.GetExecutingAssembly(), typeof(Controllers.Auth).Namespace, MvcErrorHandler);
+		}
+
+		private void MvcErrorHandler(RequestContext context, Exception ex)
+		{
+			Emailer.SendError(context, "An unhandled exception was thrown while processing an MVC request.", ex);
 		}
 
 		public override void handleGETRequest(HttpProcessor p)

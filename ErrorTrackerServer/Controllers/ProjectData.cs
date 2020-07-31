@@ -29,7 +29,7 @@ namespace ErrorTrackerServer.Controllers
 				return Json(new ApiResponseBase(false, "project name is invalid"));
 
 			request.projectName = request.projectName.Trim();
-			if(request.projectName.Length > 64)
+			if (request.projectName.Length > 64)
 				return Json(new ApiResponseBase(false, "project name is too long. Max length: 64 characters."));
 
 			Project p = new Project();
@@ -83,6 +83,10 @@ namespace ErrorTrackerServer.Controllers
 				return Json(new ApiResponseBase(false, "project could not be found"));
 
 			p.MaxEventAgeDays = request.MaxEventAgeDays;
+			if (request.CloneTo == null)
+				request.CloneTo = new string[0];
+			p.CloneTo = request.CloneTo;
+
 			Settings.data.Save();
 
 			Logger.Info("Project \"" + request.projectName + "\" was updated by \"" + session.userName + "\". " + JsonConvert.SerializeObject(p));
@@ -97,14 +101,22 @@ namespace ErrorTrackerServer.Controllers
 		public List<ProjectInfo> projects;
 		public GetProjectDataResponse() : base(true, null)
 		{
-			projects = Settings.data.GetAllProjects()
+			List<Project> allProjects = Settings.data.GetAllProjects();
+			IEnumerable<string> allNames = allProjects.Select(p => p.Name);
+			projects = allProjects
 				.Select(p =>
 				{
 					return new ProjectInfo()
 					{
 						Name = p.Name,
 						SubmitKey = p.SubmitKey,
-						MaxEventAgeDays = p.MaxEventAgeDays
+						MaxEventAgeDays = p.MaxEventAgeDays,
+						CloneTo = p.CloneTo,
+						CloneToEditSpec = new FieldEditSpec(typeof(Project).GetField("CloneTo"), new Project())
+						{
+							labelHtml = "Clone New Events to Other Projects: ",
+							allowedValues = allNames.Where(n => n != p.Name).ToArray()
+						}
 					};
 				})
 				.ToList();
@@ -115,6 +127,8 @@ namespace ErrorTrackerServer.Controllers
 		public string Name;
 		public string SubmitKey;
 		public int MaxEventAgeDays;
+		public string[] CloneTo;
+		public FieldEditSpec CloneToEditSpec;
 	}
 	public class ProjectRequest : ApiRequestBase
 	{
@@ -126,5 +140,6 @@ namespace ErrorTrackerServer.Controllers
 	public class UpdateProjectRequest : ProjectRequest
 	{
 		public int MaxEventAgeDays;
+		public string[] CloneTo;
 	}
 }

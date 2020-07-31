@@ -8,6 +8,7 @@
 			<input type="button" value="Copy Submission URL" @click="CopySubmitUrl" />
 		</div>
 		<div class="dataRow">Max Event Age (Days): <input type="number" v-model="maxEventAgeDays" min="0" max="36500" /> (0 to disable automatic Event deletion)</div>
+		<div class="dataRow"><PropEdit :initialValue="cloneTo" :spec="project.CloneToEditSpec" @valueChanged="onPropEditValueChanged" /></div>
 		<div class="buttonRow">
 			<input type="button" value="Commit Changes" @click="Commit" />
 			<input type="button" value="Delete Project" @click="Remove" />
@@ -20,9 +21,10 @@
 	import { RemoveProject, ReplaceSubmitKey, UpdateProject } from 'appRoot/api/ProjectData';
 	import { ModalConfirmDialog } from 'appRoot/scripts/ModalDialog';
 	import { CopyToClipboard } from 'appRoot/scripts/Util';
+	import PropEdit from 'appRoot/vues/common/editor/PropEdit.vue';
 
 	export default {
-		components: {},
+		components: { PropEdit },
 		props:
 		{
 			project: {
@@ -33,12 +35,14 @@
 		data()
 		{
 			return {
-				maxEventAgeDays: 0
+				maxEventAgeDays: 0,
+				cloneTo: []
 			};
 		},
 		created()
 		{
 			this.maxEventAgeDays = this.project.MaxEventAgeDays;
+			this.cloneTo = this.project.CloneTo;
 		},
 		mounted()
 		{
@@ -85,7 +89,7 @@
 			},
 			Commit()
 			{
-				UpdateProject(this.project.Name, this.maxEventAgeDays)
+				UpdateProject(this.project.Name, this.maxEventAgeDays, this.cloneTo)
 					.then(data =>
 					{
 						if (data.success)
@@ -129,6 +133,11 @@
 				}
 				else
 					toaster.error("Application Error. No submission URL was found for this project.");
+			},
+			onPropEditValueChanged(key, value)
+			{
+				if (key === "CloneTo")
+					this.cloneTo = value;
 			}
 		},
 		beforeDestroy()

@@ -21,6 +21,10 @@ namespace ErrorTrackerServer
 		/// Max age in days for events.  Events older than this will be deleted automatically. Disabled if less than 1.
 		/// </summary>
 		public int MaxEventAgeDays = 0;
+		/// <summary>
+		/// List of Project names to clone incoming events to.  Only the Project named in the Event submission has its CloneTo list processed.
+		/// </summary>
+		public string[] CloneTo = new string[0];
 
 		public void InitializeSubmitKey()
 		{

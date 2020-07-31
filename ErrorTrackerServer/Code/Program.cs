@@ -20,6 +20,10 @@ namespace ErrorTrackerServer
 			Globals.Initialize(assembly.Location, "Data/");
 			Directory.CreateDirectory(Globals.WritableDirectoryBase + "Projects/");
 			AppInit.WindowsService<ErrorTrackerSvc>();
+			Logger.CatchAll((sender, e) =>
+			{
+				Emailer.SendError(null, sender, e);
+			});
 		}
 	}
 }

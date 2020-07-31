@@ -87,6 +87,7 @@
     <Compile Include="Authentication\User.cs" />
     <Compile Include="BCrypt\BCrypt.cs" />
     <Compile Include="BCrypt\SaltParseException.cs" />
+    <Compile Include="Code\Emailer.cs" />
     <Compile Include="Code\WebpackChunkResolver.cs" />
     <Compile Include="Config\Settings.cs" />
     <Compile Include="Config\Project.cs" />
