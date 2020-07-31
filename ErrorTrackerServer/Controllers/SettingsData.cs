@@ -53,6 +53,13 @@ namespace ErrorTrackerServer.Controllers
 			Settings.data.trustedProxyIPs = request.settings.trustedProxyIPs;
 			Settings.data.useXRealIP = request.settings.useXRealIP;
 			Settings.data.useXForwardedFor = request.settings.useXForwardedFor;
+			Settings.data.smtpHost = request.settings.smtpHost;
+			Settings.data.smtpPort = request.settings.smtpPort;
+			Settings.data.smtpSsl = request.settings.smtpSsl;
+			Settings.data.smtpUser = request.settings.smtpUser;
+			Settings.data.smtpPass = request.settings.smtpPass;
+			Settings.data.smtpSendFrom = request.settings.smtpSendFrom;
+			Settings.data.defaultErrorEmail = request.settings.defaultErrorEmail;
 			Settings.data.Save();
 
 			SetSettingsResponse response = new SetSettingsResponse(true, null);
@@ -141,6 +148,13 @@ namespace ErrorTrackerServer.Controllers
 		public string[] trustedProxyIPs = new string[0];
 		public bool useXRealIP = false;
 		public bool useXForwardedFor = false;
+		public string smtpHost = "";
+		public int smtpPort = 587;
+		public bool smtpSsl = true;
+		public string smtpUser = "";
+		public string smtpPass = "";
+		public string smtpSendFrom = "";
+		public string defaultErrorEmail = "";
 		public SettingsObject() { }
 		public SettingsObject(Settings settings)
 		{
@@ -155,6 +169,13 @@ namespace ErrorTrackerServer.Controllers
 			trustedProxyIPs = settings.trustedProxyIPs;
 			useXRealIP = settings.useXRealIP;
 			useXForwardedFor = settings.useXForwardedFor;
+			smtpHost = settings.smtpHost;
+			smtpPort = settings.smtpPort;
+			smtpSsl = settings.smtpSsl;
+			smtpUser = settings.smtpUser;
+			smtpPass = settings.smtpPass;
+			smtpSendFrom = settings.smtpSendFrom;
+			defaultErrorEmail = settings.defaultErrorEmail;
 		}
 	}
 	public enum LoginStyle

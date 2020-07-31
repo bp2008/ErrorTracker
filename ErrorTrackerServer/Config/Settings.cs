@@ -69,14 +69,6 @@ namespace ErrorTrackerServer
 		/// </summary>
 		public string smtpHost = "";
 		/// <summary>
-		/// User name for SMTP server authentication.
-		/// </summary>
-		public string smtpUser = "";
-		/// <summary>
-		/// Password for SMTP server authentication.
-		/// </summary>
-		public string smtpPass = "";
-		/// <summary>
 		/// Port number for SMTP server.
 		/// </summary>
 		public int smtpPort = 587;
@@ -84,6 +76,14 @@ namespace ErrorTrackerServer
 		/// If true, SSL will be used for the SMTP connection.
 		/// </summary>
 		public bool smtpSsl = true;
+		/// <summary>
+		/// User name for SMTP server authentication.
+		/// </summary>
+		public string smtpUser = "";
+		/// <summary>
+		/// Password for SMTP server authentication.
+		/// </summary>
+		public string smtpPass = "";
 		/// <summary>
 		/// Email address to send email from.
 		/// </summary>
