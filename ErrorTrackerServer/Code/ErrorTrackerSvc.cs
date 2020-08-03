@@ -24,7 +24,14 @@ namespace ErrorTrackerServer
 		public ErrorTrackerSvc()
 		{
 			Settings.data.Load();
+
+			Logger.CatchAll((sender, e) =>
+			{
+				Emailer.SendError(null, sender, e);
+			});
+
 			Settings.data.SaveIfNoExist();
+
 			if (Settings.data.CountUsers() == 0)
 			{
 				User defaultAdmin = new User("admin", "admin", null, true)
@@ -35,6 +42,13 @@ namespace ErrorTrackerServer
 				defaultAdmin.InitializeUserId();
 				Settings.data.Save();
 			}
+
+			if (string.IsNullOrWhiteSpace(Settings.data.privateSigningKey))
+			{
+				Settings.data.privateSigningKey = new SignatureFactory().ExportPrivateKey();
+				Settings.data.Save();
+			}
+			BPUtil.PasswordReset.StatelessPasswordResetBase.Initialize(Settings.data.privateSigningKey);
 
 			// Initialize User IDs.
 			bool setAny = false;

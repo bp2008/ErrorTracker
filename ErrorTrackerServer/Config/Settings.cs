@@ -92,6 +92,10 @@ namespace ErrorTrackerServer
 		/// Email address to send error reports to.
 		/// </summary>
 		public string defaultErrorEmail = "";
+		/// <summary>
+		/// Private key used to sign and verify password reset requests, and maybe other things in the future.  Automatically generated upon application startup.
+		/// </summary>
+		public string privateSigningKey = "";
 
 		public string GetWWWDirectoryBase()
 		{

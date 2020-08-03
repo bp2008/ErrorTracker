@@ -114,7 +114,7 @@ namespace ErrorTrackerServer
 		/// <param name="ex">Exception</param>
 		public static void SendError(RequestContext context, string heading, Exception ex)
 		{
-			SendError(context, ex.ToString(), heading);
+			SendError(context, heading, ex.ToString());
 		}
 		/// <summary>
 		/// Sends an error report by email to the configured recipient.

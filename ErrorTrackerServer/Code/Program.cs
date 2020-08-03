@@ -19,11 +19,7 @@ namespace ErrorTrackerServer
 			System.Reflection.Assembly assembly = System.Reflection.Assembly.GetEntryAssembly();
 			Globals.Initialize(assembly.Location, "Data/");
 			Directory.CreateDirectory(Globals.WritableDirectoryBase + "Projects/");
-			AppInit.WindowsService<ErrorTrackerSvc>();
-			Logger.CatchAll((sender, e) =>
-			{
-				Emailer.SendError(null, sender, e);
-			});
+			AppInit.WindowsService<ErrorTrackerSvc>(); // Most of the initialization work happens here, including loading of the Settings.data object. The method blocks, so further initialization should be done in the ErrorTrackerSvc constructor.
 		}
 	}
 }
