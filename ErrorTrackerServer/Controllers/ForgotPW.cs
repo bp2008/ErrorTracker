@@ -84,6 +84,7 @@ namespace ErrorTrackerServer.Controllers
 			sb.Append("-----------------------------\r\n");
 			sb.Append(newPassword);
 			sb.Append("\r\n-----------------------------");
+			sb.Append("\r\n\r\n(This email is automated.  Please do not reply.)");
 			Emailer.SendEmail(req.email, Settings.data.systemName + " New Password", sb.ToString(), false);
 
 			return Json(new ApiResponseBase(true));

@@ -138,6 +138,11 @@
 			background-image: linear-gradient(to top, #ffffff 0%, #ffffff 100%);
 		}
 
+		.btnRequest:disabled
+		{
+			cursor: default;
+		}
+
 	.error,
 	.resetCompleted
 	{
