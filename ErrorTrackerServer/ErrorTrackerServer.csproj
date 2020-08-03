@@ -193,11 +193,14 @@
     <None Include="www\vues\common\controls\SvgButton.vue" />
     <None Include="www\vues\common\editor\Editor.vue" />
     <None Include="www\vues\common\editor\PropEdit.vue" />
+    <None Include="www\vues\login\ForgotPasswordReset.vue" />
+    <None Include="www\vues\login\ForgotPassword.vue" />
     <None Include="www\vues\common\Footer.vue" />
     <None Include="www\vues\common\loginrecords\LoginRecordsTable.vue" />
     <None Include="www\vues\common\ScaleLoader.vue" />
     <None Include="www\vues\common\Template.vue" />
-    <None Include="www\vues\Login.vue" />
+    <None Include="www\vues\login\LoginLayout.vue" />
+    <None Include="www\vues\login\Login.vue" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="webpack.config.js" />

@@ -2,7 +2,11 @@
 import VueRouter from 'vue-router';
 import ExecAPI from 'appRoot/api/api';
 
-import Login from 'appRoot/vues/Login.vue';
+import LoginLayout from 'appRoot/vues/login/LoginLayout.vue';
+import Login from 'appRoot/vues/login/Login.vue';
+import ForgotPassword from 'appRoot/vues/login/ForgotPassword.vue';
+import ForgotPasswordReset from 'appRoot/vues/login/ForgotPasswordReset.vue';
+
 import ClientLayout from 'appRoot/vues/client/ClientLayout.vue';
 import ClientHome from 'appRoot/vues/client/ClientHome.vue';
 import ClientFiltersHome from 'appRoot/vues/client/filters/ClientFiltersHome.vue';
@@ -61,7 +65,26 @@ export default function CreateRouter(store, basePath)
 				path: basePath + '', redirect: basePath + 'login'
 			},
 			{
-				path: basePath + 'login', component: Login, name: 'login'
+				path: basePath + 'login', component: LoginLayout, name: "loginLayout",
+				children: [
+					{
+						path: '', component: Login, name: 'login', meta: { title: "Login" }
+					},
+					{
+						path: 'forgotPassword', component: ForgotPassword, name: 'forgotPassword',
+						props: (route) => ({
+							initialUser: route.query.u
+						}),
+						meta: { title: "Forgot Password" }
+					},
+					{
+						path: 'resetPassword', component: ForgotPasswordReset, name: 'resetPassword',
+						props: (route) => ({
+							initialUser: route.query.u
+						}),
+						meta: { title: "Password Recovery" }
+					}
+				]
 			},
 			{
 				path: basePath + 'client', component: ClientLayout,

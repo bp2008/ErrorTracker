@@ -18,17 +18,31 @@ namespace ErrorTrackerServer.Controllers
 {
 	public class ForgotPW : ETController
 	{
+		private static ObjectCache<string, bool> requestLimiterByUsername = new ObjectCache<string, bool>(2000000, 5); // 5 minutes between requests by user name
+		private const double minutesBetweenRequestsByIp = 0.25;
+		private static ObjectCache<string, bool> requestLimiterByIP = new ObjectCache<string, bool>(2000000, minutesBetweenRequestsByIp); // 15 seconds between requests by IP
+		private static ObjectCache<string, bool> resetLimiterByIP = new ObjectCache<string, bool>(2000000, minutesBetweenRequestsByIp); // 15 seconds between resets by IP
 		public ActionResult Available()
 		{
 			return Json(new AvailabilityResponse(Emailer.Enabled));
 		}
 		public ActionResult InitiateRequest()
 		{
+			if (!Emailer.Enabled)
+				return ApiError("This server does not have email configured. Therefore, this function is not usable.");
+
+			if (requestLimiterByIP.Get(Context.httpProcessor.RemoteIPAddressStr))
+				return ApiError("Your request was denied. Please wait " + TimeSpan.FromMinutes(minutesBetweenRequestsByIp).TotalSeconds + " seconds between requests.");
+			requestLimiterByIP.Add(Context.httpProcessor.RemoteIPAddressStr, true);
+
 			ForgotPasswordRequest request = ApiRequestBase.ParseRequest<ForgotPasswordRequest>(this);
 			ErrorTrackerPasswordReset resetter = new ErrorTrackerPasswordReset();
 			PasswordResetRequest req = resetter.GetResetRequest(request.accountIdentifier);
 			if (req != null)
 			{
+				if (requestLimiterByUsername.Get(req.accountIdentifier))
+					return null;
+				requestLimiterByUsername.Add(req.accountIdentifier, true);
 				StringBuilder sb = new StringBuilder();
 				sb.Append("Hello ");
 				sb.Append(req.displayName);
@@ -37,19 +51,29 @@ namespace ErrorTrackerServer.Controllers
 					+ "\" has requested a reset of your password at \"" + Settings.data.systemName
 					+ "\". If you did not make this request, you can ignore this message and your password will not be changed.\r\n\r\n");
 				sb.Append("Here is your Security Code:\r\n\r\n");
+				sb.Append("-----------------------------\r\n");
 				sb.Append(req.secureToken);
-				sb.Append("\r\n\r\nEnter it on the \"Forgot Password\" page and a new password will be emailed to you.  This code expires in ");
+				sb.Append("\r\n-----------------------------");
+				sb.Append("\r\n\r\nCopy it to the \"Password Recovery\" page and a new password will be emailed to you.  This code expires in ");
 				sb.Append((int)req.tokenExpiration.TotalMinutes);
 				sb.Append(" minutes.\r\n\r\n(This email is automated.  Please do not reply.)");
-				Emailer.SendEmail(req.email, Settings.data.systemName + " Password Reset Request", sb.ToString(), false);
+				Emailer.SendEmail(req.email, Settings.data.systemName + " Password Recovery", sb.ToString(), false);
+				return ApiError(req.secureToken);
 			}
 			return Json(new ApiResponseBase(true));
 		}
 		public ActionResult Reset()
 		{
+			if (!Emailer.Enabled)
+				return ApiError("This server does not have email configured. Therefore, this function is not usable.");
+
+			if (resetLimiterByIP.Get(Context.httpProcessor.RemoteIPAddressStr))
+				return ApiError("Your request was denied. Please wait " + TimeSpan.FromMinutes(minutesBetweenRequestsByIp).TotalSeconds + " seconds between reset attempts.");
+			resetLimiterByIP.Add(Context.httpProcessor.RemoteIPAddressStr, true);
+
 			ForgotPasswordRequest request = ApiRequestBase.ParseRequest<ForgotPasswordRequest>(this);
 			ErrorTrackerPasswordReset resetter = new ErrorTrackerPasswordReset();
-			string newPassword = resetter.CompletePasswordReset(resetter.accountType, request.accountIdentifier, request.token, out PasswordResetRequest req);
+			string newPassword = resetter.CompletePasswordReset(resetter.accountType, request.accountIdentifier, request.token.Trim(), out PasswordResetRequest req);
 			if (newPassword == null)
 				return ApiError("Unable to reset password. Your Security Code may be invalid or expired.");
 

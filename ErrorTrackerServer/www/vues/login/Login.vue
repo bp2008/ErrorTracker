@@ -1,27 +1,20 @@
 ﻿<template>
-	<div :class="loginRootClasses">
+	<div class="loginRoot">
 		<div class="loginPanel">
 			<div class="systemName">{{systemName}}</div>
 			<input type="text" class="txtUser" v-model="user" placeholder="User Name" v-on:keyup.enter="TryLogin" />
 			<input type="password" class="txtPass" v-model="pass" placeholder="Password" v-on:keyup.enter="TryLogin" />
 			<input type="button" class="btnLogin" value="Log in" :disabled="!loginEnabled" @click="TryLogin" @keyup.space.enter="TryLogin" />
+			<div class="forgotPwLinkWrapper" v-if="emailConfigured">
+				<router-link :to="forgotPwRoute" class="forgotPwLink">Forgot Password?</router-link>
+			</div>
 		</div>
 		<div class="error" v-if="error">{{error}}</div>
-		<Footer class="loginFooter" />
-		<VStyle>
-			.loginRoot.wallpaper
-			{
-			background-image: url("{{wallpaperUrl}}");
-			}
-		</VStyle>
 	</div>
 </template>
 <script>
-	import Footer from 'appRoot/vues/common/Footer.vue';
-	import VStyle from 'appRoot/vues/common/controls/VStyle.vue';
-
 	export default {
-		components: { VStyle, Footer },
+		components: {},
 		data()
 		{
 			return {
@@ -30,17 +23,15 @@
 				pass: "",
 				loginEnabled: true,
 				error: null,
-				loginRootClasses: ["loginRoot"],
-				wallpaperUrl: appContext.appPath + "Wallpaper"
+				emailConfigured: appContext.emailConfigured
 			};
-		},
-		created()
-		{
-			if (appContext.loginStyle)
-				this.loginRootClasses.push(appContext.loginStyle);
 		},
 		computed:
 		{
+			forgotPwRoute()
+			{
+				return { name: "forgotPassword", query: { u: this.user } };
+			}
 		},
 		methods:
 		{
@@ -71,39 +62,15 @@
 	}
 </script>
 <style scoped>
-	.loginRoot
-	{
-		font-size: 16px;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		align-items: center;
-		width: 100%;
-		height: 100%;
-		background-color: #555555;
-		background-image: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
-	}
-
-		.loginRoot.style2
-		{
-			background-image: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
-		}
-
-		.loginRoot.wallpaper
-		{
-			background-size: cover;
-			background-position: center;
-		}
-
 	.loginPanel
 	{
-		margin-top: auto;
 		padding: 20px 20px;
 		background-color: rgba(255,255,255,0.25);
 		border: 1px solid rgba(0,0,0,1);
 		border-radius: 8px;
 		box-shadow: 0 0 16px rgba(0,0,0,0.5);
 		backdrop-filter: blur(8px);
+		max-width: 200px;
 	}
 
 	.systemName, .txtUser, .txtPass, .btnLogin
@@ -175,11 +142,10 @@
 		backdrop-filter: blur(8px);
 	}
 
-	.loginFooter
+	.forgotPwLinkWrapper
 	{
-		background-color: rgba(255,255,255,0.5);
-		backdrop-filter: blur(5px);
-		box-shadow: 0 0 16px rgba(0,0,0,0.5);
-		text-shadow: 0px 0px 4px rgba(255,255,255,1);
+		text-align: center;
+		margin-top: 10px;
+		font-size: 10pt;
 	}
 </style>

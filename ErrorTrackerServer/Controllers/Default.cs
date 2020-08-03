@@ -27,7 +27,8 @@ namespace ErrorTrackerServer.Controllers
 				systemName = !string.IsNullOrWhiteSpace(Settings.data.systemName) ? Settings.data.systemName.Trim() : "Error Tracker",
 				appPath = Settings.data.GetAppPath(),
 				loginStyle = Settings.data.loginStyle,
-				serverVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString()
+				serverVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+				emailConfigured = Emailer.Enabled
 			};
 
 			ViewData.Set("AppContext", JsonConvert.SerializeObject(appContext));

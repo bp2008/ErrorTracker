@@ -1,5 +1,5 @@
 ﻿import { CloseAllDialogs } from 'appRoot/scripts/ModalDialog';
-import { HTMLToText } from 'appRoot/scripts/Util';
+import { HTMLToText, GetRouteMatched } from 'appRoot/scripts/Util';
 
 /**
  * Executes an API call to the specified method, using the specified arguments.  Returns a promise which resolves with any graceful response from the server.  Rejects if an error occurred that prevents the normal functioning of the API (e.g. the server was unreachable or returned an entirely unexpected response such as HTTP 500).
@@ -27,7 +27,7 @@ export default function ExecAPI(method, args)
 				return response.json();
 			else if (response.status === 403)
 			{
-				if (window.myApp.$route.name !== "login")
+				if (!GetRouteMatched(window.myApp.$route, route=>route.name === "loginLayout"))
 				{
 					toaster.error("Your session was lost.");
 					CloseAllDialogs();
@@ -38,9 +38,12 @@ export default function ExecAPI(method, args)
 			}
 			else if (response.status === 418)
 			{
-				toaster.error("Your session does not have sufficient privilege to access the requested resource.");
-				CloseAllDialogs();
-				window.myApp.$router.replace({ name: "login" });
+				if (!GetRouteMatched(window.myApp.$route, route=>route.name === "loginLayout"))
+				{
+					toaster.error("Your session does not have sufficient privilege to access the requested resource.");
+					CloseAllDialogs();
+					window.myApp.$router.replace({ name: "login" });
+				}
 				return new Promise((resolve, reject) => { });
 			}
 			else

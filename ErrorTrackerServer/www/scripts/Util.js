@@ -409,6 +409,39 @@ export function RemoveEvents(ele, events, handler)
 ///////////////////////////////////////////////////////////////
 // Misc ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
+/**
+ * Given a route object from vue-router, determines if any of the matched routes contains a route with the specified path. E.g. for the route "/path/to/thing", the paths "path", "to", and "thing" are contained.  Uses case-insensitive comparison, so "THING" would also match.
+ * @param {Object} route A route object from vue-router.
+ * @param {String} path A string representing fragment of the path.
+ * @returns {Boolean} true if the route contains the path fragment.
+ */
+export function RouteContainsPath(route, path)
+{
+	if (route && route.matched && route.matched.length > 0 && path)
+	{
+		path = path.toLowerCase();
+		for (let i = 0; i < route.matched.length; i++)
+			if (route.matched[i].path.split('/').some(m => m.toLowerCase() === path))
+				return true;
+	}
+	return false;
+}
+/**
+ * Given a route object from vue-router, returns the first matched route which causes the provided test function to return true.
+ * @param {Object} route A route object from vue-router.
+ * @param {Function} testFunc A function accepting a route.matched[…] object as an argument, returning either true or false.
+ * @returns {Object} A route.matched[…] object or null.
+ */
+export function GetRouteMatched(route, testFunc)
+{
+	if (route && route.matched && route.matched.length > 0 && typeof testFunc === "function")
+	{
+		for (let i = 0; i < route.matched.length; i++)
+			if (testFunc(route.matched[i]))
+				return route.matched[i];
+	}
+	return null;
+}
 String.prototype.padLeft = function (len, c)
 {
 	var pads = len - this.length;
