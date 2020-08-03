@@ -58,7 +58,6 @@ namespace ErrorTrackerServer.Controllers
 				sb.Append((int)req.tokenExpiration.TotalMinutes);
 				sb.Append(" minutes.\r\n\r\n(This email is automated.  Please do not reply.)");
 				Emailer.SendEmail(req.email, Settings.data.systemName + " Password Recovery", sb.ToString(), false);
-				return ApiError(req.secureToken);
 			}
 			return Json(new ApiResponseBase(true));
 		}
