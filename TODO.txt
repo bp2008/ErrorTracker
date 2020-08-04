@@ -1,9 +1,7 @@
-* Email Configuration
-	* Consider: Email Notifications of new events
-	* Consider: Email Notifications of new events (daily summary)
-	* Consider: Email Notifications of new events (weekly summary)
-	* User Reset Password (via email)
-	* Consider: Email Notification of login from new IP
-		* Consider: With user setting to disable notification. Could be shown in user-filtered login history lists.
+* Consider: Email Notifications of new events
+* Consider: Email Notifications of new events (daily summary)
+* Consider: Email Notifications of new events (weekly summary)
+* Consider: Email Notification of login from new IP
+	* Consider: With user setting to disable notification. Could be shown in user-filtered login history lists.
 
 * Consider: Add an event stream which notifies browsers of new events and of changes made to events.  This is probably hard to do correctly, but would be extremely helpful.
