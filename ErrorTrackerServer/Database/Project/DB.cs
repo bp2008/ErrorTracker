@@ -5,8 +5,10 @@ using SQLite;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ErrorTrackerServer
@@ -14,7 +16,7 @@ namespace ErrorTrackerServer
 	/// <summary>
 	/// Use within a "using" block to guarantee correct disposal.  Provides SQLite database access.  Not thread safe.  
 	/// </summary>
-	public class DB : IDisposable
+	public class DB : DBBase
 	{
 		#region Constructor / Fields
 		/// <summary>
@@ -34,14 +36,14 @@ namespace ErrorTrackerServer
 		/// </summary>
 		public readonly string DbFilename;
 		/// <summary>
-		/// Lazy-loaded database connection.
-		/// </summary>
-		private Lazy<SQLiteConnection> conn;
-		/// <summary>
 		/// Collection for keeping track of which database files have been initialized during this run of the app.  This could be run every time, but it is only necessary to do it once per app instance.
 		/// </summary>
 		private static ConcurrentDictionary<string, bool> initializedDatabases = new ConcurrentDictionary<string, bool>();
 		private static object createMigrateLock = new object();
+		/// <summary>
+		/// Collection for keeping locks for each projectName.
+		/// </summary>
+		private static ConcurrentDictionary<string, object> dbTransactionLocks = new ConcurrentDictionary<string, object>();
 		/// <summary>
 		/// Use within a "using" block to guarantee correct disposal.  Provides SQLite database access.  Not thread safe.  The DB connection will be lazy-loaded upon the first DB request.
 		/// </summary>
@@ -55,8 +57,8 @@ namespace ErrorTrackerServer
 		}
 		private SQLiteConnection CreateDbConnection()
 		{
-			SQLiteConnection c = new SQLiteConnection(Globals.WritableDirectoryBase + "Projects/" + DbFilename, true);
-			c.BusyTimeout = TimeSpan.FromSeconds(30);
+			SQLiteConnection c = new SQLiteConnection(Globals.WritableDirectoryBase + "Projects/" + DbFilename, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.NoMutex, true);
+			c.BusyTimeout = TimeSpan.FromSeconds(4);
 			CreateOrMigrate(c);
 			return c;
 		}
@@ -70,6 +72,8 @@ namespace ErrorTrackerServer
 					if (!initializedDatabases.TryGetValue(ProjectNameLower, out initialized) || !initialized)
 					{
 						initializedDatabases[ProjectNameLower] = true;
+
+						c.EnableWriteAheadLogging();
 
 						c.CreateTable<Event>();
 						c.CreateTable<Filter>();
@@ -125,14 +129,18 @@ namespace ErrorTrackerServer
 				if (ev.ComputeHash())
 					c.Execute("UPDATE Event SET HashValue = ? WHERE EventId = ?", ev.HashValue, ev.EventId);
 		}
-		/// <summary>
-		/// True if the database is currently in a transaction.
-		/// </summary>
-		public bool IsInTransaction
+		#endregion
+
+		#region Helpers
+		protected override void LockedTransaction(Action action)
 		{
-			get
+			object transactionLock = dbTransactionLocks.GetOrAdd(this.ProjectName, n => new object());
+			lock (transactionLock)
 			{
-				return conn.IsValueCreated ? conn.Value.IsInTransaction : false;
+				Robustify(() =>
+				{
+					conn.Value.RunInTransaction(action);
+				});
 			}
 		}
 		#endregion
@@ -158,13 +166,14 @@ namespace ErrorTrackerServer
 		public void AddEvent(Event e)
 		{
 			PreprocessEvent(e);
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
-				conn.Value.Insert(e);
+				Insert(e);
 				IEnumerable<Tag> tags = e.GetAllTags();
-				conn.Value.InsertAll(tags);
+				InsertAll(tags);
 			});
 		}
+
 		///// <summary>
 		///// Moves the specified event to the specified folder, returning true if successful.
 		///// </summary>
@@ -175,7 +184,7 @@ namespace ErrorTrackerServer
 		//{
 		//	if (GetFolder(newFolderId) == null)
 		//		return false;
-		//	if (conn.Value.Execute<int>("UPDATE Event SET FolderId = ? WHERE EventId = ?", newFolderId, eventId) == 1)
+		//	if (Execute<int>("UPDATE Event SET FolderId = ? WHERE EventId = ?", newFolderId, eventId) == 1)
 		//		return true;
 		//	return false;
 		//}
@@ -188,10 +197,10 @@ namespace ErrorTrackerServer
 		public bool MoveEvents(long[] eventIds, int newFolderId)
 		{
 			int affectedRows = 0;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				if (newFolderId == 0 || GetFolder(newFolderId) != null)
-					affectedRows = conn.Value.Execute("UPDATE Event SET FolderId = ? WHERE EventId IN (" + string.Join(",", eventIds) + ")", newFolderId);
+					affectedRows = Execute("UPDATE Event SET FolderId = ? WHERE EventId IN (" + string.Join(",", eventIds) + ")", newFolderId);
 			});
 			if (affectedRows == eventIds.Length)
 				return true;
@@ -204,7 +213,7 @@ namespace ErrorTrackerServer
 		///// <returns></returns>
 		//public bool DeleteEvent(long eventId)
 		//{
-		//	if (conn.Value.Delete<Event>(eventId) == 1)
+		//	if (Delete<Event>(eventId) == 1)
 		//		return true;
 		//	return false;
 		//}
@@ -218,11 +227,11 @@ namespace ErrorTrackerServer
 			if (eventIds.Length == 0)
 				return true;
 			int affectedRows = 0;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
-				affectedRows = conn.Value.Execute("DELETE FROM Event WHERE EventId IN (" + string.Join(",", eventIds) + ")");
-				conn.Value.Execute("DELETE FROM Tag WHERE EventId IN (" + string.Join(",", eventIds) + ")");
-				conn.Value.Execute("DELETE FROM ReadState WHERE EventId IN (" + string.Join(",", eventIds) + ")");
+				affectedRows = Execute("DELETE FROM Event WHERE EventId IN (" + string.Join(",", eventIds) + ")");
+				Execute("DELETE FROM Tag WHERE EventId IN (" + string.Join(",", eventIds) + ")");
+				Execute("DELETE FROM ReadState WHERE EventId IN (" + string.Join(",", eventIds) + ")");
 			});
 			if (affectedRows == eventIds.Length)
 				return true;
@@ -236,7 +245,10 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public bool SetEventsColor(long[] eventIds, uint color)
 		{
-			int affectedRows = conn.Value.Execute("UPDATE Event SET Color = ? WHERE EventId IN (" + string.Join(",", eventIds) + ")", color);
+			int affectedRows = Robustify(() =>
+			{
+				return Execute("UPDATE Event SET Color = ? WHERE EventId IN (" + string.Join(",", eventIds) + ")", color);
+			});
 			if (affectedRows == eventIds.Length)
 				return true;
 			return false;
@@ -251,9 +263,9 @@ namespace ErrorTrackerServer
 			{
 				foreach (Event e in events)
 					PreprocessEvent(e);
-				conn.Value.RunInTransaction(() =>
+				LockedTransaction(() =>
 				{
-					conn.Value.InsertAll(events, false);
+					InsertAll(events);
 					List<Tag> allTags = new List<Tag>();
 					foreach (Event e in events)
 					{
@@ -261,7 +273,7 @@ namespace ErrorTrackerServer
 						allTags.AddRange(tags);
 					}
 					if (allTags.Count > 0)
-						conn.Value.InsertAll(allTags, false);
+						InsertAll(allTags);
 				});
 			}
 		}
@@ -274,13 +286,13 @@ namespace ErrorTrackerServer
 		{
 			List<Event> events = null;
 			List<Tag> tags = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
-				events = conn.Value.Query<Event>("SELECT * FROM Event WHERE EventId = ?", eventId);
+				events = Query<Event>("SELECT * FROM Event WHERE EventId = ?", eventId);
 				if (events.Count > 0)
 				{
-					tags = conn.Value.Query<Tag>("SELECT Tag.* FROM Tag WHERE EventId = ?", eventId);
-					events[0].MatchingEvents = conn.Value.ExecuteScalar<long>("SELECT COUNT(EventId) FROM Event WHERE HashValue = ?", events[0].HashValue);
+					tags = Query<Tag>("SELECT Tag.* FROM Tag WHERE EventId = ?", eventId);
+					events[0].MatchingEvents = ExecuteScalar<long>("SELECT COUNT(EventId) FROM Event WHERE HashValue = ?", events[0].HashValue);
 				}
 			});
 			if (events.Count > 0)
@@ -298,9 +310,9 @@ namespace ErrorTrackerServer
 		public List<Event> GetAllEventsNoTags(string eventListCustomTagKey)
 		{
 			if (eventListCustomTagKey == null)
-				return conn.Value.Query<Event>("SELECT * FROM Event");
+				return Query<Event>("SELECT * FROM Event");
 			else
-				return conn.Value.Query<EventWithCustomTagValue>(
+				return Query<EventWithCustomTagValue>(
 					"SELECT Event.*, Tag.Value as CTag FROM Event "
 					+ "LEFT JOIN Tag ON Event.EventId = Tag.EventId AND Tag.Key = ?", eventListCustomTagKey)
 					.Select(e => (Event)e)
@@ -314,9 +326,9 @@ namespace ErrorTrackerServer
 		public IEnumerable<Event> GetAllEventsNoTagsDeferred(string eventListCustomTagKey)
 		{
 			if (eventListCustomTagKey == null)
-				return conn.Value.DeferredQuery<Event>("SELECT * FROM Event");
+				return DeferredQuery<Event>("SELECT * FROM Event");
 			else
-				return conn.Value.DeferredQuery<EventWithCustomTagValue>(
+				return DeferredQuery<EventWithCustomTagValue>(
 					"SELECT Event.*, Tag.Value as CTag FROM Event "
 					+ "LEFT JOIN Tag ON Event.EventId = Tag.EventId AND Tag.Key = ?", eventListCustomTagKey);
 		}
@@ -329,7 +341,7 @@ namespace ErrorTrackerServer
 		{
 			if (ev.GetTagCount() > 0)
 				return;
-			List<Tag> tags = conn.Value.Query<Tag>("SELECT * FROM Tag WHERE EventId = ?", ev.EventId);
+			List<Tag> tags = Query<Tag>("SELECT * FROM Tag WHERE EventId = ?", ev.EventId);
 			foreach (Tag t in tags)
 				ev.SetTag(t.Key, t.Value);
 		}
@@ -343,11 +355,11 @@ namespace ErrorTrackerServer
 		{
 			List<Event> events = null;
 			List<Tag> tags = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
-				events = conn.Value.Query<Event>("SELECT * FROM Event WHERE Date >= ? AND Date <= ?", oldestEpoch, newestEpoch);
+				events = Query<Event>("SELECT * FROM Event WHERE Date >= ? AND Date <= ?", oldestEpoch, newestEpoch);
 				if (events.Count > 0)
-					tags = conn.Value.Query<Tag>("SELECT Tag.* FROM Tag INNER JOIN Event ON Tag.EventId = Event.EventId WHERE Event.Date >= ? AND Event.Date <= ?", oldestEpoch, newestEpoch);
+					tags = Query<Tag>("SELECT Tag.* FROM Tag INNER JOIN Event ON Tag.EventId = Event.EventId WHERE Event.Date >= ? AND Event.Date <= ?", oldestEpoch, newestEpoch);
 			});
 			if (events.Count > 0)
 				AddTagsToEvents(events, tags);
@@ -363,9 +375,9 @@ namespace ErrorTrackerServer
 		public List<Event> GetEventsWithoutTagsByDate(long oldestEpoch, long newestEpoch, string eventListCustomTagKey)
 		{
 			if (eventListCustomTagKey == null)
-				return conn.Value.Query<Event>("SELECT * FROM Event WHERE Date >= ? AND Date <= ?", oldestEpoch, newestEpoch);
+				return Query<Event>("SELECT * FROM Event WHERE Date >= ? AND Date <= ?", oldestEpoch, newestEpoch);
 			else
-				return conn.Value.Query<EventWithCustomTagValue>(
+				return Query<EventWithCustomTagValue>(
 					"SELECT Event.*, Tag.Value as CTag FROM Event "
 					+ "LEFT JOIN Tag ON Event.EventId = Tag.EventId AND Tag.Key = ? "
 					+ "WHERE Date >= ? AND Date <= ?", eventListCustomTagKey, oldestEpoch, newestEpoch)
@@ -381,11 +393,11 @@ namespace ErrorTrackerServer
 		{
 			List<Event> events = null;
 			List<Tag> tags = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				events = GetEventsWithoutTagsInFolder(folderId, null);
 				if (events.Count > 0)
-					tags = conn.Value.Query<Tag>("SELECT Tag.* FROM Tag INNER JOIN Event ON Tag.EventId = Event.EventId WHERE Event.FolderId = ?", folderId);
+					tags = Query<Tag>("SELECT Tag.* FROM Tag INNER JOIN Event ON Tag.EventId = Event.EventId WHERE Event.FolderId = ?", folderId);
 			});
 			if (events.Count > 0)
 				AddTagsToEvents(events, tags);
@@ -403,9 +415,9 @@ namespace ErrorTrackerServer
 			if (folderId < 0)
 				return GetAllEventsNoTags(eventListCustomTagKey);
 			else if (eventListCustomTagKey == null)
-				return conn.Value.Query<Event>("SELECT * FROM Event WHERE Event.FolderId = ?", folderId);
+				return Query<Event>("SELECT * FROM Event WHERE Event.FolderId = ?", folderId);
 			else
-				return conn.Value.Query<EventWithCustomTagValue>(
+				return Query<EventWithCustomTagValue>(
 					"SELECT Event.*, Tag.Value as CTag FROM Event "
 					+ "LEFT JOIN Tag ON Event.EventId = Tag.EventId AND Tag.Key = ? "
 					+ "WHERE Event.FolderId = ?", eventListCustomTagKey, folderId)
@@ -424,9 +436,9 @@ namespace ErrorTrackerServer
 			if (folderId < 0)
 				return GetAllEventsNoTagsDeferred(eventListCustomTagKey);
 			else if (eventListCustomTagKey == null)
-				return conn.Value.DeferredQuery<Event>("SELECT * FROM Event WHERE Event.FolderId = ?", folderId);
+				return DeferredQuery<Event>("SELECT * FROM Event WHERE Event.FolderId = ?", folderId);
 			else
-				return conn.Value.DeferredQuery<EventWithCustomTagValue>(
+				return DeferredQuery<EventWithCustomTagValue>(
 					"SELECT Event.*, Tag.Value as CTag FROM Event "
 					+ "LEFT JOIN Tag ON Event.EventId = Tag.EventId AND Tag.Key = ? "
 					+ "WHERE Event.FolderId = ?", eventListCustomTagKey, folderId);
@@ -445,9 +457,9 @@ namespace ErrorTrackerServer
 			if (folderId < 0)
 				return GetEventsByDate(oldestEpoch, newestEpoch);
 			else if (eventListCustomTagKey == null)
-				return conn.Value.Query<Event>("SELECT * FROM Event WHERE Event.FolderId = ? AND Date >= ? AND Date <= ?", folderId, oldestEpoch, newestEpoch);
+				return Query<Event>("SELECT * FROM Event WHERE Event.FolderId = ? AND Date >= ? AND Date <= ?", folderId, oldestEpoch, newestEpoch);
 			else
-				return conn.Value.Query<EventWithCustomTagValue>(
+				return Query<EventWithCustomTagValue>(
 					"SELECT Event.*, Tag.Value as CTag FROM Event "
 					+ "LEFT JOIN Tag ON Event.EventId = Tag.EventId AND Tag.Key = ? "
 					+ "WHERE Event.FolderId = ? AND Date >= ? AND Date <= ?", eventListCustomTagKey, folderId, oldestEpoch, newestEpoch)
@@ -475,7 +487,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public long CountEventsInFolder(int folderId)
 		{
-			return conn.Value.ExecuteScalar<long>("SELECT COUNT(*) FROM Event WHERE Event.FolderId = ?", folderId);
+			return ExecuteScalar<long>("SELECT COUNT(*) FROM Event WHERE Event.FolderId = ?", folderId);
 		}
 		/// <summary>
 		/// Returns the number of total events in each folder that has events.
@@ -484,7 +496,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public Dictionary<int, uint> CountEventsByFolder()
 		{
-			List<EventsInFolderCount> counts = conn.Value.Query<EventsInFolderCount>("SELECT FolderId, COUNT(EventId) as Count "
+			List<EventsInFolderCount> counts = Query<EventsInFolderCount>("SELECT FolderId, COUNT(EventId) as Count "
 				+ "FROM Event "
 				+ "GROUP BY FolderId");
 
@@ -500,7 +512,7 @@ namespace ErrorTrackerServer
 			// First, get the count of events by folder
 			Dictionary<int, uint> all = null;
 			Dictionary<int, uint> read = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				all = CountEventsByFolder();
 				read = CountReadEventsByFolder(userId);
@@ -520,7 +532,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public Dictionary<int, uint> CountReadEventsByFolder(int userId)
 		{
-			List<EventsInFolderCount> counts = conn.Value.Query<EventsInFolderCount>("SELECT FolderId, COUNT(Event.EventId) as Count "
+			List<EventsInFolderCount> counts = Query<EventsInFolderCount>("SELECT FolderId, COUNT(Event.EventId) as Count "
 				+ "FROM Event "
 				+ "INNER JOIN ReadState ON Event.EventId = ReadState.EventId "
 				+ "WHERE ReadState.UserId = ?"
@@ -539,7 +551,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public bool EventExists(int eventId)
 		{
-			return conn.Value.ExecuteScalar<int>("SELECT COUNT(*) FROM Event WHERE EventId = ?", eventId) > 0;
+			return ExecuteScalar<int>("SELECT COUNT(*) FROM Event WHERE EventId = ?", eventId) > 0;
 		}
 		/// <summary>
 		/// Deletes all events with Date lower than the specified value. Returns the number of events that were deleted.
@@ -548,9 +560,9 @@ namespace ErrorTrackerServer
 		public int DeleteEventsOlderThan(long ageCutoff)
 		{
 			int eventCount = 0;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
-				List<Event> events = conn.Value.Query<Event>("SELECT * FROM Event WHERE Event.Date < ?", ageCutoff);
+				List<Event> events = Query<Event>("SELECT * FROM Event WHERE Event.Date < ?", ageCutoff);
 				eventCount = events.Count;
 				if (!DeleteEvents(events.Select(e => e.EventId).ToArray()))
 					throw new Exception("Unable to delete all " + events.Count + " events");
@@ -568,7 +580,7 @@ namespace ErrorTrackerServer
 			{
 				if (ev.EventId != 0)
 				{
-					conn.Value.Execute("UPDATE Event SET HashValue = ? WHERE EventId = ?", ev.HashValue, ev.EventId);
+					Execute("UPDATE Event SET HashValue = ? WHERE EventId = ?", ev.HashValue, ev.EventId);
 				}
 			}
 		}
@@ -579,7 +591,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public long CountEvents()
 		{
-			return conn.Value.ExecuteScalar<long>("SELECT COUNT(*) FROM Event");
+			return ExecuteScalar<long>("SELECT COUNT(*) FROM Event");
 		}
 
 		/// <summary>
@@ -588,7 +600,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public long CountUniqueEvents()
 		{
-			return conn.Value.ExecuteScalar<long>("SELECT COUNT(DISTINCT HashValue) FROM Event");
+			return ExecuteScalar<long>("SELECT COUNT(DISTINCT HashValue) FROM Event");
 		}
 
 		/// <summary>
@@ -597,7 +609,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public long CountEventsWithHashValue(string HashValue)
 		{
-			return conn.Value.ExecuteScalar<long>("SELECT COUNT(EventId) FROM Event WHERE HashValue = ?", HashValue);
+			return ExecuteScalar<long>("SELECT COUNT(EventId) FROM Event WHERE HashValue = ?", HashValue);
 		}
 		#endregion
 		#region Folder Management
@@ -607,7 +619,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public List<Folder> GetAllFolders()
 		{
-			List<Folder> folders = conn.Value.Query<Folder>("SELECT * FROM Folder");
+			List<Folder> folders = Query<Folder>("SELECT * FROM Folder");
 			folders.Add(new Folder(ProjectName, 0));
 			return folders;
 		}
@@ -638,7 +650,7 @@ namespace ErrorTrackerServer
 			}
 			Folder nf = null;
 			string eMsg = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				FolderStructure root = GetFolderStructure();
 				if (root.TryGetNode(parentFolderId, out FolderStructure parent))
@@ -646,7 +658,7 @@ namespace ErrorTrackerServer
 					if (parent.GetChild(folderName) == null)
 					{
 						nf = new Folder(folderName, parentFolderId);
-						conn.Value.Insert(nf);
+						Insert(nf);
 					}
 					else
 						eMsg = "A folder with this name already exists in the specified location.";
@@ -680,7 +692,7 @@ namespace ErrorTrackerServer
 				return false;
 			}
 			string eMsg = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				FolderStructure root = GetFolderStructure();
 				if (root.TryGetNode(folderId, out FolderStructure current))
@@ -694,7 +706,7 @@ namespace ErrorTrackerServer
 								if (newParent.HasPathToRoot(out HashSet<long> nodesOnRootPath))
 								{
 									if (!nodesOnRootPath.Contains(folderId))
-										conn.Value.Execute("UPDATE Folder SET ParentFolderId = ? WHERE FolderId = ?", newParentFolderId, folderId);
+										Execute("UPDATE Folder SET ParentFolderId = ? WHERE FolderId = ?", newParentFolderId, folderId);
 									else
 										eMsg = "Moving this folder to the specified location would create a circular reference.";
 								}
@@ -737,13 +749,13 @@ namespace ErrorTrackerServer
 				return false;
 			}
 			string eMsg = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				FolderStructure root = GetFolderStructure();
 				if (root.TryGetNode(folderId, out FolderStructure current))
 				{
 					if (current.Parent.GetChild(newFolderName) == null)
-						conn.Value.Execute("UPDATE Folder SET Name = ? WHERE FolderId = ?", newFolderName, folderId);
+						Execute("UPDATE Folder SET Name = ? WHERE FolderId = ?", newFolderName, folderId);
 					else
 						eMsg = "A folder with this name already exists in the location.";
 				}
@@ -767,7 +779,7 @@ namespace ErrorTrackerServer
 				return false;
 			}
 			string eMsg = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				FolderStructure root = GetFolderStructure();
 				if (root.TryGetNode(folderId, out FolderStructure current))
@@ -776,7 +788,7 @@ namespace ErrorTrackerServer
 					{
 						long eventCount = CountEventsInFolder(folderId);
 						if (eventCount == 0)
-							conn.Value.Delete<Folder>(folderId);
+							Delete<Folder>(folderId);
 						else
 							eMsg = "Folder \"" + current.Name + "\" (ID " + folderId + ") cannot be deleted because it contains " + eventCount + " events.";
 					}
@@ -797,7 +809,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public Folder GetFolder(long folderId)
 		{
-			List<Folder> folders = conn.Value.Query<Folder>("SELECT * FROM Folder WHERE FolderId = ?", folderId);
+			List<Folder> folders = Query<Folder>("SELECT * FROM Folder WHERE FolderId = ?", folderId);
 			if (folders.Count > 0)
 				return folders[0];
 			return null;
@@ -810,7 +822,7 @@ namespace ErrorTrackerServer
 		public FolderStructure FolderResolvePath(string path)
 		{
 			FolderStructure fs = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				fs = GetFolderStructure();
 				if (!string.IsNullOrWhiteSpace(path))
@@ -829,11 +841,11 @@ namespace ErrorTrackerServer
 			List<Filter> filters = null;
 			List<FilterItemCount> conditions = null;
 			List<FilterItemCount> actions = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
-				filters = conn.Value.Query<Filter>("SELECT * FROM Filter");
-				conditions = conn.Value.Query<FilterItemCount>("SELECT FilterId, COUNT(FilterConditionId) as Count FROM FilterCondition WHERE Enabled = 1 GROUP BY FilterId");
-				actions = conn.Value.Query<FilterItemCount>("SELECT FilterId, COUNT(FilterActionId) as Count FROM FilterAction WHERE Enabled = 1 GROUP BY FilterId");
+				filters = Query<Filter>("SELECT * FROM Filter");
+				conditions = Query<FilterItemCount>("SELECT FilterId, COUNT(FilterConditionId) as Count FROM FilterCondition WHERE Enabled = 1 GROUP BY FilterId");
+				actions = Query<FilterItemCount>("SELECT FilterId, COUNT(FilterActionId) as Count FROM FilterAction WHERE Enabled = 1 GROUP BY FilterId");
 			});
 			Dictionary<int, uint> filterConditionCounts = conditions.ToDictionary(fic => fic.FilterId, fic => fic.Count);
 			Dictionary<int, uint> filterActionCounts = actions.ToDictionary(fic => fic.FilterId, fic => fic.Count);
@@ -861,14 +873,14 @@ namespace ErrorTrackerServer
 			List<Filter> filters = null;
 			List<FilterCondition> conditions = null;
 			List<FilterAction> actions = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				if (onlyEnabledFilters)
-					filters = conn.Value.Query<Filter>("SELECT * FROM Filter WHERE Enabled = ?", true);
+					filters = Query<Filter>("SELECT * FROM Filter WHERE Enabled = ?", true);
 				else
-					filters = conn.Value.Query<Filter>("SELECT * FROM Filter");
-				conditions = conn.Value.Query<FilterCondition>("SELECT * FROM FilterCondition");
-				actions = conn.Value.Query<FilterAction>("SELECT * FROM FilterAction");
+					filters = Query<Filter>("SELECT * FROM Filter");
+				conditions = Query<FilterCondition>("SELECT * FROM FilterCondition");
+				actions = Query<FilterAction>("SELECT * FROM FilterAction");
 			});
 
 			return filters
@@ -894,13 +906,13 @@ namespace ErrorTrackerServer
 			List<Filter> filters = null;
 			List<FilterCondition> conditions = null;
 			List<FilterAction> actions = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
-				filters = conn.Value.Query<Filter>("SELECT * FROM Filter WHERE FilterId = ?", filterId);
+				filters = Query<Filter>("SELECT * FROM Filter WHERE FilterId = ?", filterId);
 				if (filters.Count == 1)
 				{
-					conditions = conn.Value.Query<FilterCondition>("SELECT * FROM FilterCondition WHERE FilterId = ?", filterId);
-					actions = conn.Value.Query<FilterAction>("SELECT * FROM FilterAction WHERE FilterId = ?", filterId);
+					conditions = Query<FilterCondition>("SELECT * FROM FilterCondition WHERE FilterId = ?", filterId);
+					actions = Query<FilterAction>("SELECT * FROM FilterAction WHERE FilterId = ?", filterId);
 				}
 			});
 			if (filters.Count != 1)
@@ -927,11 +939,11 @@ namespace ErrorTrackerServer
 			}
 			newFilter.Name = newFilter.Name.Trim();
 			string emsg = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				try
 				{
-					List<Filter> existingFilters = conn.Value.Query<Filter>("SELECT * FROM Filter WHERE Name = ?", newFilter.Name);
+					List<Filter> existingFilters = Query<Filter>("SELECT * FROM Filter WHERE Name = ?", newFilter.Name);
 					if (existingFilters.Count > 0)
 						emsg = "A filter already exists with that name.";
 					else
@@ -942,14 +954,14 @@ namespace ErrorTrackerServer
 								highestOrder = sum.filter.Order;
 						newFilter.Order = highestOrder + 1;
 
-						conn.Value.Insert(newFilter);
+						Insert(newFilter);
 
 						if (conditions != null && conditions.Length > 0)
 						{
 							foreach (FilterCondition c in conditions)
 							{
 								c.FilterId = newFilter.FilterId;
-								conn.Value.Insert(c);
+								Insert(c);
 							}
 						}
 					}
@@ -982,27 +994,28 @@ namespace ErrorTrackerServer
 				return false;
 			}
 			string emsg = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
-				List<Filter> existing = conn.Value.Query<Filter>("SELECT * FROM Filter WHERE FilterId = ?", full.filter.FilterId);
+				List<Filter> existing = Query<Filter>("SELECT * FROM Filter WHERE FilterId = ?", full.filter.FilterId);
 				if (existing.Count == 0)
 					emsg = "Update Failed.  Unable to find filter with ID " + full.filter.FilterId + ".";
 				else
 				{
-					if (conn.Value.Update(full.filter) == 0)
+					if (Update(full.filter) == 0)
 					{
 						emsg = "Failed to update filter with ID " + full.filter.FilterId + " for an unknown reason.";
 					}
 					else
 					{
-						conn.Value.UpdateAll(full.conditions, false);
-						conn.Value.UpdateAll(full.actions, false);
+						UpdateAll(full.conditions);
+						UpdateAll(full.actions);
 					}
 				}
 			});
 			errorMessage = emsg;
 			return errorMessage == null;
 		}
+
 		/// <summary>
 		/// Deletes the specified filter and all its conditions and actions. Returns true if successful.
 		/// </summary>
@@ -1011,11 +1024,11 @@ namespace ErrorTrackerServer
 		public bool DeleteFilter(int filterId)
 		{
 			int affectedRows = 0;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
-				affectedRows += conn.Value.Execute("DELETE FROM Filter WHERE FilterId = ?", filterId);
-				affectedRows += conn.Value.Execute("DELETE FROM FilterCondition WHERE FilterId = ?", filterId);
-				affectedRows += conn.Value.Execute("DELETE FROM FilterAction WHERE FilterId = ?", filterId);
+				affectedRows += Execute("DELETE FROM Filter WHERE FilterId = ?", filterId);
+				affectedRows += Execute("DELETE FROM FilterCondition WHERE FilterId = ?", filterId);
+				affectedRows += Execute("DELETE FROM FilterAction WHERE FilterId = ?", filterId);
 			});
 			if (affectedRows > 0)
 				return true;
@@ -1028,7 +1041,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public bool FilterExists(int filterId)
 		{
-			return conn.Value.ExecuteScalar<int>("SELECT COUNT(*) FROM Filter WHERE FilterId = ?", filterId) > 0;
+			return ExecuteScalar<int>("SELECT COUNT(*) FROM Filter WHERE FilterId = ?", filterId) > 0;
 		}
 
 		/// <summary>
@@ -1040,10 +1053,10 @@ namespace ErrorTrackerServer
 			if (newOrder.Length == 0)
 				return; // true;
 			int affectedRows = 0;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				foreach (FilterOrder orderItem in newOrder)
-					affectedRows += conn.Value.Execute("UPDATE Filter SET [Order] = ? WHERE FilterId = ?", orderItem.Order, orderItem.FilterId);
+					affectedRows += Execute("UPDATE Filter SET [Order] = ? WHERE FilterId = ?", orderItem.Order, orderItem.FilterId);
 			});
 			return; // affectedRows == newOrder.Length;
 		}
@@ -1058,12 +1071,12 @@ namespace ErrorTrackerServer
 		public bool AddFilterCondition(FilterCondition filterCondition, out string errorMessage)
 		{
 			string emsg = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				if (!FilterExists(filterCondition.FilterId))
 					emsg = "Could not find filter with ID " + filterCondition.FilterId;
 				else
-					conn.Value.Insert(filterCondition);
+					Insert(filterCondition);
 			});
 			errorMessage = emsg;
 			return errorMessage == null;
@@ -1077,12 +1090,12 @@ namespace ErrorTrackerServer
 		public bool EditFilterCondition(FilterCondition filterCondition, out string errorMessage)
 		{
 			string emsg = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				if (!FilterExists(filterCondition.FilterId))
 					emsg = "Could not find filter with ID " + filterCondition.FilterId;
 				else
-					conn.Value.Update(filterCondition);
+					Update(filterCondition);
 			});
 			errorMessage = emsg;
 			return errorMessage == null;
@@ -1094,7 +1107,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public bool DeleteFilterCondition(int filterConditionId)
 		{
-			int rowsUpdated = conn.Value.Delete<FilterCondition>(filterConditionId);
+			int rowsUpdated = Delete<FilterCondition>(filterConditionId);
 			return rowsUpdated == 1;
 		}
 		#endregion
@@ -1108,12 +1121,12 @@ namespace ErrorTrackerServer
 		public bool AddFilterAction(FilterAction filterAction, out string errorMessage)
 		{
 			string emsg = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				if (!FilterExists(filterAction.FilterId))
 					emsg = "Could not find filter with ID " + filterAction.FilterId;
 				else
-					conn.Value.Insert(filterAction);
+					Insert(filterAction);
 			});
 			errorMessage = emsg;
 			return errorMessage == null;
@@ -1127,12 +1140,12 @@ namespace ErrorTrackerServer
 		public bool EditFilterAction(FilterAction filterAction, out string errorMessage)
 		{
 			string emsg = null;
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				if (!FilterExists(filterAction.FilterId))
 					emsg = "Could not find filter with ID " + filterAction.FilterId;
 				else
-					conn.Value.Update(filterAction);
+					Update(filterAction);
 			});
 			errorMessage = emsg;
 			return errorMessage == null;
@@ -1144,7 +1157,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public bool DeleteFilterAction(int filterActionId)
 		{
-			int rowsUpdated = conn.Value.Delete<FilterAction>(filterActionId);
+			int rowsUpdated = Delete<FilterAction>(filterActionId);
 			return rowsUpdated == 1;
 		}
 		#endregion
@@ -1156,10 +1169,10 @@ namespace ErrorTrackerServer
 		/// <param name="eventId">ID of the Event which was read.</param>
 		public void AddReadState(int userId, long eventId)
 		{
-			conn.Value.RunInTransaction(() =>
+			LockedTransaction(() =>
 			{
 				if (!ExistsReadState(userId, eventId))
-					conn.Value.Insert(new ReadState() { UserId = userId, EventId = eventId });
+					Insert(new ReadState() { UserId = userId, EventId = eventId });
 			});
 		}
 		/// <summary>
@@ -1170,11 +1183,11 @@ namespace ErrorTrackerServer
 		public void AddReadState(int userId, IEnumerable<long> eventIds)
 		{
 			if (eventIds.Count() > 0)
-				conn.Value.RunInTransaction(() =>
+				LockedTransaction(() =>
 				{
 					RemoveReadState(userId, eventIds);
 					string query = "INSERT INTO ReadState (UserId, EventId) VALUES " + string.Join(", ", eventIds.Select(eid => "(" + userId + "," + eid + ")"));
-					conn.Value.Execute(query);
+					Execute(query);
 				});
 		}
 		/// <summary>
@@ -1185,7 +1198,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public bool RemoveReadState(int userId, long eventId)
 		{
-			int affectedRows = conn.Value.Execute("DELETE FROM ReadState WHERE UserId = ? AND EventId = ?", userId, eventId);
+			int affectedRows = Execute("DELETE FROM ReadState WHERE UserId = ? AND EventId = ?", userId, eventId);
 			return affectedRows == 1;
 		}
 		/// <summary>
@@ -1197,7 +1210,7 @@ namespace ErrorTrackerServer
 		public void RemoveReadState(int userId, IEnumerable<long> eventIds)
 		{
 			if (eventIds.Count() > 0)
-				conn.Value.Execute("DELETE FROM ReadState WHERE UserId = ? AND EventId IN (" + string.Join(",", eventIds) + ")", userId);
+				Execute("DELETE FROM ReadState WHERE UserId = ? AND EventId IN (" + string.Join(",", eventIds) + ")", userId);
 		}
 		/// <summary>
 		/// Removes all read states for the specified User, returning the number of read states that were removed.
@@ -1206,7 +1219,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public int RemoveAllReadStates(int userId)
 		{
-			return conn.Value.Execute("DELETE FROM ReadState WHERE UserId = ?", userId);
+			return Execute("DELETE FROM ReadState WHERE UserId = ?", userId);
 		}
 		/// <summary>
 		/// Returns true if the user has read the event.
@@ -1216,7 +1229,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public bool ExistsReadState(int userId, long eventId)
 		{
-			return conn.Value.Query<ReadState>("SELECT * FROM ReadState WHERE UserId = ? AND EventId = ?", userId, eventId).Count > 0;
+			return Query<ReadState>("SELECT * FROM ReadState WHERE UserId = ? AND EventId = ?", userId, eventId).Count > 0;
 		}
 		/// <summary>
 		/// Returns an array of EventId for Events which the user has read.
@@ -1225,7 +1238,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public long[] GetAllReadEventIds(int userId)
 		{
-			return conn.Value.Query<ReadState>("SELECT * FROM ReadState WHERE UserId = ?", userId).Select(r => r.EventId).ToArray();
+			return Query<ReadState>("SELECT * FROM ReadState WHERE UserId = ?", userId).Select(r => r.EventId).ToArray();
 		}
 		/// <summary>
 		/// Returns a List of all ReadState currently in this database.
@@ -1233,41 +1246,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public List<ReadState> GetAllReadStates()
 		{
-			return conn.Value.Query<ReadState>("SELECT * FROM ReadState");
-		}
-		#endregion
-
-		#region IDisposable
-		private bool disposedValue;
-		protected virtual void Dispose(bool disposing)
-		{
-			if (!disposedValue)
-			{
-				if (disposing)
-				{
-					// dispose managed state (managed objects)
-					if (conn.IsValueCreated)
-						conn.Value.Dispose();
-				}
-
-				// free unmanaged resources (unmanaged objects) and override finalizer
-				// set large fields to null
-				disposedValue = true;
-			}
-		}
-
-		// override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-		// ~DB()
-		// {
-		//     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-		//     Dispose(disposing: false);
-		// }
-
-		public void Dispose()
-		{
-			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-			Dispose(disposing: true);
-			GC.SuppressFinalize(this);
+			return Query<ReadState>("SELECT * FROM ReadState");
 		}
 		#endregion
 	}

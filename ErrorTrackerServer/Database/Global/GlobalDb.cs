@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ErrorTrackerServer.Database.Global
 {
-	public class GlobalDb : IDisposable
+	public class GlobalDb : DBBase
 	{
 		#region Constructor / Fields
 		/// <summary>
@@ -20,12 +20,9 @@ namespace ErrorTrackerServer.Database.Global
 		/// File name of the database.
 		/// </summary>
 		public readonly string DbFilename;
-		/// <summary>
-		/// Lazy-loaded database connection.
-		/// </summary>
-		private Lazy<SQLiteConnection> conn;
 		private static bool initialized = false;
 		private static object createMigrateLock = new object();
+		private object dbTransactionLock = new object();
 		/// <summary>
 		/// Use within a "using" block to guarantee correct disposal.  Provides SQLite database access.  Not thread safe.  The DB connection will be lazy-loaded upon the first DB request.
 		/// </summary>
@@ -38,7 +35,7 @@ namespace ErrorTrackerServer.Database.Global
 		private SQLiteConnection CreateDbConnection()
 		{
 			SQLiteConnection c = new SQLiteConnection(Globals.WritableDirectoryBase + DbFilename, true);
-			c.BusyTimeout = TimeSpan.FromSeconds(30);
+			c.BusyTimeout = TimeSpan.FromSeconds(4);
 			CreateOrMigrate(c);
 			return c;
 		}
@@ -51,6 +48,8 @@ namespace ErrorTrackerServer.Database.Global
 					if (!initialized)
 					{
 						initialized = true;
+
+						c.EnableWriteAheadLogging();
 
 						c.CreateTable<LoginRecord>();
 						c.CreateTable<DbVersion>();
@@ -75,14 +74,16 @@ namespace ErrorTrackerServer.Database.Global
 				c.Insert(version);
 			}
 		}
-		/// <summary>
-		/// True if the database is currently in a transaction.
-		/// </summary>
-		public bool IsInTransaction
+		#endregion
+		#region Helpers
+		protected override void LockedTransaction(Action action)
 		{
-			get
+			lock (dbTransactionLock)
 			{
-				return conn.IsValueCreated ? conn.Value.IsInTransaction : false;
+				Robustify(() =>
+				{
+					conn.Value.RunInTransaction(action);
+				});
 			}
 		}
 		#endregion
@@ -96,7 +97,7 @@ namespace ErrorTrackerServer.Database.Global
 		/// <param name="sessionId">Session ID that was assigned.</param>
 		public void AddLoginRecord(string userName, string ipAddress, string sessionId)
 		{
-			conn.Value.Insert(new LoginRecord(userName.ToLower(), ipAddress, sessionId, TimeUtil.GetTimeInMsSinceEpoch()));
+			Insert(new LoginRecord(userName.ToLower(), ipAddress, sessionId, TimeUtil.GetTimeInMsSinceEpoch()));
 		}
 		/// <summary>
 		/// Gets a list of LoginRecord filtered by user name, ordered by date descending.
@@ -105,7 +106,7 @@ namespace ErrorTrackerServer.Database.Global
 		/// <returns></returns>
 		public List<LoginRecord> GetLoginRecordsByUserName(string userName)
 		{
-			return conn.Value.Query<LoginRecord>("SELECT * FROM LoginRecord WHERE UserName = ? ORDER BY Date DESC", userName.ToLower());
+			return Query<LoginRecord>("SELECT * FROM LoginRecord WHERE UserName = ? ORDER BY Date DESC", userName.ToLower());
 		}
 		/// <summary>
 		/// Gets a list of LoginRecord filtered by user name, ordered by date descending.
@@ -116,7 +117,7 @@ namespace ErrorTrackerServer.Database.Global
 		/// <returns></returns>
 		public List<LoginRecord> GetLoginRecordsByUserName(string userName, long startDate, long endDate)
 		{
-			return conn.Value.Query<LoginRecord>("SELECT * FROM LoginRecord WHERE UserName = ? AND Date >= ? AND Date <= ? ORDER BY Date DESC", userName.ToLower(), startDate, endDate);
+			return Query<LoginRecord>("SELECT * FROM LoginRecord WHERE UserName = ? AND Date >= ? AND Date <= ? ORDER BY Date DESC", userName.ToLower(), startDate, endDate);
 		}
 		/// <summary>
 		/// Gets a list of LoginRecord for the specified date range, ordered by date descending.
@@ -126,42 +127,7 @@ namespace ErrorTrackerServer.Database.Global
 		/// <returns></returns>
 		public List<LoginRecord> GetLoginRecordsGlobal(long startDate, long endDate)
 		{
-			return conn.Value.Query<LoginRecord>("SELECT * FROM LoginRecord WHERE Date >= ? AND Date <= ? ORDER BY Date DESC", startDate, endDate);
-		}
-		#endregion
-
-
-		#region IDisposable
-		private bool disposedValue;
-		protected virtual void Dispose(bool disposing)
-		{
-			if (!disposedValue)
-			{
-				if (disposing)
-				{
-					// dispose managed state (managed objects)
-					if (conn.IsValueCreated)
-						conn.Value.Dispose();
-				}
-
-				// free unmanaged resources (unmanaged objects) and override finalizer
-				// set large fields to null
-				disposedValue = true;
-			}
-		}
-
-		// override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-		// ~DB()
-		// {
-		//     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-		//     Dispose(disposing: false);
-		// }
-
-		public void Dispose()
-		{
-			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-			Dispose(disposing: true);
-			GC.SuppressFinalize(this);
+			return Query<LoginRecord>("SELECT * FROM LoginRecord WHERE Date >= ? AND Date <= ? ORDER BY Date DESC", startDate, endDate);
 		}
 		#endregion
 	}
