@@ -58,26 +58,30 @@ namespace ErrorTrackerServer.Controllers
 			foreach (ErrorTrackerClient.ReadOnlyTag tag in clientEvent.GetAllTags())
 				ev.SetTag(tag.Key, tag.Value);
 
-			string error = InsertIntoProject(p, ev);
-			if (error == null && p.CloneTo != null)
+			List<SubmitResult> results = new List<SubmitResult>();
+			results.Add(InsertIntoProject(p, ev));
+			if (p.CloneTo != null)
 			{
 				foreach (string pName in p.CloneTo)
 				{
 					Project pCloneTarget = Settings.data.GetProject(pName);
 					if (pCloneTarget != null && pCloneTarget != p)
-					{
-						string cloneError = InsertIntoProject(pCloneTarget, ev);
-						if (cloneError != null)
-							error = cloneError;
-					}
+						results.Add(InsertIntoProject(pCloneTarget, ev));
 				}
 			}
-			if (error == null)
-				return this.PlainText("OK");
+			if (results.Any(r => r == SubmitResult.FatalError))
+			{
+				Emailer.SendError("An fatal error occurred while handling event submission.\r\nPOST Body:\r\n" + str, false);
+				return this.Error("Fatal Error"); // Client will retry submission later.
+			}
+			else if (results.Any(r => r == SubmitResult.FilterError))
+			{
+				Emailer.SendError("An filter error occurred while handling event submission.\r\nPOST Body:\r\n" + str, false);
+				return this.Error("Filter Error"); // Client will retry submission later.
+			}
 			else
 			{
-				Emailer.SendError("An error \"" + error + "\" occurred while handling event submission.\r\nPOST Body:\r\n" + str, false);
-				return this.PlainText(error);
+				return this.PlainText("OK");
 			}
 		}
 
@@ -87,7 +91,7 @@ namespace ErrorTrackerServer.Controllers
 		/// <param name="p">Project to insert the event into.</param>
 		/// <param name="eventOriginal">Event to clone and insert.  The event object is not changed by this method.</param>
 		/// <returns>Returns a string that is null if there was no error, or an error code such as "FILTER ERROR" if there was an error.</returns>
-		private string InsertIntoProject(Project p, Event eventOriginal)
+		private SubmitResult InsertIntoProject(Project p, Event eventOriginal)
 		{
 			try
 			{
@@ -123,7 +127,7 @@ namespace ErrorTrackerServer.Controllers
 
 					// Skip adding the event if it is a duplicate.
 					if (anyDupe)
-						return null;
+						return SubmitResult.OK;
 
 					// Add the event to the database.
 					fe.db.AddEvent(ev);
@@ -135,18 +139,18 @@ namespace ErrorTrackerServer.Controllers
 					}
 					catch (Exception ex)
 					{
-						Logger.Debug(ex);
+						Logger.Debug(ex, "Filter Error");
 						Emailer.SendError(Context, "Filter Error", ex);
-						return "FILTER ERROR";
+						return SubmitResult.FilterError;
 					}
 				}
-				return null;
+				return SubmitResult.OK;
 			}
 			catch (Exception ex)
 			{
-				Logger.Debug(ex);
+				Logger.Debug(ex, "Unhandled exception thrown when inserting event into project \"" + p.Name + "\".");
 				Emailer.SendError(Context, "Unhandled exception thrown when inserting event into project \"" + p.Name + "\".", ex);
-				return "UNHANDLED EXCEPTION";
+				return SubmitResult.FatalError;
 			}
 		}
 
@@ -157,5 +161,11 @@ namespace ErrorTrackerServer.Controllers
 				diff = a.Value.CompareTo(b.Value);
 			return diff;
 		}
+	}
+	enum SubmitResult
+	{
+		OK,
+		FilterError,
+		FatalError
 	}
 }

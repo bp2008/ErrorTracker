@@ -187,12 +187,10 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public bool MoveEvents(long[] eventIds, int newFolderId)
 		{
-			if (newFolderId != 0 && GetFolder(newFolderId) == null)
-				return false;
 			int affectedRows = 0;
 			conn.Value.RunInTransaction(() =>
 			{
-				if (newFolderId == 0 || conn.Value.ExecuteScalar<int>("SELECT COUNT(*) FROM Folder WHERE FolderId = ?", newFolderId) > 0)
+				if (newFolderId == 0 || GetFolder(newFolderId) != null)
 					affectedRows = conn.Value.Execute("UPDATE Event SET FolderId = ? WHERE EventId IN (" + string.Join(",", eventIds) + ")", newFolderId);
 			});
 			if (affectedRows == eventIds.Length)
@@ -799,7 +797,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public Folder GetFolder(long folderId)
 		{
-			List<Folder> folders = conn.Value.Query<Folder>("SELECT * FROM Folder WHERE folderId = ?", folderId);
+			List<Folder> folders = conn.Value.Query<Folder>("SELECT * FROM Folder WHERE FolderId = ?", folderId);
 			if (folders.Count > 0)
 				return folders[0];
 			return null;
