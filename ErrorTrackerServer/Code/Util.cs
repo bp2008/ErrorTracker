@@ -115,5 +115,26 @@ namespace ErrorTrackerServer
 			}
 			return false;
 		}
+
+		public static void SubmitLog(string message)
+		{
+			if (Settings.data.verboseSubmitLogging)
+			{
+				int attempts = 0;
+				while (attempts < 5)
+				{
+					try
+					{
+						System.IO.File.AppendAllText(Globals.WritableDirectoryBase + "Logs/SubmitLog.txt", Thread.CurrentThread.ManagedThreadId + ">\t" + DateTime.Now.ToString() + ": " + message + "\r\n", Encoding.UTF8);
+						attempts = 10;
+					}
+					catch (ThreadAbortException) { throw; }
+					catch
+					{
+						attempts++;
+					}
+				}
+			}
+		}
 	}
 }

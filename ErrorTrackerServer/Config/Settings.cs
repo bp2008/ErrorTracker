@@ -96,6 +96,10 @@ namespace ErrorTrackerServer
 		/// Private key used to sign and verify password reset requests, and maybe other things in the future.  Automatically generated upon application startup.
 		/// </summary>
 		public string privateSigningKey = "";
+		/// <summary>
+		/// If true, all event submissions are logged in detail to a special file, for debugging purposes.
+		/// </summary>
+		public bool verboseSubmitLogging = false;
 
 		public string GetWWWDirectoryBase()
 		{

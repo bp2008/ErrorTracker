@@ -97,6 +97,7 @@
     <Compile Include="Controllers\BaseControllers\AdminController.cs" />
     <Compile Include="Controllers\BaseControllers\ETController.cs" />
     <Compile Include="Controllers\ForgotPW.cs" />
+    <Compile Include="Filtering\FilterException.cs" />
     <Compile Include="Controllers\LoginRecordData.cs" />
     <Compile Include="Controllers\SearchData.cs" />
     <Compile Include="Controllers\SessionStatus.cs" />

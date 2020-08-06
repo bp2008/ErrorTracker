@@ -132,16 +132,9 @@ namespace ErrorTrackerServer
 		#endregion
 
 		#region Helpers
-		protected override void LockedTransaction(Action action)
+		protected override object GetTransactionLock()
 		{
-			object transactionLock = dbTransactionLocks.GetOrAdd(this.ProjectName, n => new object());
-			lock (transactionLock)
-			{
-				Robustify(() =>
-				{
-					conn.Value.RunInTransaction(action);
-				});
-			}
+			return dbTransactionLocks.GetOrAdd(this.ProjectName, n => new object());
 		}
 		#endregion
 
@@ -339,7 +332,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public void GetEventTags(Event ev)
 		{
-			if (ev.GetTagCount() > 0)
+			if (ev.GetTagCount() > 0 || ev.EventId < 1)
 				return;
 			List<Tag> tags = Query<Tag>("SELECT * FROM Tag WHERE EventId = ?", ev.EventId);
 			foreach (Tag t in tags)

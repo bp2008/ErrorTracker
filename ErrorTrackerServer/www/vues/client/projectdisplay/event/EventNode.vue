@@ -42,15 +42,11 @@
 				default: false
 			},
 			selectionState: {
-				Object,
+				type: Object,
 				required: true
 			},
 			selectedEventIdsArray: {
-				Object,
-				required: true
-			},
-			selectedEventIdsMap: {
-				Object,
+				type: Array,
 				required: true
 			}
 		},
@@ -182,7 +178,7 @@
 			dragStart(e)
 			{
 				let dragContextString = "e" + this.event.EventId;
-				if (this.selectedEventIdsMap[this.event.EventId])
+				if (this.selected)
 					dragContextString = "e" + this.selectedEventIdsArray.join(",e");
 				e.dataTransfer.setData("etrk_drag", dragContextString);
 				e.dataTransfer.dropEffect = "move";

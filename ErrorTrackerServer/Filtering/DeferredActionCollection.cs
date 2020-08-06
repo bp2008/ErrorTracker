@@ -63,7 +63,17 @@ namespace ErrorTrackerServer.Filtering
 		/// <summary>
 		/// Executes all scheduled actions and resets the state of this collection so it can be reused in a new filtering operation.  Returns true if all scheduled actions executed successfully.
 		/// </summary>
+		/// <param name="db">Project's database instance.</param>
 		public bool ExecuteDeferredActions(DB db)
+		{
+			return ExecuteDeferredActions(db, false);
+		}
+		/// <summary>
+		/// Executes all scheduled actions and resets the state of this collection so it can be reused in a new filtering operation.  Returns true if all scheduled actions executed successfully.
+		/// </summary>
+		/// <param name="db">Project's database instance.</param>
+		/// <param name="isEventSubmission">If true, additional logging may be performed.</param>
+		public bool ExecuteDeferredActions(DB db, bool isEventSubmission)
 		{
 			try
 			{
@@ -75,8 +85,14 @@ namespace ErrorTrackerServer.Filtering
 					long[] eventIds = kvp.Value.Where(id => !eventIdsToDelete.Contains(id)).ToArray();
 					if (eventIds.Length > 0)
 					{
+						if (isEventSubmission && Settings.data.verboseSubmitLogging)
+							Util.SubmitLog("Event " + string.Join(",", eventIds) + " > MoveTo " + kvp.Key);
 						if (!db.MoveEvents(eventIds, kvp.Key))
+						{
 							success = false;
+							if (isEventSubmission && Settings.data.verboseSubmitLogging)
+								Util.SubmitLog("Action indicated failure");
+						}
 					}
 				}
 
@@ -86,15 +102,30 @@ namespace ErrorTrackerServer.Filtering
 					long[] eventIds = kvp.Value.Where(id => !eventIdsToDelete.Contains(id)).ToArray();
 					if (eventIds.Length > 0)
 					{
+						if (isEventSubmission && Settings.data.verboseSubmitLogging)
+							Util.SubmitLog("Event " + string.Join(",", eventIds) + " > SetColor " + kvp.Key);
 						if (!db.SetEventsColor(eventIds, kvp.Key))
+						{
 							success = false;
+							if (isEventSubmission && Settings.data.verboseSubmitLogging)
+								Util.SubmitLog("Action indicated failure");
+						}
 					}
 				}
 
 				// Delete
 				long[] idsToDelete = eventIdsToDelete.ToArray();
-				if (!db.DeleteEvents(idsToDelete))
-					success = false;
+				if (idsToDelete.Length > 0)
+				{
+					if (isEventSubmission && Settings.data.verboseSubmitLogging)
+						Util.SubmitLog("Event " + string.Join(",", idsToDelete) + " > Delete");
+					if (!db.DeleteEvents(idsToDelete))
+					{
+						success = false;
+						if (isEventSubmission && Settings.data.verboseSubmitLogging)
+							Util.SubmitLog("Action indicated failure");
+					}
+				}
 
 				// SetReadState
 				foreach (KeyValuePair<bool, List<long>> kvp in readStateMap.ReverseMap())
@@ -102,6 +133,8 @@ namespace ErrorTrackerServer.Filtering
 					long[] eventIds = kvp.Value.Where(id => !eventIdsToDelete.Contains(id)).ToArray();
 					if (eventIds.Length > 0)
 					{
+						if (isEventSubmission && Settings.data.verboseSubmitLogging)
+							Util.SubmitLog("Event " + string.Join(",", eventIds) + " > SetReadState(" + kvp.Key + ")");
 						foreach (User user in Settings.data.GetAllUsers())
 						{
 							if (kvp.Key)

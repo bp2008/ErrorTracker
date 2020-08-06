@@ -23,7 +23,6 @@
 						   :selected="isEventSelected(item)"
 						   :selectionState="selectionState"
 						   :selectedEventIdsArray="selectedEventIdsArray"
-						   :selectedEventIdsMap="selectedEventIdsMap"
 						   @menu="onMenu"
 						   @navUp="onNavUp"
 						   @navDown="onNavDown" />
@@ -105,6 +104,7 @@
 		},
 		created()
 		{
+			this.learnSelectedEventIds();
 			this.loadEvents();
 		},
 		mounted()
@@ -140,43 +140,13 @@
 				selectionState: {
 					lastSelectedEventId: null,
 					getEventsBetween: this.getEventsBetween
-				}
+				},
+				selectedEventIdsArray: [],
+				selectedEventIdsMap: {}
 			};
 		},
 		computed:
 		{
-			selectedEventIdsArray()
-			{
-				let arr = [];
-				if (this.selectedEventIds)
-				{
-					let splitted = this.selectedEventIds.split(',');
-					let eMap = this.eventIdMap;
-					for (let i = 0; i < splitted.length; i++)
-					{
-						let id = parseInt(splitted[i]);
-						if (!isNaN(id) && eMap[id])
-							arr.push(id);
-					}
-				}
-				return arr;
-			},
-			selectedEventIdsMap()
-			{
-				let m = {};
-				for (let i = 0; i < this.selectedEventIdsArray.length; i++)
-					m[this.selectedEventIdsArray[i]] = true;
-				return m;
-			},
-			eventIdMap()
-			{
-				let m = {};
-				let evs = this.events;
-				if (evs)
-					for (let i = 0; i < evs.length; i++)
-						m[evs[i].EventId] = evs[i];
-				return m;
-			},
 			externalChangesToVisibleEvents()
 			{
 				return EventBus.externalChangesToVisibleEvents;
@@ -543,6 +513,31 @@
 			redo()
 			{
 				EventBus.PerformRedo(this.projectName);
+			},
+			learnSelectedEventIds()
+			{
+				let arr = [];
+				let m = {};
+				if (this.selectedEventIds)
+				{
+					let eMap = {};
+					let evs = this.events;
+					if (evs)
+						for (let i = 0; i < evs.length; i++)
+							eMap[evs[i].EventId] = evs[i];
+					let splitted = this.selectedEventIds.split(',');
+					for (let i = 0; i < splitted.length; i++)
+					{
+						let id = parseInt(splitted[i]);
+						if (!isNaN(id) && eMap[id])
+						{
+							arr.push(id);
+							m[id] = true;
+						}
+					}
+				}
+				this.selectedEventIdsMap = m;
+				this.selectedEventIdsArray = arr;
 			}
 		},
 		watch:
@@ -579,6 +574,14 @@
 			openedEventId()
 			{
 				this.markOpenedEventAsRead();
+			},
+			selectedEventIds()
+			{
+				this.learnSelectedEventIds();
+			},
+			events()
+			{
+				this.learnSelectedEventIds();
 			}
 		}
 	}

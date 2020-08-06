@@ -1,4 +1,5 @@
 ﻿using BPUtil;
+using ErrorTrackerServer.Controllers;
 using ErrorTrackerServer.Database.Project.Model;
 using System;
 using System.Collections.Generic;
@@ -148,7 +149,94 @@ namespace ErrorTrackerServer.Filtering
 				Logger.Debug("FilterEngine was asked to run enabled filters against a null event (ID " + eventId + ").");
 				return;
 			}
-			RunEnabledFiltersAgainstEvent(e);
+			RunEnabledFiltersAgainstEvent(e, false);
+		}
+		/// <summary>
+		/// Checks for duplicates, adds the event to the database, and runs all enabled filters against it, within a single transaction.
+		/// </summary>
+		/// <param name="ev">The event to run filters against.</param>
+		/// <returns>A BasicEventTimer containing timing data.</returns>
+		public BasicEventTimer AddEventAndRunEnabledFilters(Event ev)
+		{
+			BasicEventTimer bet = new BasicEventTimer();
+			if (ev == null)
+				throw new ArgumentNullException("ev", "FilterEngine.AddEventAndRunEnabledFilters was given a null event.");
+			try
+			{
+				bet.Start("Begin Transaction");
+				db.LockedTransaction(() =>
+				{
+					try
+					{
+						bet.Start("Dupe Check");
+						// If our response is not received by the client, they will most likely submit again, causing a duplicate to be received.
+						// Check for duplicate submissions.
+						List<Event> events = db.GetEventsByDate(ev.Date, ev.Date);
+						bool anyDupe = events.Any(existing =>
+						{
+							if (existing.Date == ev.Date
+							&& existing.EventType == ev.EventType
+							&& existing.SubType == ev.SubType
+							&& existing.Message == ev.Message
+							&& existing.GetTagCount() == ev.GetTagCount())
+							{
+								// All else is the same. Compare tags.
+								List<Tag> existingTags = existing.GetAllTags();
+								existingTags.Sort(CompareTags);
+
+								List<Tag> newTags = ev.GetAllTags();
+								newTags.Sort(CompareTags);
+
+								for (int i = 0; i < existingTags.Count; i++)
+									if (existingTags[i].Key != newTags[i].Key || existingTags[i].Value != newTags[i].Value)
+										return false;
+
+								return true;
+							}
+							return false;
+						});
+
+						// Skip adding the event if it is a duplicate.
+						if (anyDupe)
+						{
+							bet.Start("Duplicate Found");
+							return;
+						}
+
+						// Add the event to the database
+						bet.Start("Insert");
+						db.AddEvent(ev);
+
+						if (Settings.data.verboseSubmitLogging)
+							Util.SubmitLog("Event " + ev.EventId + " Inserted");
+
+						// Run Filters
+						bet.Start("Filter");
+						RunEnabledFiltersAgainstEvent(ev, true);
+
+						bet.Start("Commit Transaction");
+					}
+					catch
+					{
+						bet.Start("Rollback Transaction");
+					}
+				});
+				bet.Stop();
+			}
+			catch (Exception ex)
+			{
+				bet.Stop();
+				throw new FilterException(bet, "An exception was thrown while adding and filtering a new event.", ex);
+			}
+			return bet;
+		}
+
+		private static int CompareTags(Tag a, Tag b)
+		{
+			int diff = a.Key.CompareTo(b.Key);
+			if (diff == 0)
+				diff = a.Value.CompareTo(b.Value);
+			return diff;
 		}
 
 		/// <summary>
@@ -156,6 +244,16 @@ namespace ErrorTrackerServer.Filtering
 		/// </summary>
 		/// <param name="e">The event to run filters against.</param>
 		public void RunEnabledFiltersAgainstEvent(Event e)
+		{
+			RunEnabledFiltersAgainstEvent(e, false);
+		}
+
+		/// <summary>
+		/// Runs all enabled filters against the specified event.
+		/// </summary>
+		/// <param name="e">The event to run filters against.</param>
+		/// <param name="isEventSubmission">Pass true if the current operation is an event submission and this is the automatic filtering run. Additional logging may be performed for debugging purposes.</param>
+		private void RunEnabledFiltersAgainstEvent(Event e, bool isEventSubmission)
 		{
 			if (e == null)
 			{
@@ -168,7 +266,7 @@ namespace ErrorTrackerServer.Filtering
 				if (DeferredRunFilterAgainstEvent(full, e))
 					break;
 			}
-			deferredActions.ExecuteDeferredActions(db);
+			deferredActions.ExecuteDeferredActions(db, isEventSubmission);
 		}
 
 		/// <summary>

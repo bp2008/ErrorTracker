@@ -77,8 +77,8 @@ namespace ErrorTrackerServer.Controllers
 			}
 			else if (results.Any(r => r == SubmitResult.FilterError))
 			{
-				Emailer.SendError("A filter error occurred while handling event submission.\r\nPOST Body:\r\n" + str, false);
-				return this.Error("Filter Error"); // Client will retry submission later.
+				Emailer.SendError("An error occurred in FilterEngine while handling event submission.\r\nPOST Body:\r\n" + str, false);
+				return this.Error("FilterEngine Error"); // Client will retry submission later.
 			}
 			else
 			{
@@ -94,81 +94,32 @@ namespace ErrorTrackerServer.Controllers
 		/// <returns>Returns a string that is null if there was no error, or an error code such as "FILTER ERROR" if there was an error.</returns>
 		private SubmitResult InsertIntoProject(Project p, Event eventOriginal)
 		{
-			BasicEventTimer bet = new BasicEventTimer();
 			try
 			{
 				Event ev = JsonConvert.DeserializeObject<Event>(JsonConvert.SerializeObject(eventOriginal));
 				using (FilterEngine fe = new FilterEngine(p.Name))
 				{
-					bet.Start("Dupe Check");
-					// If our response is not received by the client, they will most likely submit again, causing a duplicate to be received.
-					// Check for duplicate submissions.
-					List<Event> events = fe.db.GetEventsByDate(ev.Date, ev.Date);
-					bool anyDupe = events.Any(existing =>
-					{
-						if (existing.Date == ev.Date
-						&& existing.EventType == ev.EventType
-						&& existing.SubType == ev.SubType
-						&& existing.Message == ev.Message
-						&& existing.GetTagCount() == ev.GetTagCount())
-						{
-							// All else is the same. Compare tags.
-							List<Tag> existingTags = existing.GetAllTags();
-							existingTags.Sort(CompareTags);
-
-							List<Tag> newTags = ev.GetAllTags();
-							newTags.Sort(CompareTags);
-
-							for (int i = 0; i < existingTags.Count; i++)
-								if (existingTags[i].Key != newTags[i].Key || existingTags[i].Value != newTags[i].Value)
-									return false;
-
-							return true;
-						}
-						return false;
-					});
-
-					// Skip adding the event if it is a duplicate.
-					if (anyDupe)
-						return SubmitResult.OK;
-
-					bet.Start("Insert");
-					// Add the event to the database.
-					fe.db.AddEvent(ev);
-
-					bet.Start("Filter");
-					// Run Filters
-					try
-					{
-						fe.RunEnabledFiltersAgainstEvent(ev);
-					}
-					catch (Exception ex)
-					{
-						bet.Stop();
-						string timing = "\r\n" + bet.ToString("\r\n");
-						Logger.Debug(ex, "Filter Error" + timing);
-						Emailer.SendError(Context, "Filter Error" + timing, ex);
-						return SubmitResult.FilterError;
-					}
+					BasicEventTimer bet = fe.AddEventAndRunEnabledFilters(ev);
+					if (Settings.data.verboseSubmitLogging)
+						Util.SubmitLog("Event " + ev.EventId + " Submission Succeeded\r\n" + bet.ToString("\r\n"));
 				}
 				return SubmitResult.OK;
 			}
+			catch (FilterException ex)
+			{
+				string timing = "\r\n" + ex.timer.ToString("\r\n");
+				Util.SubmitLog("Event Submission Failed with FilterException" + timing + "\r\n" + ex.ToString());
+				Logger.Debug(ex, "FilterEngine Error" + timing);
+				Emailer.SendError(Context, "FilterEngine Error" + timing, ex);
+				return SubmitResult.FilterError;
+			}
 			catch (Exception ex)
 			{
-				bet.Stop();
-				string timing = "\r\n" + bet.ToString("\r\n");
-				Logger.Debug(ex, "Unhandled exception thrown when inserting event into project \"" + p.Name + "\"" + timing + ".");
-				Emailer.SendError(Context, "Unhandled exception thrown when inserting event into project \"" + p.Name + "\"" + timing + ".", ex);
+				Util.SubmitLog("Event Submission Failed with Exception\r\n" + ex.ToString());
+				Logger.Debug(ex, "Unhandled exception thrown when inserting event into project \"" + p.Name + "\".");
+				Emailer.SendError(Context, "Unhandled exception thrown when inserting event into project \"" + p.Name + "\".", ex);
 				return SubmitResult.FatalError;
 			}
-		}
-
-		private static int CompareTags(Tag a, Tag b)
-		{
-			int diff = a.Key.CompareTo(b.Key);
-			if (diff == 0)
-				diff = a.Value.CompareTo(b.Value);
-			return diff;
 		}
 	}
 	enum SubmitResult

@@ -76,15 +76,9 @@ namespace ErrorTrackerServer.Database.Global
 		}
 		#endregion
 		#region Helpers
-		protected override void LockedTransaction(Action action)
+		protected override object GetTransactionLock()
 		{
-			lock (dbTransactionLock)
-			{
-				Robustify(() =>
-				{
-					conn.Value.RunInTransaction(action);
-				});
-			}
+			return dbTransactionLock;
 		}
 		#endregion
 

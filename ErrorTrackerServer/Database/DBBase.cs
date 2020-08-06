@@ -28,7 +28,22 @@ namespace ErrorTrackerServer
 			}
 		}
 		#region Helpers
-		protected abstract void LockedTransaction(Action action);
+		/// <summary>
+		/// Runs the specified Action in a transaction that will automatically retry if the database is locked.
+		/// </summary>
+		/// <param name="action"></param>
+		public void LockedTransaction(Action action)
+		{
+			object transactionLock = GetTransactionLock();
+			lock (transactionLock)
+			{
+				Robustify(() =>
+				{
+					conn.Value.RunInTransaction(action);
+				});
+			}
+		}
+		protected abstract object GetTransactionLock();
 		/// <summary>
 		/// Runs the specified action.  While the database is locked (deadlock detected?), repeats the call for up to this many milliseconds.
 		/// Robustify calls within a transaction action have no effect. LockedTransaction calls have their own retry logic in case of database lock.

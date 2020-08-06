@@ -60,6 +60,7 @@ namespace ErrorTrackerServer.Controllers
 			Settings.data.smtpPass = request.settings.smtpPass;
 			Settings.data.smtpSendFrom = request.settings.smtpSendFrom;
 			Settings.data.defaultErrorEmail = request.settings.defaultErrorEmail;
+			Settings.data.verboseSubmitLogging = request.settings.verboseSubmitLogging;
 			Settings.data.Save();
 
 			SetSettingsResponse response = new SetSettingsResponse(true, null);
@@ -155,6 +156,7 @@ namespace ErrorTrackerServer.Controllers
 		public string smtpPass = "";
 		public string smtpSendFrom = "";
 		public string defaultErrorEmail = "";
+		public bool verboseSubmitLogging = false;
 		public SettingsObject() { }
 		public SettingsObject(Settings settings)
 		{
@@ -176,6 +178,7 @@ namespace ErrorTrackerServer.Controllers
 			smtpPass = settings.smtpPass;
 			smtpSendFrom = settings.smtpSendFrom;
 			defaultErrorEmail = settings.defaultErrorEmail;
+			verboseSubmitLogging = settings.verboseSubmitLogging;
 		}
 	}
 	public enum LoginStyle
