@@ -53,8 +53,8 @@ namespace ErrorTrackerServer.Controllers
 			// During this conversion, each tag key will be validated and changed if necessary.
 			Event ev = new Event();
 			ev.EventType = (EventType)clientEvent.EventType;
-			ev.SubType = clientEvent.SubType;
-			ev.Message = clientEvent.Message;
+			ev.SubType = StringUtil.VisualizeSpecialCharacters(clientEvent.SubType);
+			ev.Message = StringUtil.VisualizeSpecialCharacters(clientEvent.Message);
 			ev.Date = clientEvent.Date;
 			foreach (ErrorTrackerClient.ReadOnlyTag tag in clientEvent.GetAllTags())
 				ev.SetTag(tag.Key, tag.Value);

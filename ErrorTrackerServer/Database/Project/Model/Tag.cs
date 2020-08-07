@@ -67,6 +67,7 @@ namespace ErrorTrackerServer.Database.Project.Model
 				|| Key.Equals("Folder", StringComparison.OrdinalIgnoreCase)
 				|| Key.Equals("Color", StringComparison.OrdinalIgnoreCase))
 				Key = "Tag_" + Key;
+			Key = StringUtil.VisualizeSpecialCharacters(Key);
 			if (Key.Length > 128)
 				Key = Key.Substring(0, 128);
 			return Key;
