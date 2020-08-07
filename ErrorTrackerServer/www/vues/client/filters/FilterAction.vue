@@ -2,7 +2,7 @@
 	<div :class="{ action: true, disabled: !action.Enabled }">
 		<div class="topRow">
 			<label title="Disabled actions are ignored when the filter succeeds"><input type="checkbox" v-model="action.Enabled" /> Enabled</label>
-			<input type="button" value="Delete" @click="$emit('delete', action)" />
+			<input type="button" value="Delete" @click="$emit('delete', action)" :title="deleteBtnTooltip" />
 		</div>
 		<div>
 			<select v-model="action.Operator">
@@ -64,6 +64,10 @@
 					return s;
 				}
 				return null;
+			},
+			deleteBtnTooltip()
+			{
+				return 'Delete Action' + (action.FilterActionID > 0 ? ' ' + action.FilterActionID : '');
 			}
 		},
 		methods:

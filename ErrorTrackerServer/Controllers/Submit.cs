@@ -101,21 +101,21 @@ namespace ErrorTrackerServer.Controllers
 				{
 					BasicEventTimer bet = fe.AddEventAndRunEnabledFilters(ev);
 					if (Settings.data.verboseSubmitLogging)
-						Util.SubmitLog("Event " + ev.EventId + " Submission Succeeded\r\n" + bet.ToString("\r\n"));
+						Util.SubmitLog(p.Name, "Event " + ev.EventId + " Submission Succeeded\r\n" + bet.ToString("\r\n"));
 				}
 				return SubmitResult.OK;
 			}
 			catch (FilterException ex)
 			{
 				string timing = "\r\n" + ex.timer.ToString("\r\n");
-				Util.SubmitLog("Event Submission Failed with FilterException" + timing + "\r\n" + ex.ToString());
+				Util.SubmitLog(p.Name, "Event Submission Failed with FilterException" + timing + "\r\n" + ex.ToString());
 				Logger.Debug(ex, "FilterEngine Error" + timing);
 				Emailer.SendError(Context, "FilterEngine Error" + timing, ex);
 				return SubmitResult.FilterError;
 			}
 			catch (Exception ex)
 			{
-				Util.SubmitLog("Event Submission Failed with Exception\r\n" + ex.ToString());
+				Util.SubmitLog(p.Name, "Event Submission Failed with Exception\r\n" + ex.ToString());
 				Logger.Debug(ex, "Unhandled exception thrown when inserting event into project \"" + p.Name + "\".");
 				Emailer.SendError(Context, "Unhandled exception thrown when inserting event into project \"" + p.Name + "\".", ex);
 				return SubmitResult.FatalError;

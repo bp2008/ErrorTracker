@@ -2,7 +2,7 @@
 	<div :class="{ condition: true, disabled: !condition.Enabled }">
 		<div class="topRow">
 			<label title="Disabled conditions are ignored when the filter runs"><input type="checkbox" v-model="condition.Enabled" /> Enabled</label>
-			<input type="button" value="Delete" @click="$emit('delete', condition)" />
+			<input type="button" value="Delete" @click="$emit('delete', condition)" :title="deleteBtnTooltip" />
 		</div>
 		<div>
 			<input type="text" v-model.lazy="condition.TagKey" placeholder="Field Name" title="Field Name (case-insensitive)" />
@@ -26,6 +26,13 @@
 			condition: {
 				type: Object,
 				required: true
+			}
+		},
+		computed:
+		{
+			deleteBtnTooltip()
+			{
+				return 'Delete Condition' + (condition.FilterConditionID > 0 ? ' ' + condition.FilterConditionID : '');
 			}
 		}
 	}

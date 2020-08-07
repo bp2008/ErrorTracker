@@ -86,12 +86,12 @@ namespace ErrorTrackerServer.Filtering
 					if (eventIds.Length > 0)
 					{
 						if (isEventSubmission && Settings.data.verboseSubmitLogging)
-							Util.SubmitLog("Event " + string.Join(",", eventIds) + " > MoveTo " + kvp.Key);
+							Util.SubmitLog(db.ProjectName, "Event " + string.Join(",", eventIds) + " > MoveTo " + kvp.Key);
 						if (!db.MoveEvents(eventIds, kvp.Key))
 						{
 							success = false;
 							if (isEventSubmission && Settings.data.verboseSubmitLogging)
-								Util.SubmitLog("Action indicated failure");
+								Util.SubmitLog(db.ProjectName, "Action indicated failure");
 						}
 					}
 				}
@@ -103,12 +103,12 @@ namespace ErrorTrackerServer.Filtering
 					if (eventIds.Length > 0)
 					{
 						if (isEventSubmission && Settings.data.verboseSubmitLogging)
-							Util.SubmitLog("Event " + string.Join(",", eventIds) + " > SetColor " + kvp.Key);
+							Util.SubmitLog(db.ProjectName, "Event " + string.Join(",", eventIds) + " > SetColor " + kvp.Key);
 						if (!db.SetEventsColor(eventIds, kvp.Key))
 						{
 							success = false;
 							if (isEventSubmission && Settings.data.verboseSubmitLogging)
-								Util.SubmitLog("Action indicated failure");
+								Util.SubmitLog(db.ProjectName, "Action indicated failure");
 						}
 					}
 				}
@@ -118,12 +118,12 @@ namespace ErrorTrackerServer.Filtering
 				if (idsToDelete.Length > 0)
 				{
 					if (isEventSubmission && Settings.data.verboseSubmitLogging)
-						Util.SubmitLog("Event " + string.Join(",", idsToDelete) + " > Delete");
+						Util.SubmitLog(db.ProjectName, "Event " + string.Join(",", idsToDelete) + " > Delete");
 					if (!db.DeleteEvents(idsToDelete))
 					{
 						success = false;
 						if (isEventSubmission && Settings.data.verboseSubmitLogging)
-							Util.SubmitLog("Action indicated failure");
+							Util.SubmitLog(db.ProjectName, "Action indicated failure");
 					}
 				}
 
@@ -134,7 +134,7 @@ namespace ErrorTrackerServer.Filtering
 					if (eventIds.Length > 0)
 					{
 						if (isEventSubmission && Settings.data.verboseSubmitLogging)
-							Util.SubmitLog("Event " + string.Join(",", eventIds) + " > SetReadState(" + kvp.Key + ")");
+							Util.SubmitLog(db.ProjectName, "Event " + string.Join(",", eventIds) + " > SetReadState(" + kvp.Key + ")");
 						foreach (User user in Settings.data.GetAllUsers())
 						{
 							if (kvp.Key)

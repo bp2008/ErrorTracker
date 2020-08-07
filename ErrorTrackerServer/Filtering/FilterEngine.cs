@@ -63,7 +63,7 @@ namespace ErrorTrackerServer.Filtering
 
 			foreach (Event e in db.GetEventsWithoutTagsInFolderDeferred(folderId, null))
 			{
-				DeferredRunFilterAgainstEvent(full, e); // This method can indicate to stop executing filters against the event, but we are already done either way.
+				DeferredRunFilterAgainstEvent(full, e, false); // This method can indicate to stop executing filters against the event, but we are already done either way.
 			}
 			deferredActions.ExecuteDeferredActions(db);
 		}
@@ -78,7 +78,7 @@ namespace ErrorTrackerServer.Filtering
 			{
 				foreach (FullFilter full in enabledFilters)
 				{
-					if (DeferredRunFilterAgainstEvent(full, e))
+					if (DeferredRunFilterAgainstEvent(full, e, false))
 						break;
 				}
 			}
@@ -115,7 +115,7 @@ namespace ErrorTrackerServer.Filtering
 
 			foreach (Event e in db.GetAllEventsNoTagsDeferred(null))
 			{
-				DeferredRunFilterAgainstEvent(full, e); // This method can indicate to stop executing filters against the event, but we are already done either way.
+				DeferredRunFilterAgainstEvent(full, e, false); // This method can indicate to stop executing filters against the event, but we are already done either way.
 			}
 			deferredActions.ExecuteDeferredActions(db);
 		}
@@ -130,7 +130,7 @@ namespace ErrorTrackerServer.Filtering
 			{
 				foreach (FullFilter full in enabledFilters)
 				{
-					if (DeferredRunFilterAgainstEvent(full, e))
+					if (DeferredRunFilterAgainstEvent(full, e, false))
 						break;
 				}
 			}
@@ -208,7 +208,7 @@ namespace ErrorTrackerServer.Filtering
 						db.AddEvent(ev);
 
 						if (Settings.data.verboseSubmitLogging)
-							Util.SubmitLog("Event " + ev.EventId + " Inserted");
+							Util.SubmitLog(ProjectName, "Event " + ev.EventId + " Inserted");
 
 						// Run Filters
 						bet.Start("Filter");
@@ -261,9 +261,11 @@ namespace ErrorTrackerServer.Filtering
 				return;
 			}
 			List<FullFilter> enabledFilters = db.GetFilters(true);
+			if (isEventSubmission && Settings.data.verboseSubmitLogging)
+				Util.SubmitLog(ProjectName, "Event " + e.EventId + " Running " + enabledFilters.Count + " Filters");
 			foreach (FullFilter full in enabledFilters)
 			{
-				if (DeferredRunFilterAgainstEvent(full, e))
+				if (DeferredRunFilterAgainstEvent(full, e, isEventSubmission))
 					break;
 			}
 			deferredActions.ExecuteDeferredActions(db, isEventSubmission);
@@ -275,8 +277,9 @@ namespace ErrorTrackerServer.Filtering
 		/// </summary>
 		/// <param name="full">A filter to run against the event.</param>
 		/// <param name="e">An event with the Tags field populated.</param>
+		/// <param name="isEventSubmission">Pass true if the current operation is an event submission and this is the automatic filtering run. Additional logging may be performed for debugging purposes.</param>
 		/// <returns></returns>
-		private bool DeferredRunFilterAgainstEvent(FullFilter full, Event e)
+		private bool DeferredRunFilterAgainstEvent(FullFilter full, Event e, bool isEventSubmission)
 		{
 			try
 			{
@@ -285,6 +288,8 @@ namespace ErrorTrackerServer.Filtering
 				if (full.filter.ConditionHandling == ConditionHandling.Unconditional)
 				{
 					conditionsMet = true;
+					if (conditionsMet && isEventSubmission && Settings.data.verboseSubmitLogging)
+						Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + full.filter.FilterId + " met unconditionally. " + full.actions.Count(a => a.Enabled) + "/" + full.actions.Length + " actions enabled.");
 				}
 				else if (full.filter.ConditionHandling == ConditionHandling.All)
 				{
@@ -295,13 +300,15 @@ namespace ErrorTrackerServer.Filtering
 						if (condition.Enabled)
 						{
 							triedCount++;
-							if (EvalCondition(condition, e))
+							if (EvalCondition(condition, e, isEventSubmission))
 								metCount++;
 							else
 								break;
 						}
 					}
 					conditionsMet = metCount == triedCount;
+					if (conditionsMet && isEventSubmission && Settings.data.verboseSubmitLogging)
+						Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + full.filter.FilterId + " met " + metCount + "/" + triedCount + " conditions. " + full.actions.Count(a => a.Enabled) + "/" + full.actions.Length + " actions enabled.");
 				}
 				else if (full.filter.ConditionHandling == ConditionHandling.Any)
 				{
@@ -309,13 +316,15 @@ namespace ErrorTrackerServer.Filtering
 					{
 						if (condition.Enabled)
 						{
-							if (EvalCondition(condition, e))
+							if (EvalCondition(condition, e, isEventSubmission))
 							{
 								conditionsMet = true;
 								break;
 							}
 						}
 					}
+					if (conditionsMet && isEventSubmission && Settings.data.verboseSubmitLogging)
+						Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + full.filter.FilterId + " met any one condition. " + full.actions.Count(a => a.Enabled) + "/" + full.actions.Length + " actions enabled.");
 				}
 				else
 					throw new Exception("[Filter " + full.filter.FilterId + "] Unsupported filter ConditionHandling: " + full.filter.ConditionHandling);
@@ -327,7 +336,7 @@ namespace ErrorTrackerServer.Filtering
 					{
 						try
 						{
-							if (DeferredExecAction(action, e))
+							if (DeferredExecAction(action, e, isEventSubmission))
 								return true;
 						}
 						catch (Exception ex)
@@ -348,8 +357,9 @@ namespace ErrorTrackerServer.Filtering
 		/// </summary>
 		/// <param name="condition">Condition</param>
 		/// <param name="e">Event</param>
+		/// <param name="isEventSubmission">Pass true if the current operation is an event submission and this is the automatic filtering run. Additional logging may be performed for debugging purposes.</param>
 		/// <returns></returns>
-		private bool EvalCondition(FilterCondition condition, Event e)
+		private bool EvalCondition(FilterCondition condition, Event e, bool isEventSubmission)
 		{
 			if (!condition.Enabled)
 				throw new Exception("Disabled conditions cannot be evaluated.");
@@ -391,6 +401,9 @@ namespace ErrorTrackerServer.Filtering
 
 			if (condition.Not)
 				result = !result;
+
+			if (result && isEventSubmission && Settings.data.verboseSubmitLogging)
+				Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + condition.FilterId + " Condition " + condition.FilterConditionId + " met");
 
 			return result;
 		}
@@ -443,8 +456,9 @@ namespace ErrorTrackerServer.Filtering
 		/// </summary>
 		/// <param name="action">Action</param>
 		/// <param name="e">Event</param>
+		/// <param name="isEventSubmission">Pass true if the current operation is an event submission and this is the automatic filtering run. Additional logging may be performed for debugging purposes.</param>
 		/// <returns></returns>
-		private bool DeferredExecAction(FilterAction action, Event e)
+		private bool DeferredExecAction(FilterAction action, Event e, bool isEventSubmission)
 		{
 			if (action.Enabled)
 			{
@@ -455,16 +469,32 @@ namespace ErrorTrackerServer.Filtering
 						targetFolder = db.FolderResolvePath(action.Argument.Trim());
 					if (targetFolder != null)
 					{
+						if (isEventSubmission && Settings.data.verboseSubmitLogging)
+						{
+							string currentFolderPathLabel = "";
+							if (folderStructure.Value.TryGetNode(e.FolderId, out FolderStructure currentFolder))
+								currentFolderPathLabel = " (" + currentFolder.AbsolutePath + ")";
+							Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + action.FilterId + " Action " + action.FilterActionId + " (MoveTo) deferred move from folder " + e.FolderId + currentFolderPathLabel + " to folder " + targetFolder.FolderId + " (" + targetFolder.AbsolutePath + ")");
+						}
+
 						deferredActions.MoveEventTo(e, targetFolder.FolderId);
 						// Make change in memory so that later filters during this filtering operation can see and act upon the new value.
 						e.FolderId = targetFolder.FolderId;
 					}
 					else
+					{
 						Logger.Info("[Filter " + action.FilterId + "] FilterAction " + action.FilterActionId + " was unable to resolve path \"" + action.Argument + "\"");
+
+						if (isEventSubmission && Settings.data.verboseSubmitLogging)
+							Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + action.FilterId + " Action " + action.FilterActionId + " (MoveTo) failed: unable to resolve path \"" + action.Argument + "\"");
+					}
 					return false;
 				}
 				else if (action.Operator == FilterActionType.Delete)
 				{
+					if (isEventSubmission && Settings.data.verboseSubmitLogging)
+						Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + action.FilterId + " Action " + action.FilterActionId + " (Delete) deferred");
+
 					deferredActions.DeleteEvent(e);
 					return true;
 				}
@@ -477,10 +507,17 @@ namespace ErrorTrackerServer.Filtering
 						if (hex.StartsWith("#"))
 							hex = hex.Substring(1);
 						color = Convert.ToUInt32(hex, 16);
+
+						if (isEventSubmission && Settings.data.verboseSubmitLogging)
+							Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + action.FilterId + " Action " + action.FilterActionId + " (SetColor) deferred set color to #" + hex);
 					}
 					catch
 					{
 						Logger.Info("[Filter " + action.FilterId + "] FilterAction " + action.FilterActionId + " with Operator \"SetColor\" has invalid Argument \"" + action.Argument + "\"");
+
+						if (isEventSubmission && Settings.data.verboseSubmitLogging)
+							Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + action.FilterId + " Action " + action.FilterActionId + " (SetColor) failed: invalid Argument \"" + action.Argument + "\"");
+
 						return false;
 					}
 					deferredActions.SetEventColor(e, color);
@@ -490,15 +527,23 @@ namespace ErrorTrackerServer.Filtering
 				}
 				else if (action.Operator == FilterActionType.StopExecution)
 				{
+					if (isEventSubmission && Settings.data.verboseSubmitLogging)
+						Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + action.FilterId + " Action " + action.FilterActionId + " (StopExecution)");
 					return true;
 				}
 				else if (action.Operator == FilterActionType.MarkRead)
 				{
+					if (isEventSubmission && Settings.data.verboseSubmitLogging)
+						Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + action.FilterId + " Action " + action.FilterActionId + " (MarkRead) deferred");
+
 					deferredActions.SetReadState(e, true);
 					return false;
 				}
 				else if (action.Operator == FilterActionType.MarkUnread)
 				{
+					if (isEventSubmission && Settings.data.verboseSubmitLogging)
+						Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + action.FilterId + " Action " + action.FilterActionId + " (MarkUnread) deferred");
+
 					deferredActions.SetReadState(e, false);
 					return false;
 				}
@@ -578,7 +623,7 @@ namespace ErrorTrackerServer.Filtering
 				{
 					foreach (FilterCondition condition in conditions)
 					{
-						if (EvalCondition(condition, e))
+						if (EvalCondition(condition, e, false))
 						{
 							matches.Add(e);
 							break;
@@ -590,7 +635,7 @@ namespace ErrorTrackerServer.Filtering
 					int metCount = 0;
 					foreach (FilterCondition condition in conditions)
 					{
-						if (EvalCondition(condition, e))
+						if (EvalCondition(condition, e, false))
 							metCount++;
 						else
 							break;
