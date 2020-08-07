@@ -32,7 +32,7 @@
 		{
 			deleteBtnTooltip()
 			{
-				return 'Delete Condition' + (this.condition.FilterConditionID > 0 ? ' ' + this.condition.FilterConditionID : '');
+				return 'Delete Condition' + (this.condition.FilterConditionId > 0 ? ' ' + this.condition.FilterConditionId : '');
 			}
 		}
 	}

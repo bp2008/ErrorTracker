@@ -306,7 +306,7 @@ namespace ErrorTrackerServer.Filtering
 								break;
 						}
 					}
-					conditionsMet = metCount == triedCount;
+					conditionsMet = metCount > 0 && metCount == triedCount;
 					if (conditionsMet && isEventSubmission && Settings.data.verboseSubmitLogging)
 						Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + full.filter.FilterId + " met " + metCount + "/" + triedCount + " conditions. " + full.actions.Count(a => a.Enabled) + "/" + full.actions.Length + " actions enabled.");
 				}
