@@ -88,12 +88,13 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// <para>Must not exactly match any of the reserved Key values "EventType", "SubType", "Message", "Date", "Folder", "Color".</para>
 		/// <para>If any of these rules is violated, the Key string will be changed automatically.</para>
 		/// </param>
-		/// <param name="Value">Value of the tag.</param>
+		/// <param name="Value">Value of the tag. Certain special characters such as NULL characters in the value will be replaced for readability.</param>
 		public void SetTag(string Key, string Value)
 		{
 			if (_tags == null)
 				_tags = new Dictionary<string, Tag>();
 			Key = Tag.ValidateTagKey(Key);
+			Value = StringUtil.VisualizeSpecialCharacters(Value);
 			_tags[Key.ToLower()] = new Tag(Key, Value);
 		}
 

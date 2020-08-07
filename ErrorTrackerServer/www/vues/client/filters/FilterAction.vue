@@ -67,7 +67,7 @@
 			},
 			deleteBtnTooltip()
 			{
-				return 'Delete Action' + (action.FilterActionID > 0 ? ' ' + action.FilterActionID : '');
+				return 'Delete Action' + (this.action.FilterActionID > 0 ? ' ' + this.action.FilterActionID : '');
 			}
 		},
 		methods:
