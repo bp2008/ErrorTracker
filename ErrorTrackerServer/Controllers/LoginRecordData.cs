@@ -95,7 +95,7 @@ namespace ErrorTrackerServer.Controllers
 		/// </summary>
 		public string userName;
 	}
-	public class LoginRecordsGlobalRequest : ProjectRequestBase
+	public class LoginRecordsGlobalRequest : ApiRequestBase
 	{
 		/// <summary>
 		/// Oldest allowable date to return login records for.
