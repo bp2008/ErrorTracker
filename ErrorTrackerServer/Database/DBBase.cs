@@ -14,7 +14,7 @@ namespace ErrorTrackerServer
 	public abstract class DBBase : IDisposable
 	{
 		/// <summary>
-		/// Lazy-loaded database connection.
+		/// Lazy-loaded database connection. This should mostly not be accessed directly because it isn't very robust in a high-concurrency environment.
 		/// </summary>
 		protected Lazy<SQLiteConnection> conn;
 		/// <summary>

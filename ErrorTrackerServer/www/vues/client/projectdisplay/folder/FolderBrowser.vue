@@ -425,6 +425,7 @@
 
 							toaster.success("Moved " + description);
 							EventBus.externalChangesToVisibleEvents++;
+							this.loadFolders();
 						}
 						else
 						{
