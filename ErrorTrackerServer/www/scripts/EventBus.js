@@ -41,7 +41,8 @@ const EventBus = new Vue({
 		undoStack: {}, // Stacks of operations which can be undone, keyed by projectName
 		redoStack: {}, // Stacks of operations recently undone which can be redone, keyed by projectName.
 		undoRedoLocked: false,
-		eventSummaryMap: {} // A map of eventId to EventSummary
+		eventSummaryMap: {}, // A map of eventId to EventSummary
+		pushNotificationsAvailable: false
 	},
 	created()
 	{

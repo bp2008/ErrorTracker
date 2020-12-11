@@ -1,5 +1,5 @@
 ﻿<template>
-	<svg class="svgbtn" :style="btnStyle" v-on="$listeners"><use :xlink:href="'#' + sprite"></use><title v-if="title" role="presentation">{{title}}</title></svg>
+	<svg class="svgbtn" :style="btnStyle" @click="onclick" @keypress.enter.prevent="onclick" role="button" tabindex="0"><use :xlink:href="'#' + sprite"></use><title v-if="title" role="presentation">{{title}}</title></svg>
 </template>
 
 <script>
@@ -27,12 +27,13 @@
 				default: ""
 			}
 		},
-		data: function ()
+		data()
 		{
 			return {
 			};
 		},
-		computed: {
+		computed:
+		{
 			btnStyle()
 			{
 				let style = {};
@@ -46,7 +47,12 @@
 				return style;
 			}
 		},
-		methods: {
+		methods:
+		{
+			onclick(e)
+			{
+				this.$emit("click", e);
+			}
 		},
 		created()
 		{

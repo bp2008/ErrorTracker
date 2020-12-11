@@ -10,6 +10,7 @@
 <script>
 	import ModalDialogContainer from "appRoot/vues/common/controls/ModalDialogContainer.vue";
 	import EventBus from 'appRoot/scripts/EventBus';
+	import { ServiceWorkerInit } from 'appRoot/scripts/ServiceWorkerInit';
 
 	export default {
 		components: { ModalDialogContainer },
@@ -39,6 +40,7 @@
 		},
 		created()
 		{
+			ServiceWorkerInit();
 		}
 	};
 </script>

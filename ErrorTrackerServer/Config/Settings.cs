@@ -100,6 +100,18 @@ namespace ErrorTrackerServer
 		/// If true, all event submissions are logged in detail to a special file, for debugging purposes.
 		/// </summary>
 		public bool verboseSubmitLogging = false;
+		/// <summary>
+		/// If true, a service worker will be installed in clients when they load the app.  This enables push notifications.
+		/// </summary>
+		public bool serviceWorkerEnabled = false;
+		/// <summary>
+		/// VAPID public key used for web push notifications.
+		/// </summary>
+		public string vapidPublicKey;
+		/// <summary>
+		/// VAPID private key used for web push notifications.
+		/// </summary>
+		public string vapidPrivateKey;
 
 		public string GetWWWDirectoryBase()
 		{

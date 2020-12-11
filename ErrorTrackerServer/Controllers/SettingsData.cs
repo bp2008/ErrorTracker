@@ -61,6 +61,7 @@ namespace ErrorTrackerServer.Controllers
 			Settings.data.smtpSendFrom = request.settings.smtpSendFrom;
 			Settings.data.defaultErrorEmail = request.settings.defaultErrorEmail;
 			Settings.data.verboseSubmitLogging = request.settings.verboseSubmitLogging;
+			Settings.data.serviceWorkerEnabled = request.settings.serviceWorkerEnabled;
 			Settings.data.Save();
 
 			SetSettingsResponse response = new SetSettingsResponse(true, null);
@@ -157,6 +158,7 @@ namespace ErrorTrackerServer.Controllers
 		public string smtpSendFrom = "";
 		public string defaultErrorEmail = "";
 		public bool verboseSubmitLogging = false;
+		public bool serviceWorkerEnabled = false;
 		public SettingsObject() { }
 		public SettingsObject(Settings settings)
 		{
@@ -179,6 +181,7 @@ namespace ErrorTrackerServer.Controllers
 			smtpSendFrom = settings.smtpSendFrom;
 			defaultErrorEmail = settings.defaultErrorEmail;
 			verboseSubmitLogging = settings.verboseSubmitLogging;
+			serviceWorkerEnabled = settings.serviceWorkerEnabled;
 		}
 	}
 	public enum LoginStyle

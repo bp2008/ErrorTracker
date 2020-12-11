@@ -58,6 +58,13 @@ namespace ErrorTrackerServer
 		public string EventListCustomTagKeys;
 
 		/// <summary>
+		/// JSON-serialized list of PUSH notification subscriptions.
+		/// This exist as a JSON-serialized string in order to help prevent concurrent access problems (e.g. when saving the settings).
+		/// Each item in the list is an object containing the project name, folder Id, and subscription key string.
+		/// </summary>
+		public string PushSubscriptionList = null;
+
+		/// <summary>
 		/// Returns the validated tag key for the specified project, or null.
 		/// </summary>
 		/// <param name="projectName">Project name, not case sensitive.</param>
@@ -104,6 +111,71 @@ namespace ErrorTrackerServer
 			else
 				dict[projectName] = Tag.ValidateTagKey(customTagKey);
 			EventListCustomTagKeys = JsonConvert.SerializeObject(dict);
+		}
+
+		/// <summary>
+		/// Returns the user's <see cref="PushSubscriptionKey"/> if the user is subscribed to new events in the specified folder.  If the user is not subscribed to this folder, returns null.
+		/// </summary>
+		/// <param name="projectName">Project name containing the folder.</param>
+		/// <param name="folderId">ID of the folder we're checking subscription status for.</param>
+		/// <returns></returns>
+		public string[] GetPushNotificationSubscriptions(string projectName, int folderId)
+		{
+			if (!string.IsNullOrWhiteSpace(PushSubscriptionList))
+			{
+				PushSubscription[] subs = JsonConvert.DeserializeObject<PushSubscription[]>(PushSubscriptionList);
+				projectName = projectName.ToLower();
+				return subs
+					.Where(s => s.projectName == projectName && s.folderId == folderId)
+					.Select(s => s.subscriptionKey).ToArray();
+			}
+			return new string[0];
+		}
+
+		/// <summary>
+		/// Subscribes or unsubscribes the user to PUSH notifications for new events in the specified folder.
+		/// </summary>
+		/// <param name="projectName">Project name containing the folder.</param>
+		/// <param name="folderId">ID of the folder we're checking subscription status for.</param>
+		/// <param name="subscriptionKey">Subscription key (unique to each web browser instance)</param>
+		/// <param name="subscribed">If true, the user will be subscribed. If false, unsubscribed.</param>
+		/// <returns></returns>
+		public void SetPushNotificationSubscription(string projectName, int folderId, string subscriptionKey, bool subscribed)
+		{
+			List<PushSubscription> subs = null;
+
+			if (!string.IsNullOrWhiteSpace(PushSubscriptionList))
+				subs = JsonConvert.DeserializeObject<List<PushSubscription>>(PushSubscriptionList);
+
+			if (subs == null)
+				subs = new List<PushSubscription>();
+
+			projectName = projectName.ToLower();
+
+			bool changed = false;
+			for (int i = 0; i < subs.Count; i++)
+			{
+				PushSubscription sub = subs[i];
+				if (sub.projectName == projectName && sub.folderId == folderId && sub.subscriptionKey == subscriptionKey)
+				{
+					if (subscribed)
+						return;
+					else
+					{
+						changed = true;
+						subs.RemoveAt(i);
+						i--;
+					}
+				}
+			}
+
+			if (subscribed)
+			{
+				changed = true;
+				subs.Add(new PushSubscription(projectName, folderId, subscriptionKey));
+			}
+			if (changed)
+				PushSubscriptionList = JsonConvert.SerializeObject(subs);
 		}
 
 		/// <summary>

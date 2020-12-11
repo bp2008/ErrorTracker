@@ -45,6 +45,14 @@
 			<vsvg sprite="fingerprint"
 				  class="filterIcon" />
 		</router-link>
+		<vsvg v-if="NotificationsAvailable"
+			  role="button"
+			  tabindex="0"
+			  @click="toggleNotifications"
+			  @keypress.enter.prevent="toggleNotifications"
+			  :title="NotificationsActive ? 'notifications enabled' : 'notifications disabled'"
+			  :sprite="NotificationsActive ? 'notifications_active' : 'notifications_off'"
+			  :class="{ filterIcon: true, notificationsBtn: true, active: NotificationsActive }" />
 		<SvgButton v-if="!onFilters && !onAdvancedSearch"
 				   title="Toggle event body position"
 				   :class="{ eventBodyBelow: true, isBelow: eventBodyBelow }"
@@ -62,8 +70,10 @@
 	import svg4 from 'appRoot/images/sprite/search_adv2.svg';
 	import svg5 from 'appRoot/images/sprite/filter_alt.svg';
 	import svg6 from 'appRoot/images/sprite/fingerprint.svg';
+	import svg7 from 'appRoot/images/sprite/notifications_active.svg';
+	import svg8 from 'appRoot/images/sprite/notifications_off.svg';
 	import SvgButton from 'appRoot/vues/common/controls/SvgButton.vue';
-	import { SelectFolderDialog } from 'appRoot/scripts/ModalDialog';
+	import { SelectFolderDialog, ModalMessageDialog } from 'appRoot/scripts/ModalDialog';
 	import { SetSelectedFolder } from 'appRoot/scripts/Util';
 
 	export default {
@@ -102,7 +112,9 @@
 		data()
 		{
 			return {
-				searchQuery: ""
+				searchQuery: "",
+				NotificationsAvailable: NotificationsAvailable(),
+				NotificationPermission: NotificationPermission()
 			};
 		},
 		created()
@@ -160,6 +172,10 @@
 					return "Showing only the newest event in each matching set.";
 				else
 					return "Showing all events in each matching set.";
+			},
+			NotificationsActive()
+			{
+				return this.NotificationPermission === "granted";
 			}
 		},
 		methods:
@@ -191,8 +207,49 @@
 						if (folder)
 							SetSelectedFolder(this, false, folder.FolderId);
 					});
+			},
+			toggleNotifications()
+			{
+				this.NotificationPermission = NotificationPermission();
+				if (this.NotificationPermission === "default")
+				{
+					Notification.requestPermission()
+						.then(result =>
+						{
+							this.NotificationPermission = NotificationPermission();
+							console.log("Notification.requestPermission().then", result);
+						})
+						.catch(err =>
+						{
+							this.NotificationPermission = NotificationPermission();
+							console.log("Notification.requestPermission().catch", err);
+							toaster.error(err);
+						});
+				}
+				else if (this.NotificationPermission === "granted")
+				{
+				}
+				else if (this.NotificationPermission === "denied")
+				{
+					ModalMessageDialog("You have previously denied notification permission for this site.  Therefore, you must edit the permission manually in your browser's settings.", "Permission Denied");
+				}
 			}
 		}
+	}
+	function NotificationsAvailable()
+	{
+		if (typeof Notification === "undefined")
+			return false;
+		if (location.host === "127.0.0.1" || location.host === "localhost" || location.protocol === "https:")
+			return true;
+		return false;
+	}
+	function NotificationPermission()
+	{
+		if (NotificationsAvailable())
+			return Notification.permission;
+		else
+			return null;
 	}
 </script>
 
@@ -267,7 +324,8 @@
 
 	.filterBtn,
 	.advancedSearchBtn,
-	.uniqueOnlyBtn
+	.uniqueOnlyBtn,
+	.notificationsBtn
 	{
 		display: flex;
 		align-items: center;
@@ -293,25 +351,35 @@
 		padding: 1px;
 	}
 
-		.uniqueOnlyBtn.active
+		.uniqueOnlyBtn.active,
+		.notificationsBtn.active
 		{
 			color: #0000FF;
-			background-color: rgba(255,255,255.75);
+			background-color: rgba(255,255,255,.75);
 		}
 
 		.filterBtn:hover,
 		.advancedSearchBtn:hover,
-		.uniqueOnlyBtn:hover
+		.uniqueOnlyBtn:hover,
+		.notificationsBtn:hover
 		{
 			background-color: rgba(0,0,0,0.05);
 		}
 
 		.filterBtn:active,
 		.advancedSearchBtn:active,
-		.uniqueOnlyBtn:active
+		.uniqueOnlyBtn:active,
+		.notificationsBtn:active
 		{
 			background-color: rgba(0,0,0,0.085);
 		}
+
+	.notificationsBtn
+	{
+		cursor: pointer;
+		color: #000000;
+		padding: 1px;
+	}
 
 	.filterIcon
 	{

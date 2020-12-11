@@ -48,6 +48,13 @@ namespace ErrorTrackerServer
 				Settings.data.privateSigningKey = new SignatureFactory().ExportPrivateKey();
 				Settings.data.Save();
 			}
+			if (string.IsNullOrWhiteSpace(Settings.data.vapidPrivateKey))
+			{
+				WebPush.VapidDetails vapidKeys = WebPush.VapidHelper.GenerateVapidKeys();
+				Settings.data.vapidPrivateKey = vapidKeys.PrivateKey;
+				Settings.data.vapidPublicKey = vapidKeys.PublicKey;
+				Settings.data.Save();
+			}
 			BPUtil.PasswordReset.StatelessPasswordResetBase.Initialize(Settings.data.privateSigningKey);
 
 			// Initialize User IDs.
