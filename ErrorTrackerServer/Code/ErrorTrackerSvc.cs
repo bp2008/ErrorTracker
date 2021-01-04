@@ -42,17 +42,24 @@ namespace ErrorTrackerServer
 				defaultAdmin.InitializeUserId();
 				Settings.data.Save();
 			}
-
+			if (string.IsNullOrWhiteSpace(Settings.data.systemName))
+			{
+				Settings.data.systemName = "Error Tracker";
+				Settings.data.Save();
+			}
 			if (string.IsNullOrWhiteSpace(Settings.data.privateSigningKey))
 			{
 				Settings.data.privateSigningKey = new SignatureFactory().ExportPrivateKey();
 				Settings.data.Save();
 			}
-			if (string.IsNullOrWhiteSpace(Settings.data.vapidPrivateKey))
+			if (string.IsNullOrWhiteSpace(Settings.data.vapidPrivateKey)
+				|| string.IsNullOrWhiteSpace(Settings.data.vapidPublicKey))
 			{
 				WebPush.VapidDetails vapidKeys = WebPush.VapidHelper.GenerateVapidKeys();
 				Settings.data.vapidPrivateKey = vapidKeys.PrivateKey;
 				Settings.data.vapidPublicKey = vapidKeys.PublicKey;
+				foreach (User u in Settings.data.GetAllUsers())
+					u.ClearAllPushNotificationSubscriptions();
 				Settings.data.Save();
 			}
 			BPUtil.PasswordReset.StatelessPasswordResetBase.Initialize(Settings.data.privateSigningKey);

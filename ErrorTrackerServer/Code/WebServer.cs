@@ -56,17 +56,20 @@ namespace ErrorTrackerServer
 					p.writeFailure("400 Bad Request");
 					return;
 				}
-				if (webpackProxy != null)
+				if (!p.requestedPage.Equals("service-worker.js", StringComparison.OrdinalIgnoreCase))
 				{
-					// Handle hot module reload provided by webpack dev server.
-					switch (fi.Extension.ToLower())
+					if (webpackProxy != null)
 					{
-						case ".js":
-						case ".map":
-						case ".css":
-						case ".json":
-							webpackProxy.Proxy(p);
-							return;
+						// Handle hot module reload provided by webpack dev server.
+						switch (fi.Extension.ToLower())
+						{
+							case ".js":
+							case ".map":
+							case ".css":
+							case ".json":
+								webpackProxy.Proxy(p);
+								return;
+						}
 					}
 				}
 				if (!fi.Exists

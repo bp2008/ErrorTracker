@@ -42,7 +42,9 @@ const EventBus = new Vue({
 		redoStack: {}, // Stacks of operations recently undone which can be redone, keyed by projectName.
 		undoRedoLocked: false,
 		eventSummaryMap: {}, // A map of eventId to EventSummary
-		pushNotificationsAvailable: false
+		pushNotificationsAvailable: false, // True if all preconditions for push notification registration have been met.
+		notificationPermission: "default", // The latest value of Notification.permission. May be "default", "granted", "denied"
+		pushSubscription: null // Push notification subscription object. null if the browser is not registered for push.
 	},
 	created()
 	{

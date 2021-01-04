@@ -114,16 +114,17 @@ namespace ErrorTrackerServer
 		}
 
 		/// <summary>
-		/// Returns the user's <see cref="PushSubscriptionKey"/> if the user is subscribed to new events in the specified folder.  If the user is not subscribed to this folder, returns null.
+		/// Returns the user's <see cref="PushSubscription"/> if the user is subscribed to new events in the specified folder.  If the user is not subscribed to this folder, returns null.
 		/// </summary>
 		/// <param name="projectName">Project name containing the folder.</param>
 		/// <param name="folderId">ID of the folder we're checking subscription status for.</param>
 		/// <returns></returns>
 		public string[] GetPushNotificationSubscriptions(string projectName, int folderId)
 		{
-			if (!string.IsNullOrWhiteSpace(PushSubscriptionList))
+			string json = PushSubscriptionList;
+			if (!string.IsNullOrWhiteSpace(json))
 			{
-				PushSubscription[] subs = JsonConvert.DeserializeObject<PushSubscription[]>(PushSubscriptionList);
+				PushSubscription[] subs = JsonConvert.DeserializeObject<PushSubscription[]>(json);
 				projectName = projectName.ToLower();
 				return subs
 					.Where(s => s.projectName == projectName && s.folderId == folderId)
@@ -144,8 +145,9 @@ namespace ErrorTrackerServer
 		{
 			List<PushSubscription> subs = null;
 
-			if (!string.IsNullOrWhiteSpace(PushSubscriptionList))
-				subs = JsonConvert.DeserializeObject<List<PushSubscription>>(PushSubscriptionList);
+			string json = PushSubscriptionList;
+			if (!string.IsNullOrWhiteSpace(json))
+				subs = JsonConvert.DeserializeObject<List<PushSubscription>>(json);
 
 			if (subs == null)
 				subs = new List<PushSubscription>();
@@ -176,6 +178,11 @@ namespace ErrorTrackerServer
 			}
 			if (changed)
 				PushSubscriptionList = JsonConvert.SerializeObject(subs);
+		}
+
+		public void ClearAllPushNotificationSubscriptions()
+		{
+			PushSubscriptionList = null;
 		}
 
 		/// <summary>

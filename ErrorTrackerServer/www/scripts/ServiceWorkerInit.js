@@ -1,115 +1,97 @@
 import { GetVapidPublicKey } from 'appRoot/api/PushData';
 import EventBus from 'appRoot/scripts/EventBus';
 
+function CheckServiceWorkerPreconditions()
+{
+	if (!appContext.serviceWorkerEnabled)
+	{
+		console.log("The service worker is not enabled in this Error Tracker instance, therefore PUSH notifications will not be available.");
+		return false;
+	}
+	if (!('serviceWorker' in navigator))
+	{
+		console.warn("Service workers are not supported in this browser, therefore PUSH notifications will not be available.");
+		return false;
+	}
+	if (!('showNotification' in ServiceWorkerRegistration.prototype))
+	{
+		console.warn("ServiceWorker Notifications are not supported in this browser, therefore PUSH notifications will not be available.");
+		return false;
+	}
+	if (!('PushManager' in window))
+	{
+		console.warn("Push messaging is not supported in this browser.");
+		return false;
+	}
+	if (!IsSecure())
+	{
+		console.warn("Notifications and push messaging is not supported because this connection is not secure.");
+		return false;
+	}
+	if (typeof Notification === "undefined")
+	{
+		console.warn('typeof Notification === "undefined". Push notifications will be unavailable.');
+		return false;
+	}
+	return true;
+}
+
 export function ServiceWorkerInit()
 {
 	// Set up a service worker to handle incoming push notifications.
-	if (appContext.serviceWorkerEnabled)
+	if (!CheckServiceWorkerPreconditions())
+		return;
+	EventBus.notificationPermission = Notification.permission;
+	GetServiceWorkerRegistration()
+		.then(registration =>
+		{
+			serviceWorkerRegistration = registration;
+			EventBus.pushNotificationsAvailable = true;
+			return registration.pushManager.getSubscription()
+				.then(subscription =>
+				{
+					if (subscription)
+						EventBus.pushSubscription = subscription;
+					return subscription;
+				});
+		})
+		.catch(err =>
+		{
+			console.error(err);
+		});
+
+	// Cleanup previous bad service worker scope:
+	navigator.serviceWorker.getRegistrations().then(registrations =>
 	{
-		if (!('serviceWorker' in navigator))
+		for (let i = 0; i < registrations.length; i++)
 		{
-			console.warn("Service workers are not supported in this browser, therefore PUSH notifications will not be available.");
-			return;
+			if (registrations[i].scope.indexOf("/serviceworker/") > -1)
+				registrations[i].unregister();
 		}
-		if (!('showNotification' in ServiceWorkerRegistration.prototype))
-		{
-			console.warn("ServiceWorker Notifications are not supported in this browser, therefore PUSH notifications will not be available.");
-			return;
-		}
-		if (!('PushManager' in window))
-		{
-			console.warn("Push messaging is not supported in this browser.");
-			return;
-		}
-		navigator.serviceWorker.register('serviceworker/service-worker.js')
-			.then(() =>
-			{
-				EventBus.pushNotificationsAvailable = true;
+	});
+}
+let serviceWorkerRegistration = null;
+/**
+ * Returns a promise that resolves with the service worker registration object or otherwise rejects.
+ * As side-effects, this method may set EventBus.pushNotificationsAvailable and EventBus.pushSubscription.
+ */
+export async function GetServiceWorkerRegistration()
+{
+	let registration = serviceWorkerRegistration;
+	if (registration === null)
+	{
+		if (!CheckServiceWorkerPreconditions())
+			throw new Error("Service worker preconditions not met.");
 
-				navigator.serviceWorker.ready
-					.then(function (registration)
-					{
-						// Use the PushManager to get the user's subscription to the push service.
-						return registration.pushManager.getSubscription()
-							.then(async function (subscription)
-							{
-								// If a subscription was found, return it.
-								if (subscription)
-									return subscription;
-
-								// Get the server's public key
-								const response = await GetVapidPublicKey();
-
-								// Old versions of Chrome do not accept the vapidPublicKey as base64.
-								const convertedVapidKey = urlBase64ToUint8Array(response.vapidPublicKey);
-
-								// Subscribe the user (userVisibleOnly allows to specify that we don't plan to send notifications that don't have a visible effect for the user).
-								return registration.pushManager.subscribe({
-									userVisibleOnly: true,
-									applicationServerKey: convertedVapidKey
-								});
-							});
-					})
-					.then(function (subscription)
-					{
-						// Send the subscription details to the server using the Fetch API.
-						fetch('registerForPush', {
-							method: 'post',
-							headers: {
-								'Content-type': 'application/json'
-							},
-							body: JSON.stringify({
-								subscription: subscription
-							}),
-						});
-
-						document.getElementById('doIt').onclick = function ()
-						{
-							const delay = document.getElementById('notification-delay').value;
-							const ttl = document.getElementById('notification-ttl').value;
-
-							// Ask the server to send the client a notification (for testing purposes, in actual
-							// applications the push notification is likely going to be generated by some event
-							// in the server).
-							fetch('./sendNotification', {
-								method: 'post',
-								headers: {
-									'Content-type': 'application/json'
-								},
-								body: JSON.stringify({
-									subscription: subscription,
-									delay: delay,
-									ttl: ttl,
-								}),
-							});
-						};
-
-					})
-					.catch(err =>
-					{
-						toaster.warn(err);
-					});
-			})
-			.catch(err =>
-			{
-				toaster.warn(err);
-			});
+		registration = await navigator.serviceWorker.register(appContext.appPath + 'service-worker.js');
+		registration = await navigator.serviceWorker.ready;
 	}
+	return registration;
 }
 
-function urlBase64ToUint8Array(base64String)
+function IsSecure()
 {
-	var padding = '='.repeat((4 - base64String.length % 4) % 4);
-	var base64 = (base64String + padding)
-		.replace(/\-/g, '+')
-		.replace(/_/g, '/');
-
-	var rawData = window.atob(base64);
-	var outputArray = new Uint8Array(rawData.length);
-
-	for (var i = 0; i < rawData.length; ++i)
-	{
-		outputArray[i] = rawData.charCodeAt(i);
-	}
-	return outputArray;
+	if (location.host === "127.0.0.1" || location.host === "localhost" || location.protocol === "https:")
+		return true;
+	return false;
 }

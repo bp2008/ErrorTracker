@@ -29,7 +29,7 @@ namespace ErrorTrackerServer.Controllers
 				loginStyle = Settings.data.loginStyle,
 				serverVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString(),
 				emailConfigured = Emailer.Enabled,
-				serviceWorkerEnabled = Settings.data.serviceWorkerEnabled && this.Context.httpProcessor.secure_https
+				serviceWorkerEnabled = Settings.data.serviceWorkerEnabled
 			};
 
 			ViewData.Set("AppContext", JsonConvert.SerializeObject(appContext));

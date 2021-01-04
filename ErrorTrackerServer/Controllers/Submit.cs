@@ -103,6 +103,7 @@ namespace ErrorTrackerServer.Controllers
 					if (Settings.data.verboseSubmitLogging)
 						Util.SubmitLog(p.Name, "Event " + ev.EventId + " Submission Succeeded\r\n" + bet.ToString("\r\n"));
 				}
+				PushManager.Notify(p.Name, ev);
 				return SubmitResult.OK;
 			}
 			catch (FilterException ex)

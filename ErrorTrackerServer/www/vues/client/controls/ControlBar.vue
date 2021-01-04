@@ -50,9 +50,9 @@
 			  tabindex="0"
 			  @click="toggleNotifications"
 			  @keypress.enter.prevent="toggleNotifications"
-			  :title="NotificationsActive ? 'notifications enabled' : 'notifications disabled'"
-			  :sprite="NotificationsActive ? 'notifications_active' : 'notifications_off'"
-			  :class="{ filterIcon: true, notificationsBtn: true, active: NotificationsActive }" />
+			  :title="isRegisteredForPush ? 'notifications enabled' : 'notifications disabled'"
+			  :sprite="isRegisteredForPush ? 'notifications_active' : 'notifications_off'"
+			  :class="{ filterIcon: true, notificationsBtn: true, active: isRegisteredForPush }" />
 		<SvgButton v-if="!onFilters && !onAdvancedSearch"
 				   title="Toggle event body position"
 				   :class="{ eventBodyBelow: true, isBelow: eventBodyBelow }"
@@ -73,8 +73,9 @@
 	import svg7 from 'appRoot/images/sprite/notifications_active.svg';
 	import svg8 from 'appRoot/images/sprite/notifications_off.svg';
 	import SvgButton from 'appRoot/vues/common/controls/SvgButton.vue';
-	import { SelectFolderDialog, ModalMessageDialog } from 'appRoot/scripts/ModalDialog';
+	import { SelectFolderDialog, ProgressDialog } from 'appRoot/scripts/ModalDialog';
 	import { SetSelectedFolder } from 'appRoot/scripts/Util';
+	import { IsRegisteredForPush, RegisterPushNotificationsForFolder, UnregisterPushNotificationsForFolder } from 'appRoot/scripts/PushHelper';
 
 	export default {
 		components: { SvgButton },
@@ -113,12 +114,12 @@
 		{
 			return {
 				searchQuery: "",
-				NotificationsAvailable: NotificationsAvailable(),
-				NotificationPermission: NotificationPermission()
+				isRegisteredForPush: false
 			};
 		},
 		created()
 		{
+			this.learnPushRegistration();
 		},
 		mounted()
 		{
@@ -173,9 +174,17 @@
 				else
 					return "Showing all events in each matching set.";
 			},
-			NotificationsActive()
+			NotificationsAvailable()
 			{
-				return this.NotificationPermission === "granted";
+				return EventBus.pushNotificationsAvailable;
+			},
+			NotificationPermission()
+			{
+				return EventBus.notificationPermission;
+			},
+			pushSubscription()
+			{
+				return EventBus.pushSubscription;
 			}
 		},
 		methods:
@@ -210,46 +219,68 @@
 			},
 			toggleNotifications()
 			{
-				this.NotificationPermission = NotificationPermission();
-				if (this.NotificationPermission === "default")
+				if (this.notificationsToggling)
+					return;
+				let progressDialog;
+				let promise;
+				if (this.isRegisteredForPush)
 				{
-					Notification.requestPermission()
-						.then(result =>
+					promise = UnregisterPushNotificationsForFolder(this.projectName, this.selectedFolderId);
+					progressDialog = ProgressDialog("Unregistering");
+				}
+				else
+				{
+					promise = RegisterPushNotificationsForFolder(this.projectName, this.selectedFolderId);
+					progressDialog = ProgressDialog("Registering");
+				}
+				this.notificationsToggling = true;
+				promise
+					.then(() =>
+					{
+						this.notificationsToggling = false;
+						progressDialog.close();
+						this.learnPushRegistration();
+					})
+					.catch(err =>
+					{
+						this.notificationsToggling = false;
+						progressDialog.close();
+						toaster.error(err);
+						this.learnPushRegistration();
+					});
+			},
+			learnPushRegistration()
+			{
+				// unset the flag, then asynchronously ask if we're registered to the current project and folder.
+				this.isRegisteredForPush = false;
+
+				let projectName = this.projectName;
+				let folderId = this.selectedFolderId;
+				IsRegisteredForPush(projectName, folderId)
+					.then(isRegistered =>
+					{
+						if (this.projectName === projectName && this.selectedFolderId === folderId)
 						{
-							this.NotificationPermission = NotificationPermission();
-							console.log("Notification.requestPermission().then", result);
-						})
-						.catch(err =>
-						{
-							this.NotificationPermission = NotificationPermission();
-							console.log("Notification.requestPermission().catch", err);
-							toaster.error(err);
-						});
-				}
-				else if (this.NotificationPermission === "granted")
-				{
-				}
-				else if (this.NotificationPermission === "denied")
-				{
-					ModalMessageDialog("You have previously denied notification permission for this site.  Therefore, you must edit the permission manually in your browser's settings.", "Permission Denied");
-				}
+							this.isRegisteredForPush = isRegistered;
+						}
+					});
+			}
+		},
+		watch:
+		{
+			projectName()
+			{
+				this.learnPushRegistration();
+			},
+			selectedFolderId()
+			{
+				this.learnPushRegistration();
+			},
+			pushSubscription()
+			{
+				this.learnPushRegistration();
 			}
 		}
-	}
-	function NotificationsAvailable()
-	{
-		if (typeof Notification === "undefined")
-			return false;
-		if (location.host === "127.0.0.1" || location.host === "localhost" || location.protocol === "https:")
-			return true;
-		return false;
-	}
-	function NotificationPermission()
-	{
-		if (NotificationsAvailable())
-			return Notification.permission;
-		else
-			return null;
 	}
 </script>
 

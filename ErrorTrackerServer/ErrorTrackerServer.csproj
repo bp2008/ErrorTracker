@@ -130,6 +130,7 @@
     <Compile Include="BCrypt\BCrypt.cs" />
     <Compile Include="BCrypt\SaltParseException.cs" />
     <Compile Include="Code\Emailer.cs" />
+    <Compile Include="Code\PushManager.cs" />
     <Compile Include="Code\PushSubscription.cs" />
     <Compile Include="Code\WebpackChunkResolver.cs" />
     <Compile Include="Config\Settings.cs" />
@@ -300,6 +301,7 @@
     <Content Include="www\main.js" />
     <Content Include="www\router\index.js" />
     <Content Include="www\scripts\bcrypt.min.js" />
+    <Content Include="www\scripts\PushHelper.js" />
     <Content Include="www\scripts\EventBus.js" />
     <Content Include="www\scripts\ModalDialog.js" />
     <Content Include="www\scripts\ModalDialogAccessibilityMixin.js" />
@@ -307,7 +309,7 @@
     <Content Include="www\scripts\sha512.js" />
     <Content Include="www\scripts\ToasterHelper.js" />
     <Content Include="www\scripts\Util.js" />
-    <Content Include="www\serviceworker\service-worker.js" />
+    <Content Include="www\service-worker.js" />
     <Content Include="www\store\store.js" />
     <Content Include="www\styles\admin.css" />
     <Content Include="www\styles\Client.css" />
@@ -328,30 +330,34 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if $(ConfigurationName) == Debug (
-  if EXIST "$(TargetDir)www\dist\manifest.json" (
-    echo Skipping webpack build because release type is "Debug" and you should be 
-    echo   using hot module reload.
-    echo If web app loading fails with 404 errors, delete your "bin/Debug/www/dist" directory and 
-    echo   then build the solution again.
-    goto :exit
-  )
-)
-
-echo *****************
-echo If the following build fails, you may need to run "npm install" from the ErrorTrackerServer project directory.
-echo *****************
-rmdir /S /Q "$(TargetDir)www"
+    <PostBuildEvent>rmdir /S /Q "$(TargetDir)www"
 xcopy "$(ProjectDir)www\*.*" "$(TargetDir)www\*.*" /C /R /Y /I
 del /Q "$(TargetDir)www\Globals.scss" &gt;nul 2&gt;&amp;1
 del /Q "$(TargetDir)www\jsconfig.json" &gt;nul 2&gt;&amp;1
 del /Q "$(TargetDir)www\main.js" &gt;nul 2&gt;&amp;1
 xcopy "$(ProjectDir)www\images\*.*" "$(TargetDir)www\images\*.*" /C /R /Y /I
+
+
+if $(ConfigurationName) == Debug (
+  if EXIST "$(ProjectDir)www\dist\manifest.json" (
+    echo Skipping webpack build because release type is "Debug" and you should be 
+    echo   using hot module reload.
+    echo If web app loading fails with 404 errors, delete your "$(ProjectName)/www/dist" directory and 
+    echo   then build the solution again.
+    goto :afterwebpack
+  )
+)
+
+
+echo *****************
+echo If the following build fails, you may need to run "npm install" from the ErrorTrackerServer project directory.
+echo *****************
 cd "$(ProjectDir)"
 node "$(ProjectDir)node_modules\webpack\bin\webpack" --env=$(ConfigurationName)
-xcopy "$(ProjectDir)www\dist\*.*" "$(TargetDir)www\dist\*.*" /C /R /Y /I
 
-:exit</PostBuildEvent>
+
+:afterwebpack
+xcopy "$(ProjectDir)www\dist\*.*" "$(TargetDir)www\dist\*.*" /C /R /Y /I</PostBuildEvent>
   </PropertyGroup>
   <Import Project="..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets" Condition="Exists('..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
