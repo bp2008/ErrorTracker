@@ -43,6 +43,7 @@ namespace ErrorTrackerServer
 						if (!newEvents.IsEmpty)
 						{
 							// Accumulate a list of events we want to notify each subscription about.
+							// Map subscriptionkey > event list
 							Dictionary<string, List<EventToNotifyAbout>> accumulatedEvents = new Dictionary<string, List<EventToNotifyAbout>>();
 							List<User> users = Settings.data.GetAllUsers();
 							while (newEvents.TryDequeue(out EventToNotifyAbout en))
@@ -86,12 +87,27 @@ namespace ErrorTrackerServer
 									{
 										StringBuilder sb = new StringBuilder();
 
-										if (events.Count > 1)
-											sb.AppendLine(events.Count + " new events:");
-										foreach (EventToNotifyAbout en in events)
-											sb.AppendLine(en.ev.EventType.ToString() + ": " + en.ev.SubType);
+										PushMessage message = new PushMessage(Settings.data.systemName, events.Count + " new events:");
+										if (events.Count == 1)
+										{
+											EventToNotifyAbout en = events[0];
+											message.message = en.ev.EventType.ToString() + ": " + en.ev.SubType;
+											message.eventid = en.ev.EventId;
+										}
 
-										PushMessage message = new PushMessage(Settings.data.systemName, sb.ToString());
+										// If all events are in the same project, set message.project so that clicking the notification can open the correct project.
+										string projectName = events[0].projectName;
+										if (events.All(en => en.projectName == projectName))
+										{
+											message.project = projectName;
+
+											// If all events are in the same folder, set message.folderid so that clicking the notification can open the correct folder.
+											int folderId = events[0].ev.FolderId;
+											if (events.All(en => en.ev.FolderId == folderId))
+											{
+												message.folderid = folderId;
+											}
+										}
 
 										try
 										{
@@ -147,28 +163,69 @@ namespace ErrorTrackerServer
 	}
 	public class PushMessage
 	{
+		[JsonIgnore]
+		private string _title;
 		/// <summary>
-		/// Title with a max length of 64 characters.
+		/// Title with automatically enforced max length of 64 characters.
 		/// </summary>
-		public string title;
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "name consistency")]
+		public string title
+		{
+			get
+			{
+				return _title;
+			}
+			set
+			{
+				string v = value;
+				if (v == null)
+					v = Settings.data.systemName;
+				if (v == null)
+					v = "Error Tracker";
+				if (v.Length > 64)
+					v = v.Substring(0, 64);
+				_title = v;
+			}
+		}
+		[JsonIgnore]
+		private string _message;
 		/// <summary>
-		/// Message with a max length of 128 characters.
+		/// Message with automatically enforced max length of 128 characters.
 		/// </summary>
-		public string message;
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "name consistency")]
+		public string message
+		{
+			get
+			{
+				return _message;
+			}
+			set
+			{
+				string v = value;
+				if (v == null)
+					v = "";
+				else if (v.Length > 128)
+					v = value.Substring(0, 127) + "…";
+				_message = v;
+			}
+		}
+		/// <summary>
+		/// Project Name. May be null/empty to indicate no specific project is associated with this message.
+		/// </summary>
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public string project;
+		/// <summary>
+		/// Folder ID. May be below 0 to indicate no specific folder is associated with this message.
+		/// </summary>
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public int? folderid = null;
+		/// <summary>
+		/// Event ID. May be below 0 to indicate no specific event is associated with this message.
+		/// </summary>
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public long? eventid = null;
 		public PushMessage(string title, string message)
 		{
-			if (title == null)
-				title = Settings.data.systemName;
-			if (title == null)
-				title = "Error Tracker";
-			if (title.Length > 64)
-				title = title.Substring(0, 64);
-
-			if (message == null)
-				throw new ArgumentNullException("message");
-			if (message.Length > 128)
-				message = message.Substring(0, 127) + "…";
-
 			this.title = title;
 			this.message = message;
 		}
