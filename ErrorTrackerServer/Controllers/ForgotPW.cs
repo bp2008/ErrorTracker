@@ -18,10 +18,11 @@ namespace ErrorTrackerServer.Controllers
 {
 	public class ForgotPW : ETController
 	{
-		private static ObjectCache<string, bool> requestLimiterByUsername = new ObjectCache<string, bool>(2000000, 5); // 5 minutes between requests by user name
-		private const double minutesBetweenRequestsByIp = 0.25;
-		private static ObjectCache<string, bool> requestLimiterByIP = new ObjectCache<string, bool>(2000000, minutesBetweenRequestsByIp); // 15 seconds between requests by IP
-		private static ObjectCache<string, bool> resetLimiterByIP = new ObjectCache<string, bool>(2000000, minutesBetweenRequestsByIp); // 15 seconds between resets by IP
+		private const double minutesBetweenRequestsByName = 5; // 5 minutes between requests by user name
+		private static ObjectCache<string, bool> requestLimiterByUsername = new ObjectCache<string, bool>(2000000, minutesBetweenRequestsByName); 
+		private const double minutesBetweenRequestsByIp = 0.25; // 15 seconds between requests by IP
+		private static ObjectCache<string, bool> requestLimiterByIP = new ObjectCache<string, bool>(2000000, minutesBetweenRequestsByIp); 
+		private static ObjectCache<string, bool> resetLimiterByIP = new ObjectCache<string, bool>(2000000, minutesBetweenRequestsByIp);
 		public ActionResult Available()
 		{
 			return Json(new AvailabilityResponse(Emailer.Enabled));
@@ -32,7 +33,7 @@ namespace ErrorTrackerServer.Controllers
 				return ApiError("This server does not have email configured. Therefore, this function is not usable.");
 
 			if (requestLimiterByIP.Get(Context.httpProcessor.RemoteIPAddressStr))
-				return ApiError("Your request was denied. Please wait " + TimeSpan.FromMinutes(minutesBetweenRequestsByIp).TotalSeconds + " seconds between requests.");
+				return ApiError("A password reset request was recently initiated from " + Context.httpProcessor.RemoteIPAddressStr + ". Rate-limiting is in effect. Please wait " + TimeSpan.FromMinutes(minutesBetweenRequestsByIp).TotalSeconds + " seconds between requests.");
 			requestLimiterByIP.Add(Context.httpProcessor.RemoteIPAddressStr, true);
 
 			ForgotPasswordRequest request = ApiRequestBase.ParseRequest<ForgotPasswordRequest>(this);
@@ -41,7 +42,7 @@ namespace ErrorTrackerServer.Controllers
 			if (req != null)
 			{
 				if (requestLimiterByUsername.Get(req.accountIdentifier))
-					return null;
+					return ApiError("A password reset request was recently received for this user. Rate-limiting is in effect. Please wait " + TimeSpan.FromMinutes(minutesBetweenRequestsByName).TotalMinutes + " minutes between requests.");
 				requestLimiterByUsername.Add(req.accountIdentifier, true);
 				StringBuilder sb = new StringBuilder();
 				sb.Append("Hello ");
@@ -67,7 +68,7 @@ namespace ErrorTrackerServer.Controllers
 				return ApiError("This server does not have email configured. Therefore, this function is not usable.");
 
 			if (resetLimiterByIP.Get(Context.httpProcessor.RemoteIPAddressStr))
-				return ApiError("Your request was denied. Please wait " + TimeSpan.FromMinutes(minutesBetweenRequestsByIp).TotalSeconds + " seconds between reset attempts.");
+				return ApiError("A password reset request was recently attempted from " + Context.httpProcessor.RemoteIPAddressStr + ". Rate-limiting is in effect. Please wait " + TimeSpan.FromMinutes(minutesBetweenRequestsByIp).TotalSeconds + " seconds between requests.");
 			resetLimiterByIP.Add(Context.httpProcessor.RemoteIPAddressStr, true);
 
 			ForgotPasswordRequest request = ApiRequestBase.ParseRequest<ForgotPasswordRequest>(this);
