@@ -116,7 +116,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				if (db.AddFilterCondition(request.condition, out string errorMessage))
 				{
-					Logger.Info("[" + p.Name + "] Filter condition" + request.condition.FilterConditionId + " was added by \"" + session.userName + "\"");
+					Logger.Info("[" + p.Name + "] Filter condition " + request.condition.FilterConditionId + " was added by \"" + session.userName + "\"");
 					return Json(new ApiResponseBase(true));
 				}
 				else
@@ -134,7 +134,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				if (db.EditFilterCondition(request.condition, out string errorMessage))
 				{
-					Logger.Info("[" + p.Name + "] Filter condition" + request.condition.FilterConditionId + " was edited by \"" + session.userName + "\"");
+					Logger.Info("[" + p.Name + "] Filter condition " + request.condition.FilterConditionId + " was edited by \"" + session.userName + "\"");
 					return Json(new ApiResponseBase(true));
 				}
 				else
@@ -152,7 +152,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				if (db.DeleteFilterCondition(request.condition.FilterConditionId))
 				{
-					Logger.Info("[" + p.Name + "] Filter condition" + request.condition.FilterConditionId + " was deleted by \"" + session.userName + "\"");
+					Logger.Info("[" + p.Name + "] Filter condition " + request.condition.FilterConditionId + " was deleted by \"" + session.userName + "\"");
 					return Json(new ApiResponseBase(true));
 				}
 				else
@@ -170,7 +170,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				if (db.AddFilterAction(request.action, out string errorMessage))
 				{
-					Logger.Info("[" + p.Name + "] Filter condition" + request.action.FilterActionId + " was added by \"" + session.userName + "\"");
+					Logger.Info("[" + p.Name + "] Filter action " + request.action.FilterActionId + " was added by \"" + session.userName + "\"");
 					return Json(new ApiResponseBase(true));
 				}
 				else
@@ -188,7 +188,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				if (db.EditFilterAction(request.action, out string errorMessage))
 				{
-					Logger.Info("[" + p.Name + "] Filter condition" + request.action.FilterActionId + " was edited by \"" + session.userName + "\"");
+					Logger.Info("[" + p.Name + "] Filter action " + request.action.FilterActionId + " was edited by \"" + session.userName + "\"");
 					return Json(new ApiResponseBase(true));
 				}
 				else
@@ -206,7 +206,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				if (db.DeleteFilterAction(request.action.FilterActionId))
 				{
-					Logger.Info("[" + p.Name + "] Filter condition" + request.action.FilterActionId + " was deleted by \"" + session.userName + "\"");
+					Logger.Info("[" + p.Name + "] Filter action " + request.action.FilterActionId + " was deleted by \"" + session.userName + "\"");
 					return Json(new ApiResponseBase(true));
 				}
 				else
