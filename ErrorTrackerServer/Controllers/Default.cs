@@ -42,7 +42,11 @@ namespace ErrorTrackerServer.Controllers
 				scriptCallouts.Append("<script src=\"");
 				scriptCallouts.Append(appContext.appPath);
 				scriptCallouts.Append("dist/");
+#if DEBUG
+				scriptCallouts.Append(scriptName);
+#else
 				scriptCallouts.Append(webpackChunkResolver.Resolve(scriptName));
+#endif
 				scriptCallouts.AppendLine("\"></script>");
 			}
 			ViewData.Set("ScriptCallouts", scriptCallouts.ToString());
