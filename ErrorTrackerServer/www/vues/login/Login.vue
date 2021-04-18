@@ -47,8 +47,6 @@
 						// After login completion, don't just push a route. We must actually navigate (load a new browser page) otherwise some bugs can occur like lastpass leaving its icons on screen.
 						if (this.$route.query.path)
 							location.href = this.$router.resolve({ path: this.$route.query.path }).href;
-						else if (data.admin)
-							location.href = this.$router.resolve({ name: "adminStatus" }).href;
 						else
 							location.href = this.$router.resolve({ name: "clientHome" }).href;
 					})
