@@ -106,11 +106,11 @@ namespace ErrorTrackerServer
 			}
 		}
 		/// <summary>
-		/// Robustly executes the specified query.
+		/// (Robustified). Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?' in the command text for each of the arguments and then executes that command. Use this method instead of Query when you don't expect rows back. Such cases include INSERTs, UPDATEs, and DELETEs. You can set the Trace or TimeExecution properties of the connection to profile execution.
 		/// </summary>
 		/// <param name="sql">The fully escaped SQL.</param>
 		/// <param name="args">Arguments to substitute for the occurences of '?' in the query.</param>
-		/// <returns></returns>
+		/// <returns>The number of rows modified in the database as a result of this execution.</returns>
 		protected int Execute(string sql, params object[] args)
 		{
 			return Robustify(() =>
@@ -118,7 +118,13 @@ namespace ErrorTrackerServer
 				return conn.Value.Execute(sql, args);
 			});
 		}
-
+		/// <summary>
+		/// (Robustified). Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?' in the command text for each of the arguments and then executes that command. Use this method when return primitive values. You can set the Trace or TimeExecution properties of the connection to profile execution.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="sql">The fully escaped SQL.</param>
+		/// <param name="args">Arguments to substitute for the occurences of '?' in the query.</param>
+		/// <returns>The number of rows modified in the database as a result of this execution.</returns>
 		protected T ExecuteScalar<T>(string sql, params object[] args)
 		{
 			return Robustify(() =>
@@ -127,7 +133,7 @@ namespace ErrorTrackerServer
 			});
 		}
 		/// <summary>
-		/// Robustly executes the specified query.
+		/// (Robustified). Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?' in the command text for each of the arguments and then executes that command. It returns each row of the result using the mapping automatically generated for the given type.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="query">The fully escaped SQL.</param>
@@ -141,7 +147,7 @@ namespace ErrorTrackerServer
 			});
 		}
 		/// <summary>
-		/// Robustly executes the specified query.
+		/// (Robustified). Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?' in the command text for each of the arguments and then executes that command. It returns each row of the result using the mapping automatically generated for the given type.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="query">The fully escaped SQL.</param>
@@ -154,23 +160,36 @@ namespace ErrorTrackerServer
 				return conn.Value.DeferredQuery<T>(query, args);
 			});
 		}
-
-		protected int InsertAll<T>(IEnumerable<T> objects)
+		/// <summary>
+		/// (Robustified). Inserts all specified objects.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="objects">An System.Collections.IEnumerable of the objects to insert. A boolean indicating if the inserts should be wrapped in a transaction.</param>
+		/// <returns>The number of rows added to the table.</returns>
+		protected int InsertAll(System.Collections.IEnumerable objects)
 		{
 			return Robustify(() =>
 			{
 				return conn.Value.InsertAll(objects, false);
 			});
 		}
-
-		protected int Insert<T>(T obj)
+		/// <summary>
+		/// (Robustified). Inserts the given object (and updates its auto incremented primary key if it has one). The return value is the number of rows added to the table.
+		/// </summary>
+		/// <param name="obj">The object to insert.</param>
+		/// <returns>The number of rows added to the table.</returns>
+		protected int Insert(object obj)
 		{
 			return Robustify(() =>
 			{
 				return conn.Value.Insert(obj);
 			});
 		}
-
+		/// <summary>
+		/// (Robustified). Deletes the given object from the database using its primary key.
+		/// </summary>
+		/// <param name="objectToDelete">The object to delete. It must have a primary key designated using the PrimaryKeyAttribute.</param>
+		/// <returns>The number of rows deleted.</returns>
 		protected int Delete(object objectToDelete)
 		{
 			return Robustify(() =>
@@ -178,6 +197,12 @@ namespace ErrorTrackerServer
 				return conn.Value.Delete(objectToDelete);
 			});
 		}
+		/// <summary>
+		/// (Robustified). Deletes the object with the specified primary key.
+		/// </summary>
+		/// <typeparam name="T">The type of object.</typeparam>
+		/// <param name="primaryKey">The primary key of the object to delete.</param>
+		/// <returns>The number of objects deleted.</returns>
 		protected int Delete<T>(object primaryKey)
 		{
 			return Robustify(() =>
@@ -185,7 +210,11 @@ namespace ErrorTrackerServer
 				return conn.Value.Delete<T>(primaryKey);
 			});
 		}
-
+		/// <summary>
+		/// (Robustified). Updates all of the columns of a table using the specified object except for its primary key. The object is required to have a primary key.
+		/// </summary>
+		/// <param name="obj">The object to update. It must have a primary key designated using the PrimaryKeyAttribute.</param>
+		/// <returns>The number of rows updated.</returns>
 		protected int Update(object obj)
 		{
 			return Robustify(() =>
@@ -193,7 +222,11 @@ namespace ErrorTrackerServer
 				return conn.Value.Update(obj);
 			});
 		}
-
+		/// <summary>
+		/// (Robustified). Updates all specified objects.
+		/// </summary>
+		/// <param name="objects">An System.Collections.IEnumerable of the objects to insert.</param>
+		/// <returns>The number of rows modified.</returns>
 		protected int UpdateAll(System.Collections.IEnumerable objects)
 		{
 			return Robustify(() =>
