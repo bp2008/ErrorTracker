@@ -31,6 +31,10 @@ namespace ErrorTrackerClient
 			this.Key = Key;
 			this.Value = Value;
 		}
+		/// <summary>
+		/// Returns: Key + ": " + Value
+		/// </summary>
+		/// <returns></returns>
 		public override string ToString()
 		{
 			return Key + ": " + Value;
@@ -57,6 +61,10 @@ namespace ErrorTrackerClient
 			this.Key = Key;
 			this.Value = Value;
 		}
+		/// <summary>
+		/// Returns: Key + ": " + Value
+		/// </summary>
+		/// <returns></returns>
 		public override string ToString()
 		{
 			return Key + ": " + Value;

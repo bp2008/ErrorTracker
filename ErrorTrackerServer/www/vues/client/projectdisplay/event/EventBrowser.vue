@@ -135,6 +135,7 @@
 				error: null,
 				loading: false,
 				events: null,
+				eventLoadCounter: 0,
 				eventItemSize: 37,
 				newEvents: 0,
 				selectionState: {
@@ -212,38 +213,49 @@
 					this.loading = false;
 					return;
 				}
+				this.eventLoadCounter++;
+				let myEventLoadId = this.eventLoadCounter;
 				promise
 					.then(data =>
 					{
-						if (data.success)
+						if (myEventLoadId === this.eventLoadCounter)
 						{
-							this.newEvents = 0;
-							data.events.sort((a, b) =>
+							if (data.success)
 							{
-								return b.Date - a.Date;
-							});
-							for (let i = 0; i < data.events.length; i++)
-							{
-								// Our infinite scroller component prevents us keeping references to the components, so here we define a function on the event objects that we can overwrite within EventNode.vue to provide access to the component.
-								data.events[i].keyboardNav = () => { };
+								this.newEvents = 0;
+								data.events.sort((a, b) =>
+								{
+									return b.Date - a.Date;
+								});
+								for (let i = 0; i < data.events.length; i++)
+								{
+									// Our infinite scroller component prevents us keeping references to the components, so here we define a function on the event objects that we can overwrite within EventNode.vue to provide access to the component.
+									data.events[i].keyboardNav = () => { };
+								}
+								this.events = data.events;
+								this.markOpenedEventAsRead();
 							}
-							this.events = data.events;
-							this.markOpenedEventAsRead();
-						}
-						else
-						{
-							this.error = data.error;
-							this.events = null;
+							else
+							{
+								this.error = data.error;
+								this.events = null;
+							}
 						}
 					})
 					.catch(err =>
 					{
-						this.error = err.message;
-						this.events = null;
+						if (myEventLoadId === this.eventLoadCounter)
+						{
+							this.error = err.message;
+							this.events = null;
+						}
 					})
 					.finally(() =>
 					{
-						this.loading = false;
+						if (myEventLoadId === this.eventLoadCounter)
+						{
+							this.loading = false;
+						}
 					});
 			},
 			isEventSelected(event)
