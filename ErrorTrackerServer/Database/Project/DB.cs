@@ -781,7 +781,12 @@ namespace ErrorTrackerServer
 					{
 						long eventCount = CountEventsInFolder(folderId);
 						if (eventCount == 0)
+						{
 							Delete<Folder>(folderId);
+							List<User> users = Settings.data.GetAllUsers();
+							foreach (User u in users)
+								u.DeletePushNotificationSubscriptionsByFolder(ProjectName, folderId);
+						}
 						else
 							eMsg = "Folder \"" + current.Name + "\" (ID " + folderId + ") cannot be deleted because it contains " + eventCount + " events.";
 					}

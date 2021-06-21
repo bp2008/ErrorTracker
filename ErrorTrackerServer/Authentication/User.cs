@@ -137,7 +137,7 @@ namespace ErrorTrackerServer
 		/// Subscribes or unsubscribes the user to PUSH notifications for new events in the specified folder.
 		/// </summary>
 		/// <param name="projectName">Project name containing the folder.</param>
-		/// <param name="folderId">ID of the folder we're checking subscription status for.</param>
+		/// <param name="folderId">ID of the folder we're setting subscription status for.</param>
 		/// <param name="subscriptionKey">Subscription key (unique to each web browser instance)</param>
 		/// <param name="subscribed">If true, the user will be subscribed. If false, unsubscribed.</param>
 		/// <returns></returns>
@@ -210,6 +210,43 @@ namespace ErrorTrackerServer
 				PushSubscriptionList = JsonConvert.SerializeObject(subs);
 
 			return count;
+		}
+
+		/// <summary>
+		/// Deletes this user's push notification subscriptions for the specified folder, returning true if any were deleted.
+		/// </summary>
+		/// <param name="projectName">Project name containing the folder.</param>
+		/// <param name="folderId">ID of the folder we're deleting subscriptions for.</param>
+		/// <returns></returns>
+		public bool DeletePushNotificationSubscriptionsByFolder(string projectName, int folderId)
+		{
+			List<PushSubscription> subs = null;
+
+			string json = PushSubscriptionList;
+			if (!string.IsNullOrWhiteSpace(json))
+				subs = JsonConvert.DeserializeObject<List<PushSubscription>>(json);
+
+			if (subs == null)
+				subs = new List<PushSubscription>();
+
+			projectName = projectName.ToLower();
+
+			bool changed = false;
+			for (int i = 0; i < subs.Count; i++)
+			{
+				PushSubscription sub = subs[i];
+				if (sub.projectName == projectName && sub.folderId == folderId)
+				{
+					changed = true;
+					subs.RemoveAt(i);
+					i--;
+				}
+			}
+
+			if (changed)
+				PushSubscriptionList = JsonConvert.SerializeObject(subs);
+
+			return changed;
 		}
 
 		public void ClearAllPushNotificationSubscriptions()
