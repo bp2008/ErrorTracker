@@ -64,10 +64,13 @@ namespace ErrorTrackerServer
 							if (accumulatedEvents.Count > 0)
 							{
 								WebPush.VapidDetails vapidDetails = new WebPush.VapidDetails(GetVapidSubject(), Settings.data.vapidPublicKey, Settings.data.vapidPrivateKey);
+								HashSet<string> keysToDelete = new HashSet<string>();
 								// Build and send one notification to each affected subscription.
 								foreach (KeyValuePair<string, List<EventToNotifyAbout>> kvp in accumulatedEvents)
 								{
 									string subscriptionKey = kvp.Key;
+									if (keysToDelete.Contains(subscriptionKey))
+										continue;
 									List<EventToNotifyAbout> events = kvp.Value;
 
 									WebPush.PushSubscription subscription = null;
@@ -115,8 +118,28 @@ namespace ErrorTrackerServer
 										}
 										catch (Exception ex)
 										{
-											Logger.Debug(ex, "Failed to send push notification.");
+											if (ex is WebPush.WebPushException)
+											{
+												WebPush.WebPushException wpe = (WebPush.WebPushException)ex;
+												if (wpe.Message != null && wpe.Message.Contains("Subscription no longer valid"))
+												{
+													keysToDelete.Add(subscriptionKey);
+													Logger.Info("Deleting expired push subscription: " + subscriptionKey);
+												}
+												else
+													Logger.Debug(ex, "Failed to send push notification.");
+											}
+											else
+												Logger.Debug(ex, "Failed to send push notification.");
 										}
+									}
+								}
+								if (keysToDelete.Count > 0)
+								{
+									foreach (User u in users)
+									{
+										foreach (string key in keysToDelete)
+											u.DeletePushNotificationSubscriptions(key);
 									}
 								}
 							}

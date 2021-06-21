@@ -114,7 +114,7 @@ namespace ErrorTrackerServer
 		}
 
 		/// <summary>
-		/// Returns the user's <see cref="PushSubscription"/> if the user is subscribed to new events in the specified folder.  If the user is not subscribed to this folder, returns null.
+		/// Returns an array of <see cref="PushSubscription.subscriptionKey"/> if the user is subscribed to new events in the specified folder.  If the user is not subscribed to this folder, returns an empty array. Each subscription key is unique to a web browser instance.
 		/// </summary>
 		/// <param name="projectName">Project name containing the folder.</param>
 		/// <param name="folderId">ID of the folder we're checking subscription status for.</param>
@@ -178,6 +178,38 @@ namespace ErrorTrackerServer
 			}
 			if (changed)
 				PushSubscriptionList = JsonConvert.SerializeObject(subs);
+		}
+		/// <summary>
+		/// Removes all subscriptions using this key, returning the number of removed subscription objects.
+		/// </summary>
+		/// <param name="subscriptionKey">Subscription key (unique to each web browser instance)</param>
+		public int DeletePushNotificationSubscriptions(string subscriptionKey)
+		{
+			List<PushSubscription> subs = null;
+			string json = PushSubscriptionList;
+			if (!string.IsNullOrWhiteSpace(json))
+				subs = JsonConvert.DeserializeObject<List<PushSubscription>>(json);
+
+			if (subs == null)
+				subs = new List<PushSubscription>();
+
+			int count = 0;
+
+			for (int i = 0; i < subs.Count; i++)
+			{
+				PushSubscription sub = subs[i];
+				if (sub.subscriptionKey == subscriptionKey)
+				{
+					count++;
+					subs.RemoveAt(i);
+					i--;
+				}
+			}
+
+			if (count > 0)
+				PushSubscriptionList = JsonConvert.SerializeObject(subs);
+
+			return count;
 		}
 
 		public void ClearAllPushNotificationSubscriptions()
