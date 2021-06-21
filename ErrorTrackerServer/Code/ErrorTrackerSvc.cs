@@ -96,12 +96,14 @@ namespace ErrorTrackerServer
 
 		protected override void OnStart(string[] args)
 		{
+			Logger.Info(ServiceName + " " + Globals.AssemblyVersion + " is starting.");
 			srv.Start();
 			thrMaintainProjects.Start();
 		}
 
 		protected override void OnStop()
 		{
+			Logger.Info(ServiceName + " " + Globals.AssemblyVersion + " is stopping.");
 			srv.Stop();
 			thrMaintainProjects.Abort();
 		}
