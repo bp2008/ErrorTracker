@@ -101,6 +101,14 @@ namespace ErrorTrackerServer
 		/// </summary>
 		public bool verboseSubmitLogging = false;
 		/// <summary>
+		/// If true, web server verbose logging is enabled, for debugging purposes.
+		/// </summary>
+		public bool webServerVerboseLogging = false;
+		/// <summary>
+		/// If true, web server request logging is enabled, for debugging purposes.
+		/// </summary>
+		public bool webServerRequestLogging = false;
+		/// <summary>
 		/// If true, a service worker will be installed in clients when they load the app.  This enables push notifications.
 		/// </summary>
 		public bool serviceWorkerEnabled = false;

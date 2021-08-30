@@ -22,6 +22,9 @@ namespace ErrorTrackerServer
 			if (Debugger.IsAttached)
 				webpackProxy = new WebpackProxy(9000, Globals.ApplicationDirectoryBase + "../../");
 #endif
+			
+			SimpleHttpLogger.RegisterLogger(Logger.httpLogger, Settings.data.webServerVerboseLogging);
+			Logger.StartLoggingThreads();
 
 			this.XForwardedForHeader = Settings.data.useXForwardedFor;
 			this.XRealIPHeader = Settings.data.useXRealIP;
@@ -29,6 +32,11 @@ namespace ErrorTrackerServer
 			MvcJson.SerializeObject = JsonConvert.SerializeObject;
 			MvcJson.DeserializeObject = JsonConvert.DeserializeObject;
 			mvcMain = new MVCMain(Assembly.GetExecutingAssembly(), typeof(Controllers.Auth).Namespace, MvcErrorHandler);
+		}
+
+		public override bool shouldLogRequestsToFile()
+		{
+			return Settings.data.webServerRequestLogging;
 		}
 
 		private void MvcErrorHandler(RequestContext context, Exception ex)

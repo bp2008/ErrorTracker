@@ -61,8 +61,13 @@ namespace ErrorTrackerServer.Controllers
 			Settings.data.smtpSendFrom = request.settings.smtpSendFrom;
 			Settings.data.defaultErrorEmail = request.settings.defaultErrorEmail;
 			Settings.data.verboseSubmitLogging = request.settings.verboseSubmitLogging;
+			Settings.data.webServerVerboseLogging = request.settings.webServerVerboseLogging;
+			Settings.data.webServerRequestLogging = request.settings.webServerRequestLogging;
+			Settings.data.verboseSubmitLogging = request.settings.verboseSubmitLogging;
 			Settings.data.serviceWorkerEnabled = request.settings.serviceWorkerEnabled;
 			Settings.data.Save();
+
+			BPUtil.SimpleHttp.SimpleHttpLogger.RegisterLogger(Logger.httpLogger, Settings.data.webServerVerboseLogging);
 
 			SetSettingsResponse response = new SetSettingsResponse(true, null);
 			if (requiresRestart)
@@ -158,6 +163,8 @@ namespace ErrorTrackerServer.Controllers
 		public string smtpSendFrom = "";
 		public string defaultErrorEmail = "";
 		public bool verboseSubmitLogging = false;
+		public bool webServerVerboseLogging = false;
+		public bool webServerRequestLogging = false;
 		public bool serviceWorkerEnabled = false;
 		public SettingsObject() { }
 		public SettingsObject(Settings settings)
@@ -181,6 +188,8 @@ namespace ErrorTrackerServer.Controllers
 			smtpSendFrom = settings.smtpSendFrom;
 			defaultErrorEmail = settings.defaultErrorEmail;
 			verboseSubmitLogging = settings.verboseSubmitLogging;
+			webServerVerboseLogging = settings.webServerVerboseLogging;
+			webServerRequestLogging = settings.webServerRequestLogging;
 			serviceWorkerEnabled = settings.serviceWorkerEnabled;
 		}
 	}
