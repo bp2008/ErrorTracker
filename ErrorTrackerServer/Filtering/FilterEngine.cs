@@ -219,6 +219,7 @@ namespace ErrorTrackerServer.Filtering
 					catch
 					{
 						bet.Start("Rollback Transaction");
+						throw;
 					}
 				});
 				bet.Stop();

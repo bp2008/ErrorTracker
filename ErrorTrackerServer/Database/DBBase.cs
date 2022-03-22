@@ -70,7 +70,7 @@ namespace ErrorTrackerServer
 					if (ex.Message == "database is locked" && sw.ElapsedMilliseconds < runtimeLimitMs)
 						Thread.Sleep(StaticRandom.Next(1, 11));
 					else
-						throw ex;
+						throw;
 				}
 			}
 		}
