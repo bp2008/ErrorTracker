@@ -34,76 +34,66 @@ namespace ErrorTrackerServer
 		/// <param name="action"></param>
 		public void LockedTransaction(Action action)
 		{
-			object transactionLock = GetTransactionLock();
-			lock (transactionLock)
+			Robustify(() =>
 			{
-				Robustify(() =>
-				{
-					conn.Value.RunInTransaction(action);
-				});
-			}
+				conn.Value.RunInTransaction(action);
+			});
 		}
+		/// <summary>
+		/// When overridden in a derived class, this method returns an object for which the lock should be held before beginning any DB transactions.
+		/// </summary>
+		/// <returns></returns>
 		protected abstract object GetTransactionLock();
 		/// <summary>
-		/// Runs the specified action.  While the database is locked (deadlock detected?), repeats the call for up to this many milliseconds.
-		/// Robustify calls within a transaction action have no effect. LockedTransaction calls have their own retry logic in case of database lock.
+		/// <para>Call only from within LockedTransaction or while holding the lock returned by <see cref="GetTransactionLock"/>.</para>
+		/// <para>Runs the specified action.  While the database is locked (deadlock detected?), repeats the call for up to this many milliseconds.</para>
+		/// <para>Robustify calls within a pre-existing transaction have no effect except to call the action. LockedTransaction calls have their own retry logic in case of database lock.</para>
+		/// <para></para>
 		/// </summary>
 		/// <param name="action"></param>
 		/// <param name="runtimeLimitMs"></param>
 		protected void Robustify(Action action, int runtimeLimitMs = 60000)
 		{
-			if (IsInTransaction)
+			lock (GetTransactionLock())
 			{
-				action();
-				return;
-			}
-			Stopwatch sw = Stopwatch.StartNew();
-			while (true)
-			{
-				try
+				if (IsInTransaction)
 				{
-					conn.Value.RunInTransaction(action);
+					action();
 					return;
 				}
-				catch (SQLiteException ex)
+				Stopwatch sw = Stopwatch.StartNew();
+				while (true)
 				{
-					if (ex.Message == "database is locked" && sw.ElapsedMilliseconds < runtimeLimitMs)
-						Thread.Sleep(StaticRandom.Next(1, 11));
-					else
-						throw;
+					try
+					{
+						conn.Value.RunInTransaction(action);
+						return;
+					}
+					catch (SQLiteException ex)
+					{
+						if (ex.Message == "database is locked" && sw.ElapsedMilliseconds < runtimeLimitMs)
+							Thread.Sleep(StaticRandom.Next(1, 11));
+						else
+							throw;
+					}
 				}
 			}
 		}
 		/// <summary>
-		/// Runs the specified func and returns its return value.  While the database is locked (deadlock detected?), repeats the call for up to this many milliseconds.
-		/// Robustify calls within a transaction action have no effect. LockedTransaction calls have their own retry logic in case of database lock.
+		/// <para>Call only from within LockedTransaction or while holding the lock returned by <see cref="GetTransactionLock"/>.</para>
+		/// <para>Runs the specified func and returns its return value.  While the database is locked (deadlock detected?), repeats the call for up to this many milliseconds.</para>
+		/// <para>Robustify calls within a pre-existing transaction have no effect except to call the func. LockedTransaction calls have their own retry logic in case of database lock.</para>
 		/// </summary>
 		/// <param name="func"></param>
 		/// <param name="runtimeLimitMs"></param>
 		protected T Robustify<T>(Func<T> func, int runtimeLimitMs = 60000)
 		{
-			if (IsInTransaction)
-				return func();
-			Stopwatch sw = Stopwatch.StartNew();
-			while (true)
+			T retVal = default;
+			Robustify(() =>
 			{
-				try
-				{
-					T retVal = default;
-					conn.Value.RunInTransaction(() =>
-					{
-						retVal = func();
-					});
-					return retVal;
-				}
-				catch (SQLiteException ex)
-				{
-					if (ex.Message == "database is locked" && sw.ElapsedMilliseconds < runtimeLimitMs)
-						Thread.Sleep(StaticRandom.Next(1, 11));
-					else
-						throw ex;
-				}
-			}
+				retVal = func();
+			});
+			return retVal;
 		}
 		/// <summary>
 		/// (Robustified). Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?' in the command text for each of the arguments and then executes that command. Use this method instead of Query when you don't expect rows back. Such cases include INSERTs, UPDATEs, and DELETEs. You can set the Trace or TimeExecution properties of the connection to profile execution.

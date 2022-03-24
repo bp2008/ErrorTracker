@@ -120,6 +120,18 @@ namespace ErrorTrackerServer
 		/// VAPID private key used for web push notifications.
 		/// </summary>
 		public string vapidPrivateKey;
+		/// <summary>
+		/// If true, backups of all the databases will be saved in the configured backup folder shortly after midnight each morning.  Backups are automatically deleted as they age.
+		/// </summary>
+		public bool backup = false;
+		/// <summary>
+		/// Folder path to save backups in.
+		/// </summary>
+		public string backupPath = "Backups";
+		/// <summary>
+		/// Path to 7za(.exe). Required for database backups.
+		/// </summary>
+		public string sevenZipCommandLineExePath = "../7zip/7za.exe";
 
 		public string GetWWWDirectoryBase()
 		{

@@ -65,6 +65,9 @@ namespace ErrorTrackerServer.Controllers
 			Settings.data.webServerRequestLogging = request.settings.webServerRequestLogging;
 			Settings.data.verboseSubmitLogging = request.settings.verboseSubmitLogging;
 			Settings.data.serviceWorkerEnabled = request.settings.serviceWorkerEnabled;
+			Settings.data.backup = request.settings.backup;
+			Settings.data.backupPath = request.settings.backupPath;
+			Settings.data.sevenZipCommandLineExePath = request.settings.sevenZipCommandLineExePath;
 			Settings.data.Save();
 
 			BPUtil.SimpleHttp.SimpleHttpLogger.RegisterLogger(Logger.httpLogger, Settings.data.webServerVerboseLogging);
@@ -166,6 +169,9 @@ namespace ErrorTrackerServer.Controllers
 		public bool webServerVerboseLogging = false;
 		public bool webServerRequestLogging = false;
 		public bool serviceWorkerEnabled = false;
+		public bool backup = false;
+		public string backupPath = "";
+		public string sevenZipCommandLineExePath = "";
 		public SettingsObject() { }
 		public SettingsObject(Settings settings)
 		{
@@ -191,6 +197,9 @@ namespace ErrorTrackerServer.Controllers
 			webServerVerboseLogging = settings.webServerVerboseLogging;
 			webServerRequestLogging = settings.webServerRequestLogging;
 			serviceWorkerEnabled = settings.serviceWorkerEnabled;
+			backup = settings.backup;
+			backupPath = settings.backupPath;
+			sevenZipCommandLineExePath = settings.sevenZipCommandLineExePath;
 		}
 	}
 	public enum LoginStyle

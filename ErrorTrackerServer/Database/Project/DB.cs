@@ -6,6 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -36,6 +37,10 @@ namespace ErrorTrackerServer
 		/// </summary>
 		public readonly string DbFilename;
 		/// <summary>
+		/// Full path of the database file.
+		/// </summary>
+		public string DbFileFullPath { get { return Globals.WritableDirectoryBase + "Projects/" + DbFilename; } }
+		/// <summary>
 		/// Collection for keeping track of which database files have been initialized during this run of the app.  This could be run every time, but it is only necessary to do it once per app instance.
 		/// </summary>
 		private static ConcurrentDictionary<string, bool> initializedDatabases = new ConcurrentDictionary<string, bool>();
@@ -57,7 +62,7 @@ namespace ErrorTrackerServer
 		}
 		private SQLiteConnection CreateDbConnection()
 		{
-			SQLiteConnection c = new SQLiteConnection(Globals.WritableDirectoryBase + "Projects/" + DbFilename, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.NoMutex, true);
+			SQLiteConnection c = new SQLiteConnection(DbFileFullPath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.NoMutex, true);
 			c.BusyTimeout = TimeSpan.FromSeconds(4);
 			CreateOrMigrate(c);
 			return c;
@@ -109,15 +114,15 @@ namespace ErrorTrackerServer
 			// Version 3 -> 4 changed the hashing function to trim unwanted base64 padding characters from the end of every hash string.
 			// Version 4 -> 5 fixed a bug in the hashing function.
 			// These migrations therefore simply require existing hash values to all be recomputed.
-			if (version.CurrentVersion == 1 || version.CurrentVersion == 2 || version.CurrentVersion == 3)
+			if (version.CurrentVersion == 1 || version.CurrentVersion == 2 || version.CurrentVersion == 3 || version.CurrentVersion == 4)
 			{
 				c.RunInTransaction(() =>
 				{
 					version = c.Query<DbVersion>("SELECT * From DbVersion").FirstOrDefault();
-					if (version.CurrentVersion == 1 || version.CurrentVersion == 2 || version.CurrentVersion == 3)
+					if (version.CurrentVersion == 1 || version.CurrentVersion == 2 || version.CurrentVersion == 3 || version.CurrentVersion == 4)
 					{
 						MigrateComputeHashValuesForAllEvents(c);
-						version.CurrentVersion = 3;
+						version.CurrentVersion = 5;
 						c.Execute("UPDATE DbVersion SET CurrentVersion = ?", version.CurrentVersion);
 					}
 				});
@@ -1245,6 +1250,27 @@ namespace ErrorTrackerServer
 		public List<ReadState> GetAllReadStates()
 		{
 			return Query<ReadState>("SELECT * FROM ReadState");
+		}
+		#endregion
+		#region Database Management
+		/// <summary>
+		/// Copies the entire database to the specified directory, using <see cref="DbFilename"/> for the file name.
+		/// </summary>
+		/// <param name="directoryPath">Path to the directory where the copy should be placed.</param>
+		public string CopyToDirectory(string directoryPath)
+		{
+			object transactionLock = GetTransactionLock();
+			lock (transactionLock)
+			{
+				if (IsInTransaction)
+					throw new Exception("Unwilling to copy DB while it is in a transaction. This shouldn't have been called in this condition.");
+				FileInfo fi = new FileInfo(DbFileFullPath);
+				if (!Directory.Exists(directoryPath))
+					Directory.CreateDirectory(directoryPath);
+				string destinationPath = Path.Combine(directoryPath, DbFilename);
+				fi.CopyTo(destinationPath);
+				return destinationPath;
+			}
 		}
 		#endregion
 	}
