@@ -51,7 +51,7 @@ namespace ErrorTrackerServer
 
 											// 2) Compress the database copy
 											string archiveTmpPath = Path.Combine(tmp.FullName, backupFileNameToday);
-											SevenZip.Create7zArchive(Settings.data.sevenZipCommandLineExePath, archiveTmpPath, dbTmpPath, 1);
+											SevenZip.Create7zArchive(Settings.data.sevenZipCommandLineExePath, archiveTmpPath, dbTmpPath, 1, true);
 
 											// 3) Move the compressed archive to its permanent location
 											File.Move(archiveTmpPath, backupFullPath);
