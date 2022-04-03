@@ -1,14 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using SQLite;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ErrorTrackerServer.Database.Global.Model
+﻿namespace ErrorTrackerServer.Database.Global.Model
 {
 	public class DbVersion
 	{
