@@ -152,6 +152,7 @@ namespace ErrorTrackerServer.Filtering
 				folderMap.Clear();
 				colorMap.Clear();
 				eventIdsToDelete.Clear();
+				readStateMap.Clear();
 			}
 		}
 	}
