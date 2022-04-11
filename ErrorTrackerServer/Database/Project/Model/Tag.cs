@@ -1,5 +1,5 @@
 ﻿using BPUtil;
-using SQLite;
+using RepoDb.Attributes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -17,21 +17,22 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// <summary>
 		/// Auto-incremented unique identifier for the Tag.
 		/// </summary>
-		[PrimaryKey, AutoIncrement]
+		[Map("tagid")]
 		public long TagId { get; set; }
 		/// <summary>
 		/// ID of the event to which this tag belongs.
 		/// </summary>
-		[Indexed]
+		[Map("eventid")]
 		public long EventId { get; set; }
 		/// <summary>
 		/// Key string. Case-insensitive for matching purposes.
 		/// </summary>
-		[NotNull]
+		[Map("key")]
 		public string Key { get; set; }
 		/// <summary>
 		/// Value string.
 		/// </summary>
+		[Map("value")]
 		public string Value { get; set; }
 		/// <summary>
 		/// Zero-argument constructor for deserialization purposes.

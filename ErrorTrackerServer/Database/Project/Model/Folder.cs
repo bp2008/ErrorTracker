@@ -1,5 +1,5 @@
 ﻿using BPUtil;
-using SQLite;
+using RepoDb.Attributes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -19,16 +19,17 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// <summary>
 		/// Auto-incremented unique identifier for the Folder.
 		/// </summary>
-		[PrimaryKey, AutoIncrement]
+		[Map("folderid")]
 		public int FolderId { get; set; }
 		/// <summary>
 		/// ID of the parent folder. The root folder is the parent of itself.
 		/// </summary>
+		[Map("parentfolderid")]
 		public int ParentFolderId { get; set; }
 		/// <summary>
 		/// Name of the folder.
 		/// </summary>
-		[NotNull]
+		[Map("name")]
 		public string Name { get; set; }
 
 		public Folder() { }

@@ -1,7 +1,7 @@
 ﻿using BPUtil;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using SQLite;
+using RepoDb.Attributes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -19,52 +19,50 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// <summary>
 		/// Auto-incremented unique identifier for the event.
 		/// </summary>
-		[PrimaryKey, AutoIncrement]
+		[Map("eventid")]
 		public long EventId { get; set; }
 		/// <summary>
 		/// The hash value for this event. Events sharing the same Hash are strongly related to each other.
 		/// </summary>
-		[Indexed]
-		[NotNull]
+		[Map("hashvalue")]
 		public string HashValue { get; set; }
 		/// <summary>
 		/// ID of the folder this event is in.
 		/// </summary>
-		[Indexed]
+		[Map("folderid")]
 		public int FolderId { get; set; }
 		/// <summary>
 		/// Type of event.
 		/// </summary>
-		[Indexed]
 		[JsonConverter(typeof(StringEnumConverter))]
+		[Map("eventtype")]
 		public EventType EventType { get; set; }
 		/// <summary>
 		/// A string describing the type of event, to be used as a subtitle and a search filter.  E.g. So you can list "Info" events with SubType "AppStart".
 		/// </summary>
-		[Indexed]
-		[NotNull]
+		[Map("subtype")]
 		public string SubType { get; set; }
 		/// <summary>
 		/// The main body of the event. Describes what happened to cause the event.
 		/// </summary>
-		[NotNull]
+		[Map("message")]
 		public string Message { get; set; }
 		/// <summary>
 		/// A timestamp indicating the date and time of this event, in milliseconds since the unix epoch. (assigned by the Error Tracker Client)
 		/// </summary>
-		[Indexed]
+		[Map("date")]
 		public long Date { get; set; }
 		/// <summary>
 		/// RGB color value associated with this event.
 		/// </summary>
 		[JsonConverter(typeof(HexStringJsonConverter), 3)]
+		[Map("color")]
 		public uint Color { get; set; } = 0xEBEBEB;
 		/// <summary>
 		/// Tags associated with the event.
 		/// Keys must be non-null and contain at least one alphanumeric character.
 		/// Keys must not exactly match any of the reserved Key values "EventType", "SubType", "Message", "Date", "Folder", "Color".
 		/// </summary>
-		[Ignore]
 		[JsonProperty("Tags")]
 		private Dictionary<string, Tag> _tags { get; set; }
 		/// <summary>
@@ -72,7 +70,6 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// Should be less than 1 only if this field has not been populated.
 		/// This value is not persisted in the database and must be recomputed when retrieving full event records.
 		/// </summary>
-		[Ignore]
 		public long MatchingEvents { get; set; }
 		public override string ToString()
 		{

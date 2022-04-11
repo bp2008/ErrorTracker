@@ -3,6 +3,7 @@ using ErrorTrackerServer.Database.Project.Model;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -148,9 +149,9 @@ namespace ErrorTrackerServer
 		/// Some error conditions can cause this method to throw an exception.
 		/// </summary>
 		/// <param name="path">Path to resolve, e.g. "/" or "/stuff/here" or "/stuff/here/"</param>
-		/// <param name="dbInTransaction">The database where this FolderStructure was loaded from, in which the calling code has started a transaction. Provide this if you want missing path elements to be created automatically. This argument should be null unless being called from within a DB instance with the intent to create folders.</param>
+		/// <param name="db">The database where this FolderStructure was loaded from. Provide this if you want missing path elements to be created automatically. This argument should be null unless being called from within a DB instance with the intent to create folders.</param>
 		/// <returns></returns>
-		public FolderStructure ResolvePath(string path, DB dbInTransaction)
+		public FolderStructure ResolvePath(string path, DB db)
 		{
 			if (string.IsNullOrWhiteSpace(path))
 				return this;
@@ -177,13 +178,10 @@ namespace ErrorTrackerServer
 						break;
 					}
 				}
-				if (next == null && dbInTransaction != null)
+				if (next == null && db != null)
 				{
-					if (!dbInTransaction.IsInTransaction)
-						Logger.Info("FolderStructure.ResolvePath was given a DB instance that is not in a transaction. At " + new StackTrace(true).ToString());
-
 					// Create Folder					
-					if (dbInTransaction.AddFolder(parts[0], FolderId, out string errorMessage, out Folder newFolder))
+					if (db.AddFolder(parts[0], FolderId, out string errorMessage, out Folder newFolder))
 					{
 						next = new FolderStructure(newFolder);
 						next.Parent = this;
@@ -203,7 +201,7 @@ namespace ErrorTrackerServer
 			if (next == null)
 				return null;
 
-			return next.ResolvePath(string.Join("/", parts.Skip(1)), dbInTransaction);
+			return next.ResolvePath(string.Join("/", parts.Skip(1)), db);
 		}
 
 		/// <summary>

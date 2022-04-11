@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using SQLite;
+using RepoDb.Attributes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -15,25 +15,29 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// <summary>
 		/// Auto-incremented unique identifier for the filter.
 		/// </summary>
-		[PrimaryKey, AutoIncrement]
+		[Map("filterid")]
 		public int FilterId { get; set; }
 		/// <summary>
 		/// Name of the filter.
 		/// </summary>
+		[Map("name")]
 		public string Name { get; set; }
 		/// <summary>
 		/// True if this filter is enabled.
 		/// </summary>
+		[Map("enabled")]
 		public bool Enabled { get; set; }
 		/// <summary>
 		/// Determines if and how the <see cref="FilterCondition"/> list is processed.
 		/// </summary>
 		[JsonConverter(typeof(StringEnumConverter))]
+		[Map("conditionhandling")]
 		public ConditionHandling ConditionHandling { get; set; }
 		/// <summary>
 		/// Integer for sorting for listing and executing the filters in a particular order (ascending).
 		/// </summary>
-		public int Order { get; set; }
+		[Map("myorder")]
+		public int MyOrder { get; set; }
 	}
 	public enum ConditionHandling : byte
 	{
@@ -70,6 +74,6 @@ namespace ErrorTrackerServer.Database.Project.Model
 	public class FilterOrder
 	{
 		public int FilterId;
-		public int Order;
+		public int MyOrder;
 	}
 }

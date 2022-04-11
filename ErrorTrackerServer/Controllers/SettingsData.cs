@@ -53,6 +53,8 @@ namespace ErrorTrackerServer.Controllers
 			Settings.data.trustedProxyIPs = request.settings.trustedProxyIPs;
 			Settings.data.useXRealIP = request.settings.useXRealIP;
 			Settings.data.useXForwardedFor = request.settings.useXForwardedFor;
+			Settings.data.postgresHost = request.settings.postgresHost;
+			Settings.data.postgresPort = request.settings.postgresPort;
 			Settings.data.smtpHost = request.settings.smtpHost;
 			Settings.data.smtpPort = request.settings.smtpPort;
 			Settings.data.smtpSsl = request.settings.smtpSsl;
@@ -158,6 +160,8 @@ namespace ErrorTrackerServer.Controllers
 		public string[] trustedProxyIPs = new string[0];
 		public bool useXRealIP = false;
 		public bool useXForwardedFor = false;
+		public string postgresHost = "127.0.0.1";
+		public int postgresPort = 5432;
 		public string smtpHost = "";
 		public int smtpPort = 587;
 		public bool smtpSsl = true;
@@ -186,6 +190,8 @@ namespace ErrorTrackerServer.Controllers
 			trustedProxyIPs = settings.trustedProxyIPs;
 			useXRealIP = settings.useXRealIP;
 			useXForwardedFor = settings.useXForwardedFor;
+			postgresHost = settings.postgresHost;
+			postgresPort = settings.postgresPort;
 			smtpHost = settings.smtpHost;
 			smtpPort = settings.smtpPort;
 			smtpSsl = settings.smtpSsl;

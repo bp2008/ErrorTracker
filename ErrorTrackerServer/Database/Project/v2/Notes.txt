@@ -1,0 +1,208 @@
+﻿-- Create Database
+
+CREATE ROLE errortracker WITH
+	LOGIN
+	NOSUPERUSER
+	CREATEDB
+	NOCREATEROLE
+	INHERIT
+	REPLICATION
+	CONNECTION LIMIT -1
+	PASSWORD 'xxxxxx';
+
+
+CREATE DATABASE IF NO EXISTS "ErrorTracker"
+    WITH 
+    OWNER = errortracker
+    ENCODING = 'UTF8'
+    CONNECTION LIMIT = -1;
+
+COMMENT ON DATABASE "ErrorTracker"
+    IS 'Created by ErrorTracker Service.';
+
+
+
+
+
+
+... Connect to ErrorTracker database ...
+
+
+
+
+
+
+-- Prepare Database
+
+DROP SCHEMA IF EXISTS "public";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- Create Project
+CREATE SCHEMA "TestA"
+    AUTHORIZATION errortracker;
+
+
+
+
+
+-- Initialize DbVersion table with value 0
+CREATE TABLE "TestA"."DbVersion"
+(
+    "CurrentVersion" integer NOT NULL
+);
+
+ALTER TABLE IF EXISTS "TestA"."DbVersion"
+    OWNER to errortracker;
+
+INSERT INTO "TestA"."DbVersion" ("CurrentVersion") VALUES (0);
+
+
+-- Create Tables
+
+CREATE TABLE "TestA"."Event"
+(
+    "EventId" integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    "FolderId" integer NOT NULL,
+    "EventType" smallint NOT NULL,
+    "SubType" varchar NOT NULL,
+    "Message" varchar NOT NULL,
+    "Date" bigint NOT NULL,
+    "Color" integer NOT NULL,
+    "HashValue" varchar NOT NULL
+);
+
+ALTER TABLE IF EXISTS "TestA"."Event"
+    OWNER to errortracker;
+
+CREATE INDEX "Event_FolderId" ON "TestA"."Event" USING btree ("FolderId" ASC NULLS LAST);
+CREATE INDEX "Event_EventType" ON "TestA"."Event" USING btree ("EventType" ASC NULLS LAST);
+CREATE INDEX "Event_Date" ON "TestA"."Event" USING btree ("Date" ASC NULLS LAST);
+CREATE INDEX "Event_SubType" ON "TestA"."Event" USING btree ("SubType" ASC NULLS LAST);
+CREATE INDEX "Event_HashValue" ON "TestA"."Event" USING btree ("HashValue" ASC NULLS LAST);
+
+
+
+
+
+CREATE TABLE "TestA"."Filter"
+(
+    "FilterId" integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    "Enabled" boolean NOT NULL,
+    "Regex" boolean NOT NULL,
+    "ConditionHandling" smallint NOT NULL,
+    "Name" text NOT NULL,
+    "Order" integer NOT NULL
+);
+
+ALTER TABLE IF EXISTS "TestA"."Filter"
+    OWNER to errortracker;
+
+
+
+
+
+CREATE TABLE "TestA"."FilterAction"
+(
+    "FilterActionId" integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    "FilterId" integer NOT NULL,
+    "Enabled" boolean NOT NULL,
+    "Operator" smallint NOT NULL,
+    "Argument" varchar NOT NULL
+);
+
+ALTER TABLE IF EXISTS "TestA"."FilterAction"
+    OWNER to errortracker;
+
+
+
+
+
+
+CREATE TABLE "TestA"."FilterCondition"
+(
+    "FilterConditionId" integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    "FilterId" integer NOT NULL,
+    "Enabled" boolean NOT NULL,
+    "TagKey" varchar NOT NULL,
+    "Operator" smallint NOT NULL,
+    "Query" varchar NOT NULL,
+    "Regex" boolean NOT NULL,
+    "Not" boolean NOT NULL
+);
+
+ALTER TABLE IF EXISTS "TestA"."FilterCondition"
+    OWNER to errortracker;
+
+
+
+
+
+
+CREATE TABLE "TestA"."Folder"
+(
+    "FolderId" integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    "ParentFolderId" integer NOT NULL,
+    "Name" varchar NOT NULL
+);
+
+ALTER TABLE IF EXISTS "TestA"."Folder"
+    OWNER to errortracker;
+
+
+
+
+
+CREATE TABLE "TestA"."ReadState"
+(
+    "UserId" integer NOT NULL,
+    "EventId" integer NOT NULL
+);
+
+ALTER TABLE IF EXISTS "TestA"."ReadState"
+    OWNER to errortracker;
+
+CREATE INDEX "ReadState_EventId" ON "TestA"."ReadState" USING btree ("EventId" ASC NULLS LAST);
+CREATE INDEX "ReadState_UserId" ON "TestA"."ReadState" USING btree ("UserId" ASC NULLS LAST);
+
+
+
+
+CREATE TABLE "TestA"."Tag"
+(
+    "TagId" integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    "EventId" integer NOT NULL,
+    "Key" varchar NOT NULL,
+    "Value" varchar NOT NULL
+);
+
+
+ALTER TABLE IF EXISTS "TestA"."Tag"
+    OWNER to errortracker;
+
+CREATE INDEX "Tag_EventId" ON "TestA"."Tag" USING btree ("EventId" ASC NULLS LAST);
+
+
+
+
+-- Finished creating tables.  Update DbVersion.CurrentVersion
+UPDATE "TestA"."DbVersion" SET "CurrentVersion" = 6;

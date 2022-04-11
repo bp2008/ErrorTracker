@@ -1,8 +1,11 @@
 ﻿using BPUtil;
-using SQLite;
+using ErrorTrackerServer.Database.Project.v2;
+using RepoDb;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -13,251 +16,193 @@ namespace ErrorTrackerServer
 {
 	public abstract class DBBase : IDisposable
 	{
-		/// <summary>
-		/// Lazy-loaded database connection. This should mostly not be accessed directly because it isn't very robust in a high-concurrency environment.
-		/// </summary>
-		protected Lazy<SQLiteConnection> conn;
-		/// <summary>
-		/// True if the database is currently in a transaction.
-		/// </summary>
-		public bool IsInTransaction
+		static DBBase()
 		{
-			get
-			{
-				return conn.IsValueCreated ? conn.Value.IsInTransaction : false;
-			}
 		}
-		#region Helpers
-		/// <summary>
-		/// Runs the specified Action in a transaction that will automatically retry if the database is locked.
-		/// </summary>
-		/// <param name="action"></param>
-		public void LockedTransaction(Action action)
-		{
-			Robustify(() =>
-			{
-				conn.Value.RunInTransaction(action);
-			});
-		}
+		private EtRepository repo = new EtRepository();
+		public IDbTransaction CurrentTransaction { get; private set; } = null;
 		/// <summary>
 		/// When overridden in a derived class, this method returns an object for which the lock should be held before beginning any DB transactions.
 		/// </summary>
 		/// <returns></returns>
 		protected abstract object GetTransactionLock();
 		/// <summary>
-		/// <para>Call only from within LockedTransaction or while holding the lock returned by <see cref="GetTransactionLock"/>.</para>
-		/// <para>Runs the specified action.  While the database is locked (deadlock detected?), repeats the call for up to this many milliseconds.</para>
-		/// <para>Robustify calls within a pre-existing transaction have no effect except to call the action. LockedTransaction calls have their own retry logic in case of database lock.</para>
-		/// <para></para>
+		/// When overridden in a derived class, this method returns the name of the db schema that is to be used when making certain database requests.
 		/// </summary>
-		/// <param name="action"></param>
-		/// <param name="runtimeLimitMs"></param>
-		protected void Robustify(Action action, int runtimeLimitMs = 60000)
+		/// <returns></returns>
+		protected abstract string GetSchemaName();
+		#region Helpers
+
+		/// <summary>
+		/// <para>Ensures that a transaction is open, then calls the method.  The transaction is automatically committed when the method completes.  If an exception is thrown, the transaction is automatically rolled back and the exception is rethrown.</para>
+		/// </summary>
+		/// <param name="action">Action method to call. The method must use the transaction for all database queries.</param>
+		/// <returns></returns>
+		public void RunInTransaction(Action action)
 		{
-			lock (GetTransactionLock())
-			{
-				if (IsInTransaction)
+			IDbTransaction existingTransaction = CurrentTransaction;
+			if (existingTransaction != null)
+				action();
+			else
+				using (IDbTransaction transaction = repo.CreateConnection().EnsureOpen().BeginTransaction())
 				{
-					action();
-					return;
-				}
-				Stopwatch sw = Stopwatch.StartNew();
-				while (true)
-				{
+					CurrentTransaction = transaction;
 					try
 					{
-						conn.Value.RunInTransaction(action);
-						return;
+						action();
+						transaction.Commit();
 					}
-					catch (SQLiteException ex)
+					catch (Exception ex)
 					{
-						if (ex.Message == "database is locked" && sw.ElapsedMilliseconds < runtimeLimitMs)
-							Thread.Sleep(StaticRandom.Next(1, 11));
-						else
+						try
+						{
+							transaction.Rollback();
 							throw;
+						}
+						catch (Exception ex2)
+						{
+							throw new AggregateException(ex, ex2);
+						}
+					}
+					finally
+					{
+						CurrentTransaction = null;
 					}
 				}
-			}
 		}
 		/// <summary>
-		/// <para>Call only from within LockedTransaction or while holding the lock returned by <see cref="GetTransactionLock"/>.</para>
-		/// <para>Runs the specified func and returns its return value.  While the database is locked (deadlock detected?), repeats the call for up to this many milliseconds.</para>
-		/// <para>Robustify calls within a pre-existing transaction have no effect except to call the func. LockedTransaction calls have their own retry logic in case of database lock.</para>
+		/// <para>Ensures that a transaction is open, then calls the method.  The transaction is automatically committed when the method completes.  If an exception is thrown, the transaction is automatically rolled back and the exception is rethrown.</para>
 		/// </summary>
-		/// <param name="func"></param>
-		/// <param name="runtimeLimitMs"></param>
-		protected T Robustify<T>(Func<T> func, int runtimeLimitMs = 60000)
+		/// <param name="func">Func method to call. The method must use the transaction for all database queries.</param>
+		/// <returns></returns>
+		public T RunInTransaction<T>(Func<T> func)
 		{
-			T retVal = default;
-			Robustify(() =>
+			T retVal = default(T);
+			RunInTransaction(() =>
 			{
 				retVal = func();
 			});
 			return retVal;
 		}
+
 		/// <summary>
-		/// (Robustified). Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?' in the command text for each of the arguments and then executes that command. Use this method instead of Query when you don't expect rows back. Such cases include INSERTs, UPDATEs, and DELETEs. You can set the Trace or TimeExecution properties of the connection to profile execution.
+		/// Inserts the specified object into the correct table for this project.
 		/// </summary>
-		/// <param name="sql">The fully escaped SQL.</param>
-		/// <param name="args">Arguments to substitute for the occurences of '?' in the query.</param>
-		/// <returns>The number of rows modified in the database as a result of this execution.</returns>
-		protected int Execute(string sql, params object[] args)
+		/// <typeparam name="T">Object type</typeparam>
+		/// <param name="obj">Object to insert.</param>
+		protected object Insert<T>(T obj)
 		{
-			return Robustify(() =>
-			{
-				return conn.Value.Execute(sql, args);
-			});
+			return repo.Insert(GetSchemaName() + "." + typeof(T).Name, obj, transaction: CurrentTransaction);
 		}
 		/// <summary>
-		/// (Robustified). Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?' in the command text for each of the arguments and then executes that command. Use this method when return primitive values. You can set the Trace or TimeExecution properties of the connection to profile execution.
+		/// Inserts the specified objects into the correct table for this project.
+		/// </summary>
+		/// <typeparam name="T">Object type</typeparam>
+		/// <param name="objs">Objects to insert.</param>
+		protected int InsertAll<T>(IEnumerable<T> objs) where T : class
+		{
+			return repo.InsertAll(GetSchemaName() + "." + typeof(T).Name, objs, transaction: CurrentTransaction);
+		}
+		/// <summary>
+		/// Gets objects with the specified key.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <param name="sql">The fully escaped SQL.</param>
-		/// <param name="args">Arguments to substitute for the occurences of '?' in the query.</param>
-		/// <returns>The number of rows modified in the database as a result of this execution.</returns>
-		protected T ExecuteScalar<T>(string sql, params object[] args)
+		/// <param name="key"></param>
+		/// <param name="transaction"></param>
+		/// <returns></returns>
+		protected List<T> Query<T>(object key) where T : class
 		{
-			return Robustify(() =>
-			{
-				return conn.Value.ExecuteScalar<T>(sql, args);
-			});
+			return repo.Query<T>(GetSchemaName() + "." + typeof(T).Name, key, transaction: CurrentTransaction).ToList();
+		}
+		protected List<T> QueryAll<T>() where T : class
+		{
+			return repo.QueryAll<T>(GetSchemaName() + "." + typeof(T).Name, transaction: CurrentTransaction).ToList();
+		}
+		protected int Delete<T>(object key) where T : class
+		{
+			return repo.Delete(GetSchemaName() + "." + typeof(T).Name, transaction: CurrentTransaction);
+		}
+		protected int Update<T>(T obj) where T : class
+		{
+			return repo.Update<T>(GetSchemaName() + "." + typeof(T).Name, obj, transaction: CurrentTransaction);
+		}
+		protected int UpdateAll<T>(IEnumerable<T> objs) where T : class
+		{
+			return repo.UpdateAll<T>(GetSchemaName() + "." + typeof(T).Name, objs, transaction: CurrentTransaction);
 		}
 		/// <summary>
-		/// (Robustified). Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?' in the command text for each of the arguments and then executes that command. It returns each row of the result using the mapping automatically generated for the given type.
+		/// Executes a SQL statement using ExecuteNonQuery.
+		/// </summary>
+		/// <param name="sql">The command text to be used.</param>
+		/// <param name="param">The parameters/values defined in the System.Data.IDbCommand.CommandText property. Supports a dynamic object, System.Collections.Generic.IDictionary`2, System.Dynamic.ExpandoObject, RepoDb.QueryField, RepoDb.QueryGroup and an enumerable of RepoDb.QueryField objects.</param>
+		/// <returns></returns>
+		protected int ExecuteNonQuery(string sql, object param = null)
+		{
+			return repo.ExecuteNonQuery(sql, param, transaction: CurrentTransaction);
+		}
+		/// <summary>
+		/// Executes a SQL statement using ExecuteQuery.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <param name="query">The fully escaped SQL.</param>
-		/// <param name="args">Arguments to substitute for the occurences of '?' in the query.</param>
-		/// <returns>An enumerable with one result for each row returned by the query.</returns>
-		protected List<T> Query<T>(string query, params object[] args) where T : new()
+		/// <param name="sql">The command text to be used.</param>
+		/// <param name="param">The parameters/values defined in the System.Data.IDbCommand.CommandText property. Supports a dynamic object, System.Collections.Generic.IDictionary`2, System.Dynamic.ExpandoObject, RepoDb.QueryField, RepoDb.QueryGroup and an enumerable of RepoDb.QueryField objects.</param>
+		/// <returns></returns>
+		protected IEnumerable<dynamic> ExecuteQuery(string sql, object param = null)
 		{
-			return Robustify(() =>
-			{
-				return conn.Value.Query<T>(query, args);
-			});
+			return repo.ExecuteQuery(sql, param, transaction: CurrentTransaction);
 		}
 		/// <summary>
-		/// (Robustified). Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?' in the command text for each of the arguments and then executes that command. It returns each row of the result using the mapping automatically generated for the given type.
+		/// Executes a SQL statement using ExecuteQuery.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <param name="query">The fully escaped SQL.</param>
-		/// <param name="args">Arguments to substitute for the occurences of '?' in the query.</param>
-		/// <returns>An enumerable with one result for each row returned by the query.</returns>
-		protected IEnumerable<T> DeferredQuery<T>(string query, params object[] args) where T : new()
+		/// <param name="sql">The command text to be used.</param>
+		/// <param name="param">The parameters/values defined in the System.Data.IDbCommand.CommandText property. Supports a dynamic object, System.Collections.Generic.IDictionary`2, System.Dynamic.ExpandoObject, RepoDb.QueryField, RepoDb.QueryGroup and an enumerable of RepoDb.QueryField objects.</param>
+		/// <returns></returns>
+		protected IEnumerable<T> ExecuteQuery<T>(string sql, object param = null) where T : class
 		{
-			return Robustify(() =>
-			{
-				return conn.Value.DeferredQuery<T>(query, args);
-			});
+			return repo.ExecuteQuery<T>(sql, param, transaction: CurrentTransaction);
 		}
 		/// <summary>
-		/// (Robustified). Inserts all specified objects.
+		/// Executes a SQL statement using ExecuteScalar. Returns the value in the first column of the first row.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <param name="objects">An System.Collections.IEnumerable of the objects to insert. A boolean indicating if the inserts should be wrapped in a transaction.</param>
-		/// <returns>The number of rows added to the table.</returns>
-		protected int InsertAll(System.Collections.IEnumerable objects)
+		/// <param name="sql">The command text to be used.</param>
+		/// <param name="param">The parameters/values defined in the System.Data.IDbCommand.CommandText property. Supports a dynamic object, System.Collections.Generic.IDictionary`2, System.Dynamic.ExpandoObject, RepoDb.QueryField, RepoDb.QueryGroup and an enumerable of RepoDb.QueryField objects.</param>
+		/// <returns></returns>
+		protected T ExecuteScalar<T>(string sql, object param = null)
 		{
-			return Robustify(() =>
-			{
-				return conn.Value.InsertAll(objects, false);
-			});
+			return repo.ExecuteScalar<T>(sql, param, transaction: CurrentTransaction);
 		}
 		/// <summary>
-		/// (Robustified). Inserts the given object (and updates its auto incremented primary key if it has one). The return value is the number of rows added to the table.
+		/// Executes a stored procedure.
 		/// </summary>
-		/// <param name="obj">The object to insert.</param>
-		/// <returns>The number of rows added to the table.</returns>
-		protected int Insert(object obj)
+		/// <typeparam name="T">Type of object expected as a return value.</typeparam>
+		/// <param name="storedProcedureName">Stored Procedure Name</param>
+		/// <param name="args">Arguments to the stored procedure</param>
+		/// <returns></returns>
+		public IEnumerable<T> SP<T>(string storedProcedureName, object args) where T : class
 		{
-			return Robustify(() =>
-			{
-				return conn.Value.Insert(obj);
-			});
-		}
-		/// <summary>
-		/// (Robustified). Deletes the given object from the database using its primary key.
-		/// </summary>
-		/// <param name="objectToDelete">The object to delete. It must have a primary key designated using the PrimaryKeyAttribute.</param>
-		/// <returns>The number of rows deleted.</returns>
-		protected int Delete(object objectToDelete)
-		{
-			return Robustify(() =>
-			{
-				return conn.Value.Delete(objectToDelete);
-			});
-		}
-		/// <summary>
-		/// (Robustified). Deletes the object with the specified primary key.
-		/// </summary>
-		/// <typeparam name="T">The type of object.</typeparam>
-		/// <param name="primaryKey">The primary key of the object to delete.</param>
-		/// <returns>The number of objects deleted.</returns>
-		protected int Delete<T>(object primaryKey)
-		{
-			return Robustify(() =>
-			{
-				return conn.Value.Delete<T>(primaryKey);
-			});
-		}
-		/// <summary>
-		/// (Robustified). Updates all of the columns of a table using the specified object except for its primary key. The object is required to have a primary key.
-		/// </summary>
-		/// <param name="obj">The object to update. It must have a primary key designated using the PrimaryKeyAttribute.</param>
-		/// <returns>The number of rows updated.</returns>
-		protected int Update(object obj)
-		{
-			return Robustify(() =>
-			{
-				return conn.Value.Update(obj);
-			});
-		}
-		/// <summary>
-		/// (Robustified). Updates all specified objects.
-		/// </summary>
-		/// <param name="objects">An System.Collections.IEnumerable of the objects to insert.</param>
-		/// <returns>The number of rows modified.</returns>
-		protected int UpdateAll(System.Collections.IEnumerable objects)
-		{
-			return Robustify(() =>
-			{
-				return conn.Value.UpdateAll(objects, false);
-			});
+			return repo.ExecuteQuery<T>(storedProcedureName, args, CommandType.StoredProcedure, transaction: CurrentTransaction);
 		}
 		#endregion
-
-		#region IDisposable
-		private bool disposedValue;
-		protected virtual void Dispose(bool disposing)
-		{
-			if (!disposedValue)
-			{
-				if (disposing)
-				{
-					// dispose managed state (managed objects)
-					if (conn.IsValueCreated)
-						conn.Value.Dispose();
-				}
-
-				// free unmanaged resources (unmanaged objects) and override finalizer
-				// set large fields to null
-				disposedValue = true;
-			}
-		}
-
-		// override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-		// ~DB()
-		// {
-		//     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-		//     Dispose(disposing: false);
-		// }
 
 		public void Dispose()
 		{
-			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-			Dispose(disposing: true);
-			GC.SuppressFinalize(this);
+			IDbTransaction t = CurrentTransaction;
+			if (t != null)
+			{
+				Logger.Debug(this.GetType().Name + ".Dispose() found an existing transaction which will now be rolled back.");
+				try
+				{
+					t.Rollback();
+				}
+				catch (Exception ex)
+				{
+					Logger.Debug(ex);
+				}
+				CurrentTransaction = null;
+			}
+			repo.Dispose();
 		}
-		#endregion
 	}
 }

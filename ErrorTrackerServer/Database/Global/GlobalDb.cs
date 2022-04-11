@@ -1,9 +1,11 @@
 ﻿using BPUtil;
+using ErrorTrackerServer.Database.Creation;
 using ErrorTrackerServer.Database.Global.Model;
-using SQLite;
+using ErrorTrackerServer.Database.Project.v2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,34 +14,17 @@ namespace ErrorTrackerServer.Database.Global
 	public class GlobalDb : DBBase
 	{
 		#region Constructor / Fields
-		/// <summary>
-		/// Database version number useful for performing migrations. This number should only be incremented when migrations are in place to support upgrading all previously existing versions to this version.
-		/// </summary>
-		public const int dbVersion = 1;
-		/// <summary>
-		/// File name of the database.
-		/// </summary>
-		public readonly string DbFilename;
 		private static bool initialized = false;
 		private static object createMigrateLock = new object();
 		private object dbTransactionLock = new object();
 		/// <summary>
-		/// Use within a "using" block to guarantee correct disposal.  Provides SQLite database access.  Not thread safe.  The DB connection will be lazy-loaded upon the first DB request.
+		/// Use within a "using" block to guarantee correct disposal.  Provides SQL database access.  Not thread safe.
 		/// </summary>
-		/// <param name="projectName">Project name, case insensitive. Please validate the project name before passing it in, as this class will create the database if it doesn't exist.</param>
 		public GlobalDb()
 		{
-			DbFilename = "ErrorTrackerGlobalDB.s3db";
-			conn = new Lazy<SQLiteConnection>(CreateDbConnection, false);
+			CreateOrMigrate();
 		}
-		private SQLiteConnection CreateDbConnection()
-		{
-			SQLiteConnection c = new SQLiteConnection(Globals.WritableDirectoryBase + DbFilename, true);
-			c.BusyTimeout = TimeSpan.FromSeconds(4);
-			CreateOrMigrate(c);
-			return c;
-		}
-		private void CreateOrMigrate(SQLiteConnection c)
+		private void CreateOrMigrate()
 		{
 			if (!initialized)
 			{
@@ -47,31 +32,11 @@ namespace ErrorTrackerServer.Database.Global
 				{
 					if (!initialized)
 					{
+						DbCreation.CreateOrMigrateGlobalDb();
+
 						initialized = true;
-
-						c.EnableWriteAheadLogging();
-
-						c.CreateTable<LoginRecord>();
-						c.CreateTable<DbVersion>();
-
-						PerformDbMigrations(c);
 					}
 				}
-			}
-		}
-		/// <summary>
-		/// Performs Db Migrations. As this occurs during lazy connection loading, predefined API methods are unavailable here.
-		/// </summary>
-		/// <param name="c">The db connection.</param>
-		private void PerformDbMigrations(SQLiteConnection c)
-		{
-			// Get current version
-			DbVersion version = c.Query<DbVersion>("SELECT * From DbVersion").FirstOrDefault();
-			if (version == null)
-			{
-				// This is a new DB. It will start at the latest version!
-				version = new DbVersion() { CurrentVersion = dbVersion };
-				c.Insert(version);
 			}
 		}
 		#endregion
@@ -79,6 +44,10 @@ namespace ErrorTrackerServer.Database.Global
 		protected override object GetTransactionLock()
 		{
 			return dbTransactionLock;
+		}
+		protected override string GetSchemaName()
+		{
+			return "ErrorTrackerGlobal";
 		}
 		#endregion
 
@@ -91,7 +60,7 @@ namespace ErrorTrackerServer.Database.Global
 		/// <param name="sessionId">Session ID that was assigned.</param>
 		public void AddLoginRecord(string userName, string ipAddress, string sessionId)
 		{
-			Insert(new LoginRecord(userName.ToLower(), ipAddress, sessionId, TimeUtil.GetTimeInMsSinceEpoch()));
+			Insert(new LoginRecord(userName.ToLower(), IPAddress.Parse(ipAddress), sessionId, TimeUtil.GetTimeInMsSinceEpoch()));
 		}
 		/// <summary>
 		/// Gets a list of LoginRecord filtered by user name, ordered by date descending.
@@ -100,7 +69,7 @@ namespace ErrorTrackerServer.Database.Global
 		/// <returns></returns>
 		public List<LoginRecord> GetLoginRecordsByUserName(string userName)
 		{
-			return Query<LoginRecord>("SELECT * FROM LoginRecord WHERE UserName = ? ORDER BY Date DESC", userName.ToLower());
+			return ExecuteQuery<LoginRecord>("SELECT * FROM ErrorTrackerGlobal.LoginRecord WHERE UserName = usernamearg ORDER BY Date DESC", new { usernamearg = userName.ToLower() }).ToList();
 		}
 		/// <summary>
 		/// Gets a list of LoginRecord filtered by user name, ordered by date descending.
@@ -111,7 +80,7 @@ namespace ErrorTrackerServer.Database.Global
 		/// <returns></returns>
 		public List<LoginRecord> GetLoginRecordsByUserName(string userName, long startDate, long endDate)
 		{
-			return Query<LoginRecord>("SELECT * FROM LoginRecord WHERE UserName = ? AND Date >= ? AND Date <= ? ORDER BY Date DESC", userName.ToLower(), startDate, endDate);
+			return ExecuteQuery<LoginRecord>("SELECT * FROM ErrorTrackerGlobal.LoginRecord WHERE UserName = usernamearg AND Date >= startdate AND Date <= enddate ORDER BY Date DESC", new { usernamearg = userName.ToLower(), startdate = startDate, enddate = endDate }).ToList();
 		}
 		/// <summary>
 		/// Gets a list of LoginRecord for the specified date range, ordered by date descending.
@@ -121,7 +90,7 @@ namespace ErrorTrackerServer.Database.Global
 		/// <returns></returns>
 		public List<LoginRecord> GetLoginRecordsGlobal(long startDate, long endDate)
 		{
-			return Query<LoginRecord>("SELECT * FROM LoginRecord WHERE Date >= ? AND Date <= ? ORDER BY Date DESC", startDate, endDate);
+			return ExecuteQuery<LoginRecord>("SELECT * FROM ErrorTrackerGlobal.LoginRecord WHERE Date >= startdate AND Date <= enddate ORDER BY Date DESC", new { startdate = startDate, enddate = endDate }).ToList();
 		}
 		#endregion
 	}

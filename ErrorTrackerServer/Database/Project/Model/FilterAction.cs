@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using SQLite;
+using RepoDb.Attributes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -18,22 +18,25 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// <summary>
 		/// Auto-incremented unique identifier for the filter action.
 		/// </summary>
-		[PrimaryKey, AutoIncrement]
+		[Map("filteractionid")]
 		public int FilterActionId { get; set; }
 		/// <summary>
 		/// ID of the filter this action belongs to.
 		/// </summary>
+		[Map("filterid")]
 		public int FilterId { get; set; }
 		/// <summary>
 		/// True if this filter action is enabled.
 		/// </summary>
+		[Map("enabled")]
 		public bool Enabled { get; set; }
 		[JsonConverter(typeof(StringEnumConverter))]
+		[Map("operator")]
 		public FilterActionType Operator { get; set; }
 		/// <summary>
 		/// Argument for to the action type. E.g. for a "MoveTo" operation, this argument would be the folder path to move the event to.
 		/// </summary>
-		[NotNull]
+		[Map("argument")]
 		public string Argument { get; set; } = "";
 	}
 

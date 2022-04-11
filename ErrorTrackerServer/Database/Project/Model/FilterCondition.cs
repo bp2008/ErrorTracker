@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using SQLite;
+using RepoDb.Attributes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -18,15 +18,17 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// <summary>
 		/// Auto-incremented unique identifier for the filter condition.
 		/// </summary>
-		[PrimaryKey, AutoIncrement]
+		[Map("filterconditionid")]
 		public int FilterConditionId { get; set; }
 		/// <summary>
 		/// ID of the filter this condition belongs to.
 		/// </summary>
+		[Map("filterid")]
 		public int FilterId { get; set; }
 		/// <summary>
 		/// True if this filter condition is enabled.
 		/// </summary>
+		[Map("enabled")]
 		public bool Enabled { get; set; }
 		/// <summary>
 		/// <para>Tag to inspect.</para>
@@ -38,25 +40,28 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// </list>
 		/// </para>
 		/// </summary>
-		[NotNull]
+		[Map("tagkey")]
 		public string TagKey { get; set; } = "";
 		/// <summary>
 		/// The operation used by this filter condition.
 		/// </summary>
 		[JsonConverter(typeof(StringEnumConverter))]
+		[Map("operator")]
 		public FilterConditionOperator Operator { get; set; }
 		/// <summary>
 		/// Query to use when inspecting the tag.
 		/// </summary>
-		[NotNull]
+		[Map("query")]
 		public string Query { get; set; } = "";
 		/// <summary>
 		/// If true, <see cref="Query"/> is a regular expression.
 		/// </summary>
+		[Map("regex")]
 		public bool Regex { get; set; }
 		/// <summary>
 		/// True if the operator's result should be negated. (e.g. "Not Equals")
 		/// </summary>
+		[Map("not")]
 		public bool Not { get; set; }
 	}
 

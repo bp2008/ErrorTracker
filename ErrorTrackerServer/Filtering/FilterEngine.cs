@@ -164,7 +164,8 @@ namespace ErrorTrackerServer.Filtering
 			try
 			{
 				bet.Start("Begin Transaction");
-				db.LockedTransaction(() =>
+				// TODO 2022: Make this actually run in a transaction...
+				//db.repo.RunInTransaction(transaction=>
 				{
 					try
 					{
@@ -200,7 +201,8 @@ namespace ErrorTrackerServer.Filtering
 						if (anyDupe)
 						{
 							bet.Start("Duplicate Found");
-							return;
+							bet.Stop();
+							return bet;
 						}
 
 						// Add the event to the database
@@ -221,7 +223,7 @@ namespace ErrorTrackerServer.Filtering
 						bet.Start("Rollback Transaction");
 						throw;
 					}
-				});
+				}
 				bet.Stop();
 			}
 			catch (Exception ex)
