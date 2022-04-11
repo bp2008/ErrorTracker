@@ -2,7 +2,6 @@
 using ErrorTrackerServer;
 using ErrorTrackerServer.Database.Creation;
 using ErrorTrackerServer.Database.Project.Model;
-using ErrorTrackerServer.Database.Project.v2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System;
@@ -130,7 +129,7 @@ namespace ErrorTrackerTests
 					Assert.AreEqual(2, actual.GetTagCount());
 					foreach (Tag tag in actual.GetAllTags())
 					{
-						Assert.IsTrue(tag.TagId > 0);
+						Assert.AreEqual(0, tag.TagId, "A relatively unimportant implementation detail: when querying events, the TagId is not set within the event object.  This logic could be changed in the future which would require this assertion to be changed.");
 						Assert.AreEqual(tag.EventId, actual.EventId);
 						Assert.IsTrue(expected.TryGetTag(tag.Key, out string expectedA));
 						Assert.IsTrue(actual.TryGetTag(tag.Key, out string actualA));

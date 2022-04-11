@@ -1,7 +1,6 @@
 ﻿using BPUtil;
 using ErrorTrackerServer.Database.Creation;
 using ErrorTrackerServer.Database.Global.Model;
-using ErrorTrackerServer.Database.Project.v2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,6 +47,10 @@ namespace ErrorTrackerServer.Database.Global
 		protected override string GetSchemaName()
 		{
 			return "ErrorTrackerGlobal";
+		}
+		protected override string GetConnectionString()
+		{
+			return DbCreation.GetConnectionString();
 		}
 		#endregion
 

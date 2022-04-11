@@ -1,7 +1,6 @@
 ﻿using BPUtil;
 using ErrorTrackerServer.Database.Creation;
 using ErrorTrackerServer.Database.Global.Model;
-using ErrorTrackerServer.Database.Project.v2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,11 +14,13 @@ namespace ErrorTrackerServer.Database.Creation
 	{
 		#region Constructor / Fields
 		private object dbTransactionLock = new object();
+		private string connectionString;
 		/// <summary>
 		/// Use within a "using" block to guarantee correct disposal.  Provides SQL database access.  Not thread safe.
 		/// </summary>
-		public DbHelper()
+		public DbHelper(string connectionString = null)
 		{
+			this.connectionString = connectionString;
 		}
 		#endregion
 		#region Helpers
@@ -30,6 +31,12 @@ namespace ErrorTrackerServer.Database.Creation
 		protected override string GetSchemaName()
 		{
 			throw new ApplicationException("This method is not supported by DbHelper.");
+		}
+		protected override string GetConnectionString()
+		{
+			if (connectionString == null)
+				return DbCreation.GetConnectionString();
+			return connectionString;
 		}
 		#endregion
 

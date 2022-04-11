@@ -1,9 +1,7 @@
-﻿using RepoDb.Attributes;
-using System.Net;
+﻿using System.Net;
 
 namespace ErrorTrackerServer.Database.Global.Model
 {
-	[Map("ErrorTrackerGlobal.LoginRecord")]
 	public class LoginRecord
 	{
 		/// <summary>

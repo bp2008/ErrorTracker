@@ -5,19 +5,19 @@
 
 
 
-CREATE TABLE %PR."DbVersion"
+CREATE TABLE %PR.DbVersion
 (
 	CurrentVersion integer NOT NULL
 );
-ALTER TABLE %PR."DbVersion"
+ALTER TABLE %PR.DbVersion
 	OWNER to %DBUSER;
-INSERT INTO %PR."DbVersion" (CurrentVersion) VALUES (6);
+INSERT INTO %PR.DbVersion (CurrentVersion) VALUES (6);
 
 --------------------
 -- Create Tables
 --------------------
 
-CREATE TABLE %PR."Event"
+CREATE TABLE %PR.Event
 (
 	EventId bigint NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	FolderId integer NOT NULL,
@@ -28,19 +28,19 @@ CREATE TABLE %PR."Event"
 	Color integer NOT NULL,
 	HashValue varchar NOT NULL
 );
-ALTER TABLE %PR."Event"
+ALTER TABLE %PR.Event
 	OWNER to %DBUSER;
-CREATE INDEX Event_FolderId ON %PR."Event" USING btree (FolderId ASC NULLS LAST);
-CREATE INDEX Event_EventType ON %PR."Event" USING btree (EventType ASC NULLS LAST);
-CREATE INDEX Event_Date ON %PR."Event" USING btree (Date ASC NULLS LAST);
-CREATE INDEX Event_SubType ON %PR."Event" USING btree (SubType ASC NULLS LAST);
-CREATE INDEX Event_HashValue ON %PR."Event" USING btree (HashValue ASC NULLS LAST);
+CREATE INDEX Event_FolderId ON %PR.Event USING btree (FolderId ASC NULLS LAST);
+CREATE INDEX Event_EventType ON %PR.Event USING btree (EventType ASC NULLS LAST);
+CREATE INDEX Event_Date ON %PR.Event USING btree (Date ASC NULLS LAST);
+CREATE INDEX Event_SubType ON %PR.Event USING btree (SubType ASC NULLS LAST);
+CREATE INDEX Event_HashValue ON %PR.Event USING btree (HashValue ASC NULLS LAST);
 
 
 
 
 
-CREATE TABLE %PR."Filter"
+CREATE TABLE %PR.Filter
 (
 	FilterId integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	Enabled boolean NOT NULL,
@@ -49,14 +49,14 @@ CREATE TABLE %PR."Filter"
 	Name text NOT NULL,
 	MyOrder integer NOT NULL
 );
-ALTER TABLE %PR."Filter"
+ALTER TABLE %PR.Filter
 	OWNER to %DBUSER;
 
 
 
 
 
-CREATE TABLE %PR."FilterAction"
+CREATE TABLE %PR.FilterAction
 (
 	FilterActionId integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	FilterId integer NOT NULL,
@@ -64,14 +64,14 @@ CREATE TABLE %PR."FilterAction"
 	Operator smallint NOT NULL,
 	Argument varchar NOT NULL
 );
-ALTER TABLE %PR."FilterAction"
+ALTER TABLE %PR.FilterAction
 	OWNER to %DBUSER;
 
 
 
 
 
-CREATE TABLE %PR."FilterCondition"
+CREATE TABLE %PR.FilterCondition
 (
 	FilterConditionId integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	FilterId integer NOT NULL,
@@ -82,47 +82,47 @@ CREATE TABLE %PR."FilterCondition"
 	Regex boolean NOT NULL,
 	Invert boolean NOT NULL
 );
-ALTER TABLE %PR."FilterCondition"
+ALTER TABLE %PR.FilterCondition
 	OWNER to %DBUSER;
 
 
 
 
 
-CREATE TABLE %PR."Folder"
+CREATE TABLE %PR.Folder
 (
 	FolderId integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	ParentFolderId integer NOT NULL,
 	Name varchar NOT NULL
 );
-ALTER TABLE %PR."Folder"
+ALTER TABLE %PR.Folder
 	OWNER to %DBUSER;
 
 
 
 
 
-CREATE TABLE %PR."ReadState"
+CREATE TABLE %PR.ReadState
 (
 	UserId integer NOT NULL,
 	EventId bigint NOT NULL
 );
-ALTER TABLE %PR."ReadState"
+ALTER TABLE %PR.ReadState
 	OWNER to %DBUSER;
-CREATE INDEX ReadState_EventId ON %PR."ReadState" USING btree (EventId ASC NULLS LAST);
-CREATE INDEX ReadState_UserId ON %PR."ReadState" USING btree (UserId ASC NULLS LAST);
+CREATE INDEX ReadState_EventId ON %PR.ReadState USING btree (EventId ASC NULLS LAST);
+CREATE INDEX ReadState_UserId ON %PR.ReadState USING btree (UserId ASC NULLS LAST);
 
 
 
 
 
-CREATE TABLE %PR."Tag"
+CREATE TABLE %PR.Tag
 (
 	TagId integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	EventId bigint NOT NULL,
 	Key varchar NOT NULL,
 	Value varchar NOT NULL
 );
-ALTER TABLE %PR."Tag"
+ALTER TABLE %PR.Tag
 	OWNER to %DBUSER;
-CREATE INDEX Tag_EventId ON %PR."Tag" USING btree (EventId ASC NULLS LAST);
+CREATE INDEX Tag_EventId ON %PR.Tag USING btree (EventId ASC NULLS LAST);

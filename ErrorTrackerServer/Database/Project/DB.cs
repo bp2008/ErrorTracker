@@ -2,8 +2,6 @@
 using ErrorTrackerServer.Controllers;
 using ErrorTrackerServer.Database.Creation;
 using ErrorTrackerServer.Database.Project.Model;
-using ErrorTrackerServer.Database.Project.v2;
-using RepoDb;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -78,6 +76,10 @@ namespace ErrorTrackerServer
 		protected override string GetSchemaName()
 		{
 			return ProjectNameLower;
+		}
+		protected override string GetConnectionString()
+		{
+			return DbCreation.GetConnectionString();
 		}
 		#endregion
 
@@ -223,7 +225,7 @@ namespace ErrorTrackerServer
 			List<Tag> tags = null;
 			RunInTransaction(() =>
 			{
-				events = Query<Event>(eventId);
+				events = Query<Event>("EventId", eventId);
 				if (events.Count > 0)
 				{
 					tags = ExecuteQuery<Tag>("SELECT * FROM " + ProjectNameLower + ".Tag WHERE EventId = " + eventId).ToList();
@@ -293,8 +295,8 @@ namespace ErrorTrackerServer
 		}
 		private IEnumerable<Event> GetEvents(long? oldest = null, long? newest = null, int? folderid = null, string customtagkey = null, bool includeTags = false)
 		{
-			DirectionalQueryField tags = new DirectionalQueryField("tags", typeof(DataTable), ParameterDirection.Output);
-			dynamic args = new { oldest, newest, folderid, customtagkey, includeTags, tags };
+			//DirectionalQueryField tags = new DirectionalQueryField("tags", typeof(DataTable), ParameterDirection.Output);
+			dynamic args = new { oldest, newest, folderid, customtagkey, includeTags, tags = (DataTable)null };
 			IEnumerable<Event> events = SP<Event>("GetEvents", args);
 			return events;
 			//if (events.Count > 0)
@@ -716,7 +718,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public Folder GetFolder(long folderId)
 		{
-			List<Folder> folders = Query<Folder>(folderId);
+			List<Folder> folders = Query<Folder>("FolderId", folderId);
 			if (folders.Count > 0)
 				return folders[0];
 			return null;
@@ -815,7 +817,7 @@ namespace ErrorTrackerServer
 			List<FilterAction> actions = null;
 			RunInTransaction(() =>
 			{
-				filters = Query<Filter>(filterId);
+				filters = Query<Filter>("FilterId", filterId);
 				if (filters.Count == 1)
 				{
 					conditions = ExecuteQuery<FilterCondition>("SELECT * FROM " + ProjectNameLower + ".FilterCondition WHERE FilterId = " + filterId).ToList();
@@ -903,7 +905,7 @@ namespace ErrorTrackerServer
 			string emsg = null;
 			RunInTransaction(() =>
 			{
-				List<Filter> existing = Query<Filter>(full.filter.FilterId);
+				List<Filter> existing = Query<Filter>("FilterId", full.filter.FilterId);
 				if (existing.Count == 0)
 					emsg = "Update Failed.  Unable to find filter with ID " + full.filter.FilterId + ".";
 				else

@@ -1,7 +1,5 @@
 ﻿using BPUtil;
-using ErrorTrackerServer.Database.Project.v2;
 using Npgsql;
-using RepoDb;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -16,8 +14,6 @@ namespace ErrorTrackerServer.Database.Creation
 	{
 		static DbCreation()
 		{
-			RepoDb.PostgreSqlBootstrap.Initialize();
-			PropertyHandlerMapper.Add<uint, UIntPropertyHandler>();
 		}
 		/// <summary>
 		/// Returns the connection string to connect to the ErrorTracker database.
@@ -78,10 +74,10 @@ namespace ErrorTrackerServer.Database.Creation
 			dbName = "ErrorTrackerTest";
 			dbUser = "errortrackertest";
 			Settings.data.postgresPassword = "";
-			using (NpgsqlConnection connection = new NpgsqlConnection(InternalGetConnectionString(dbAdminUser, dbAdminPass, existingDbName)))
+			using (DbHelper db = new DbHelper(InternalGetConnectionString(dbAdminUser, dbAdminPass, existingDbName)))
 			{
-				connection.ExecuteNonQuery("DROP DATABASE IF EXISTS \"" + dbName + "\" WITH (FORCE);");
-				connection.ExecuteNonQuery("DROP ROLE IF EXISTS " + dbUser);
+				db._ExecuteNonQuery("DROP DATABASE IF EXISTS \"" + dbName + "\" WITH (FORCE);");
+				db._ExecuteNonQuery("DROP ROLE IF EXISTS " + dbUser);
 			}
 		}
 		/// <summary>
@@ -96,12 +92,11 @@ namespace ErrorTrackerServer.Database.Creation
 				throw new ApplicationException("Configuration indicates the PostgreSQL database was already created.  To try again, delete the 'postgresPassword' field from your Error Tracker settings file and restart the service.");
 
 			string dbpw = StringUtil.GetRandomAlphaNumericString(23);
-			using (NpgsqlConnection connection = new NpgsqlConnection(InternalGetConnectionString(dbAdminUser, dbAdminPass, existingDbName)))
+			using (DbHelper db = new DbHelper(InternalGetConnectionString(dbAdminUser, dbAdminPass, existingDbName)))
 			{
-				connection.EnsureOpen();
 				try
 				{
-					connection.ExecuteNonQuery(SQL(Properties.Resources.DbSetup_A_CreateRole).Replace("%DBPASSWORD", dbpw));
+					db._ExecuteNonQuery(SQL(Properties.Resources.DbSetup_A_CreateRole).Replace("%DBPASSWORD", dbpw));
 				}
 				catch (Exception ex)
 				{
@@ -110,17 +105,17 @@ namespace ErrorTrackerServer.Database.Creation
 
 				try
 				{
-					connection.ExecuteNonQuery(SQL(Properties.Resources.DbSetup_B_CreateDb));
-					connection.ExecuteNonQuery(SQL(Properties.Resources.DbSetup_C_CommentDb));
+					db._ExecuteNonQuery(SQL(Properties.Resources.DbSetup_B_CreateDb));
+					db._ExecuteNonQuery(SQL(Properties.Resources.DbSetup_C_CommentDb));
 				}
 				catch (Exception ex)
 				{
 					throw new ApplicationException("The '" + dbName + "' database could not be created.  Delete the '" + dbName + "' database within your PostgreSQL server, then try again.", ex);
 				}
 			}
-			using (NpgsqlConnection connection = new NpgsqlConnection(InternalGetConnectionString(dbAdminUser, dbAdminPass, dbName)))
+			using (DbHelper db = new DbHelper(InternalGetConnectionString(dbAdminUser, dbAdminPass, dbName)))
 			{
-				connection.ExecuteNonQuery(SQL(Properties.Resources.DbSetup_D_DropPublicSchema));
+				db._ExecuteNonQuery(SQL(Properties.Resources.DbSetup_D_DropPublicSchema));
 			}
 
 			Settings.data.postgresPassword = dbpw;
@@ -166,7 +161,7 @@ namespace ErrorTrackerServer.Database.Creation
 		/// <param name="db">Database helper object</param>
 		private static void PerformGlobalDbMigrations(DbHelper db)
 		{
-			int dbVersion = db._ExecuteScalar<int>("SELECT CurrentVersion FROM ErrorTrackerGlobal.\"DbVersion\" LIMIT 1;");
+			int dbVersion = db._ExecuteScalar<int>("SELECT CurrentVersion FROM ErrorTrackerGlobal.DbVersion LIMIT 1;");
 			if (dbVersion < 2)
 				throw new ApplicationException("ErrorTracker schema \"ErrorTrackerGlobal\" has unexpected DbVersion.CurrentVersion defined: " + dbVersion);
 
@@ -204,7 +199,7 @@ namespace ErrorTrackerServer.Database.Creation
 		/// <param name="db">Database helper object</param>
 		private static void PerformProjectMigrations(string projectName, DbHelper db)
 		{
-			int dbVersion = db._ExecuteScalar<int>("SELECT CurrentVersion FROM " + projectName + ".\"DbVersion\" LIMIT 1;");
+			int dbVersion = db._ExecuteScalar<int>("SELECT CurrentVersion FROM " + projectName + ".DbVersion LIMIT 1;");
 			if (dbVersion < 6)
 				throw new ApplicationException("Project \"" + projectName + "\" has unexpected DbVersion.CurrentVersion defined: " + dbVersion);
 

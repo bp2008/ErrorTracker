@@ -1,7 +1,6 @@
 ﻿using BPUtil;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using RepoDb.Attributes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -19,12 +18,10 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// <summary>
 		/// Identifier for the event which was read by a user.
 		/// </summary>
-		[Map("userid")]
 		public int UserId { get; set; }
 		/// <summary>
 		/// Identifier for the event which was read by a user.
 		/// </summary>
-		[Map("eventid")]
 		public long EventId { get; set; }
 	}
 }
