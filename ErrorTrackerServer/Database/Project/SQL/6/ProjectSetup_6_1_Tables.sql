@@ -43,8 +43,8 @@ CREATE INDEX Event_HashValue ON %PR.Event USING btree (HashValue ASC NULLS LAST)
 CREATE TABLE %PR.Filter
 (
 	FilterId integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	Enabled boolean NOT NULL,
-	Regex boolean NOT NULL,
+	Enabled boolean NOT NULL DEFAULT false, 
+	Regex boolean NOT NULL DEFAULT false,
 	ConditionHandling smallint NOT NULL,
 	Name text NOT NULL,
 	MyOrder integer NOT NULL
@@ -60,7 +60,7 @@ CREATE TABLE %PR.FilterAction
 (
 	FilterActionId integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	FilterId integer NOT NULL,
-	Enabled boolean NOT NULL,
+	Enabled boolean NOT NULL DEFAULT false,
 	Operator smallint NOT NULL,
 	Argument varchar NOT NULL
 );
@@ -75,12 +75,12 @@ CREATE TABLE %PR.FilterCondition
 (
 	FilterConditionId integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	FilterId integer NOT NULL,
-	Enabled boolean NOT NULL,
+	Enabled boolean NOT NULL DEFAULT false,
 	TagKey varchar NOT NULL,
 	Operator smallint NOT NULL,
 	Query varchar NOT NULL,
-	Regex boolean NOT NULL,
-	Invert boolean NOT NULL
+	Regex boolean NOT NULL DEFAULT false,
+	Invert boolean NOT NULL DEFAULT false
 );
 ALTER TABLE %PR.FilterCondition
 	OWNER to %DBUSER;

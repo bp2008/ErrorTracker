@@ -117,23 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="DbSetup_A_CreateRole" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Database\Creation\SQL\DbSetup_A_CreateRole.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="DbSetup_B_CreateDb" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Database\Creation\SQL\DbSetup_B_CreateDb.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="DbSetup_C_CommentDb" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Database\Creation\SQL\DbSetup_C_CommentDb.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="DbSetup_D_DropPublicSchema" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Database\Creation\SQL\DbSetup_D_DropPublicSchema.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="GlobalSetup_2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Database\Global\SQL\2\GlobalSetup_2.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="ProjectSetup_6_1_Tables" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Database\Project\SQL\6\ProjectSetup_6_1_Tables.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
 </root>

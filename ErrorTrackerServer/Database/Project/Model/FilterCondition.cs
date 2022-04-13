@@ -53,7 +53,7 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// <summary>
 		/// True if the operator's result should be negated. (e.g. "Not Equals")
 		/// </summary>
-		public bool Not { get; set; }
+		public bool Invert { get; set; }
 	}
 
 	public enum FilterConditionOperator : byte

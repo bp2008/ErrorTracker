@@ -124,7 +124,14 @@ namespace ErrorTrackerServer
 		/// <param name="obj">Object to insert.</param>
 		protected object Insert<T>(T obj)
 		{
-			return db.Insert(obj);
+			try
+			{
+				return db.Insert(obj);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
 		}
 		/// <summary>
 		/// Inserts the specified objects into the correct table for this project.
@@ -146,19 +153,86 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		protected List<T> Query<T>(string keyColumnName, object key)
 		{
-			return db.Fetch<T>("WHERE " + keyColumnName + " = @0", key);
+			try
+			{
+				return db.Fetch<T>("WHERE " + keyColumnName + " = @0", key);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
 		}
+		/// <summary>
+		/// Gets all objects of the specified type.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
 		protected List<T> QueryAll<T>()
 		{
-			return db.Fetch<T>();
+			try
+			{
+				return db.Fetch<T>();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
+		}
+		/// <summary>
+		/// Gets objects with the specified key, not loading them all into memory at once.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="key"></param>
+		/// <param name="transaction"></param>
+		/// <returns></returns>
+		protected IEnumerable<T> DeferredQuery<T>(string keyColumnName, object key)
+		{
+			try
+			{
+				return db.Query<T>("WHERE " + keyColumnName + " = @0", key);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
+		}
+		/// <summary>
+		/// Gets all objects of the specified type, not loading them all into memory at once.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
+		protected IEnumerable<T> DeferredQueryAll<T>()
+		{
+			try
+			{
+				return db.Query<T>();
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
 		}
 		protected int Delete<T>(object key)
 		{
-			return db.Delete(key);
+			try
+			{
+				return db.Delete(key);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
 		}
 		protected int Update<T>(T obj)
 		{
-			return db.Update(obj);
+			try
+			{
+				return db.Update(obj);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
 		}
 		protected int UpdateAll<T>(IEnumerable<T> objs)
 		{
@@ -174,7 +248,14 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		protected int ExecuteNonQuery(string sql, object param = null)
 		{
-			return db.Execute(sql, param);
+			try
+			{
+				return db.Execute(sql, param);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
 		}
 		/// <summary>
 		/// Executes a SQL statement using ExecuteQuery.
@@ -183,9 +264,70 @@ namespace ErrorTrackerServer
 		/// <param name="sql">The command text to be used.</param>
 		/// <param name="param">The parameters/values defined in the System.Data.IDbCommand.CommandText property. Supports a dynamic object, System.Collections.Generic.IDictionary`2, System.Dynamic.ExpandoObject, RepoDb.QueryField, RepoDb.QueryGroup and an enumerable of RepoDb.QueryField objects.</param>
 		/// <returns></returns>
-		protected IEnumerable<T> ExecuteQuery<T>(string sql, object param = null)
+		protected List<T> ExecuteQuery<T>(string sql, object param = null)
 		{
-			return db.Query<T>(sql, param);
+			try
+			{
+				return db.Fetch<T>(sql, param);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
+		}
+		/// <summary>
+		/// Executes a SQL statement using ExecuteQuery, not loading all the results into memory at once.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="sql">The command text to be used.</param>
+		/// <param name="param">The parameters/values defined in the System.Data.IDbCommand.CommandText property. Supports a dynamic object, System.Collections.Generic.IDictionary`2, System.Dynamic.ExpandoObject, RepoDb.QueryField, RepoDb.QueryGroup and an enumerable of RepoDb.QueryField objects.</param>
+		/// <returns></returns>
+		protected IEnumerable<T> DeferredExecuteQuery<T>(string sql, object param = null)
+		{
+			try
+			{
+				return db.Query<T>(sql, param);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
+		}
+		/// <summary>
+		/// Executes a SQL statement using ExecuteQuery.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="sql">The command to be used.</param>
+		/// <param name="param">The parameters/values defined in the System.Data.IDbCommand.CommandText property. Supports a dynamic object, System.Collections.Generic.IDictionary`2, System.Dynamic.ExpandoObject, RepoDb.QueryField, RepoDb.QueryGroup and an enumerable of RepoDb.QueryField objects.</param>
+		/// <returns></returns>
+		protected List<T> ExecuteQuery<T>(Sql sql)
+		{
+			try
+			{
+				return db.Fetch<T>(sql);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
+		}
+		/// <summary>
+		/// Executes a SQL statement using ExecuteQuery, not loading all the results into memory at once.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="sql">The command to be used.</param>
+		/// <param name="param">The parameters/values defined in the System.Data.IDbCommand.CommandText property. Supports a dynamic object, System.Collections.Generic.IDictionary`2, System.Dynamic.ExpandoObject, RepoDb.QueryField, RepoDb.QueryGroup and an enumerable of RepoDb.QueryField objects.</param>
+		/// <returns></returns>
+		protected IEnumerable<T> DeferredExecuteQuery<T>(Sql sql)
+		{
+			try
+			{
+				return db.Query<T>(sql);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
 		}
 		/// <summary>
 		/// Executes a SQL statement using ExecuteScalar. Returns the value in the first column of the first row.
@@ -196,7 +338,14 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		protected T ExecuteScalar<T>(string sql, object param = null)
 		{
-			return db.ExecuteScalar<T>(sql, param);
+			try
+			{
+				return db.ExecuteScalar<T>(sql, param);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
 		}
 		/// <summary>
 		/// Executes a stored procedure.
@@ -207,14 +356,31 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public IEnumerable<T> SP<T>(string storedProcedureName, object args)
 		{
-			return db.FetchProc<T>(storedProcedureName, args);
+			try
+			{
+				return db.FetchProc<T>("\"" + storedProcedureName + "\"", args);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
 		}
 		protected IEnumerable<T> DeferredSP<T>(string storedProcedureName, params object[] args)
 		{
-			return db.QueryProc<T>(storedProcedureName, args);
+			try
+			{
+				return db.QueryProc<T>("\"" + storedProcedureName + "\"", args);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
 		}
 		#endregion
-
+		public string GetLastCommandText()
+		{
+			return db.LastCommand;
+		}
 		public void Dispose()
 		{
 			db?.Dispose();

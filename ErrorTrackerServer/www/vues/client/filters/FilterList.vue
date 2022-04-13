@@ -141,7 +141,7 @@
 			endDragging(e)
 			{
 				for (let i = 0; i < this.filterSummaries.length; i++)
-					this.filterSummaries[i].filter.Order = i;
+					this.filterSummaries[i].filter.MyOrder = i;
 
 				let newOrderArg = this.getFilterOrder();
 				let newOrderJson = JSON.stringify(newOrderArg);
@@ -168,7 +168,7 @@
 			{
 				return this.filterSummaries.map(f => ({
 					FilterId: f.filter.FilterId,
-					Order: f.filter.Order
+					MyOrder: f.filter.MyOrder
 				}));
 			},
 			runFilters()

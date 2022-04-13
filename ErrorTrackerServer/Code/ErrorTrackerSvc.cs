@@ -136,16 +136,16 @@ namespace ErrorTrackerServer
 						Emailer.SendError(null, "Error when maintaining projects", ex);
 					}
 
-					try
-					{
-						BackupManager.RunTasks();
-					}
-					catch (ThreadAbortException) { throw; }
-					catch (Exception ex)
-					{
-						Logger.Debug(ex);
-						Emailer.SendError(null, "Error in BackupManager.RunTasks", ex);
-					}
+					//try
+					//{
+					//	BackupManager.RunTasks();
+					//}
+					//catch (ThreadAbortException) { throw; }
+					//catch (Exception ex)
+					//{
+					//	Logger.Debug(ex);
+					//	Emailer.SendError(null, "Error in BackupManager.RunTasks", ex);
+					//}
 
 					Thread.Sleep(TimeSpan.FromMinutes(30));
 				}

@@ -196,4 +196,32 @@ namespace ErrorTrackerServer.Database.Project.Model
 	{
 		public string CTag { get; set; }
 	}
+	public class EventWithTags : Event
+	{
+		public string TagsJson
+		{
+			set
+			{
+				Dictionary<string, string> dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(value);
+				foreach (KeyValuePair<string, string> tag in dict)
+				{
+					SetTag(tag.Key, tag.Value);
+				}
+			}
+		}
+	}
+	public class EventWithTagsAndCustomTagValue : EventWithCustomTagValue
+	{
+		public string TagsJson
+		{
+			set
+			{
+				Dictionary<string, string> dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(value);
+				foreach (KeyValuePair<string, string> tag in dict)
+				{
+					SetTag(tag.Key, tag.Value);
+				}
+			}
+		}
+	}
 }

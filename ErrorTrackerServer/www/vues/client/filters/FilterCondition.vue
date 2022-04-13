@@ -6,7 +6,7 @@
 		</div>
 		<div>
 			<input type="text" v-model.lazy="condition.TagKey" placeholder="Field Name" title="Field Name (case-insensitive)" />
-			<label title="Not (negate result)"><input type="checkbox" v-model="condition.Not" />!</label>
+			<label title="Invert (negate result)"><input type="checkbox" v-model="condition.Invert" />!</label>
 			<select v-model="condition.Operator">
 				<option value="Contains">contains</option>
 				<option value="Equals">equals</option>

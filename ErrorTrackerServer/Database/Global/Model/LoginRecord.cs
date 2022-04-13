@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using ErrorTrackerServer.Code;
+using Newtonsoft.Json;
+using System.Net;
 
 namespace ErrorTrackerServer.Database.Global.Model
 {
@@ -11,6 +13,7 @@ namespace ErrorTrackerServer.Database.Global.Model
 		/// <summary>
 		/// IP Address that provided credentials for the login.
 		/// </summary>
+		[JsonConverter(typeof(IPAddressConverter))]
 		public IPAddress IPAddress { get; set; }
 		/// <summary>
 		/// Session ID that was assigned.

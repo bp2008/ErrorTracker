@@ -241,7 +241,7 @@
 			&& a.Operator === b.Operator
 			&& a.Query === b.Query
 			&& a.Regex === b.Regex
-			&& a.Not === b.Not
+			&& a.Invert === b.Invert
 			;
 	}
 </script>

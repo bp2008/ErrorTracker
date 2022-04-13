@@ -111,7 +111,7 @@ CREATE TABLE "TestA"."Filter"
     "Regex" boolean NOT NULL,
     "ConditionHandling" smallint NOT NULL,
     "Name" text NOT NULL,
-    "Order" integer NOT NULL
+    "MyOrder" integer NOT NULL
 );
 
 ALTER TABLE IF EXISTS "TestA"."Filter"

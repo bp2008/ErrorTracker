@@ -61,23 +61,15 @@ namespace ErrorTrackerServer.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to DO
-        ///$do$
-        ///BEGIN
-        ///	IF NOT EXISTS (SELECT * FROM pg_catalog.pg_roles WHERE rolname = &apos;%DBUSER&apos;)
-        ///	THEN
-        ///		CREATE ROLE %DBUSER WITH
-        ///			LOGIN
-        ///			NOSUPERUSER
-        ///			CREATEDB
-        ///			NOCREATEROLE
-        ///			INHERIT
-        ///			REPLICATION
-        ///			CONNECTION LIMIT -1
-        ///			PASSWORD @dbpw;
-        ///	END IF;
-        ///END
-        ///$do$;.
+        ///   Looks up a localized string similar to CREATE ROLE %DBUSER WITH
+        ///	LOGIN
+        ///	NOSUPERUSER
+        ///	CREATEDB
+        ///	NOCREATEROLE
+        ///	INHERIT
+        ///	REPLICATION
+        ///	CONNECTION LIMIT -1
+        ///	PASSWORD &apos;%DBPASSWORD&apos;;.
         /// </summary>
         internal static string DbSetup_A_CreateRole {
             get {
@@ -86,7 +78,7 @@ namespace ErrorTrackerServer.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to CREATE DATABASE IF NO EXISTS %DBNAME
+        ///   Looks up a localized string similar to CREATE DATABASE &quot;%DBNAME&quot;
         ///    WITH 
         ///    OWNER = %DBUSER
         ///    ENCODING = &apos;UTF8&apos;
@@ -131,7 +123,7 @@ namespace ErrorTrackerServer.Properties {
         ///);
         ///ALTER TABLE ErrorTrackerGlobal.DbVersion
         ///	OWNER to %DBUSER;
-        ///INSERT INTO ErrorTrackerGlobal.DbVersion (CurrentVersion) VALUES (2);
+        ///INSERT INTO ErrorTrackerGlobal.&quot;DbVersion (CurrentVersion) VALUES (2);
         ///
         ///
         ///
@@ -145,7 +137,7 @@ namespace ErrorTrackerServer.Properties {
         ///	Date bigint NOT NULL
         ///);
         ///ALTER TABLE ErrorTrackerGlobal.LoginRecord
-        ///	OWNER to % [rest of string was truncated]&quot;;.
+        ///	OWNER to  [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string GlobalSetup_2 {
             get {
@@ -185,26 +177,6 @@ namespace ErrorTrackerServer.Properties {
         internal static string ProjectSetup_6_1_Tables {
             get {
                 return ResourceManager.GetString("ProjectSetup_6_1_Tables", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to BEGIN TRANSACTION;
-        ///DROP PROCEDURE IF EXISTS testb.&quot;GetEvents&quot;;
-        ///CREATE PROCEDURE testb.&quot;GetEvents&quot; (
-        ///	IN oldest bigint, -- Pass null to disable this date boundary
-        ///	IN newest bigint, -- Pass null to disable this date boundary
-        ///	IN folderid integer, -- If null, all folders will be searched
-        ///	IN customtagkey varchar, -- If null, no CTag will be added to the result set.
-        ///	IN includetags boolean, -- If true, a second table containing tags will be returned.
-        ///	OUT tags refcursor
-        ///)
-        ///LANGUAGE &apos;plpgsql&apos;
-        ///AS $BODY [rest of string was truncated]&quot;;.
-        /// </summary>
-        internal static string ProjectSetup_6_2_GetEventsWithoutTagsByDate {
-            get {
-                return ResourceManager.GetString("ProjectSetup_6_2_GetEventsWithoutTagsByDate", resourceCulture);
             }
         }
     }

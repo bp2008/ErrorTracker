@@ -68,6 +68,7 @@
     <Reference Include="System.Diagnostics.DiagnosticSource, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Diagnostics.DiagnosticSource.6.0.0\lib\net461\System.Diagnostics.DiagnosticSource.dll</HintPath>
     </Reference>
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
     </Reference>
@@ -95,6 +96,7 @@
     <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
     </Reference>
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -115,7 +117,14 @@
     <Compile Include="BCrypt\BCrypt.cs" />
     <Compile Include="BCrypt\SaltParseException.cs" />
     <Compile Include="Code\BackupManager.cs" />
+    <Compile Include="Code\DatabaseSetupForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Code\DatabaseSetupForm.Designer.cs">
+      <DependentUpon>DatabaseSetupForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Code\Emailer.cs" />
+    <Compile Include="Code\IPAddressConverter.cs" />
     <Compile Include="Code\PushManager.cs" />
     <Compile Include="Code\PushSubscription.cs" />
     <Compile Include="Code\WebpackChunkResolver.cs" />
@@ -187,7 +196,6 @@
     <Content Include="Database\Creation\SQL\DbSetup_C_CommentDb.sql" />
     <Content Include="Database\Creation\SQL\DbSetup_D_DropPublicSchema.sql" />
     <Content Include="Database\Creation\SQL\DbSetup_B_CreateDb.sql" />
-    <Content Include="Database\Project\SQL\6\ProjectSetup_6_2_GetEventsWithoutTagsByDate.sql" />
     <None Include="package-lock.json" />
     <None Include="package.json" />
     <None Include="packages.config" />
@@ -320,6 +328,9 @@
     <Content Include="www\styles\Dialog.css" />
     <Content Include="www\styles\theme.green.css" />
     <Content Include="www\styles\toastr.min.css" />
+    <EmbeddedResource Include="Code\DatabaseSetupForm.resx">
+      <DependentUpon>DatabaseSetupForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

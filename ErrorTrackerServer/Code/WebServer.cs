@@ -19,10 +19,13 @@ namespace ErrorTrackerServer
 		public WebServer(int port, int httpsPort, ICertificateSelector certificateSelector, IPAddress bindAddr) : base(port, httpsPort, certificateSelector, bindAddr)
 		{
 #if DEBUG
-			if (Debugger.IsAttached)
-				webpackProxy = new WebpackProxy(9000, Globals.ApplicationDirectoryBase + "../../");
+			if (!string.IsNullOrEmpty(Settings.data.postgresPassword))
+			{
+				if (Debugger.IsAttached)
+					webpackProxy = new WebpackProxy(9000, Globals.ApplicationDirectoryBase + "../../");
+			}
 #endif
-			
+
 			SimpleHttpLogger.RegisterLogger(Logger.httpLogger, Settings.data.webServerVerboseLogging);
 			Logger.StartLoggingThreads();
 
@@ -46,6 +49,12 @@ namespace ErrorTrackerServer
 
 		public override void handleGETRequest(HttpProcessor p)
 		{
+			if (string.IsNullOrEmpty(Settings.data.postgresPassword))
+			{
+				p.writeFailure("500 Internal Server Error", "Error Tracker is unavailable because the PostgreSQL database has not been configured yet. Do this via the service manager GUI, then restart the Error Tracker service.");
+				return;
+			}
+
 			Settings.data.RemoveAppPath(p);
 
 			if (mvcMain.ProcessRequest(p, p.requestedPage))
@@ -119,6 +128,12 @@ namespace ErrorTrackerServer
 
 		public override void handlePOSTRequest(HttpProcessor p, StreamReader inputData)
 		{
+			if (string.IsNullOrEmpty(Settings.data.postgresPassword))
+			{
+				p.writeFailure("500 Internal Server Error", "PostgreSQL database has not been configured yet. This must be done via the service manager GUI.");
+				return;
+			}
+
 			Settings.data.RemoveAppPath(p);
 
 			if (mvcMain.ProcessRequest(p, p.requestedPage))

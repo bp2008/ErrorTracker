@@ -11,7 +11,7 @@ CREATE TABLE ErrorTrackerGlobal.DbVersion
 );
 ALTER TABLE ErrorTrackerGlobal.DbVersion
 	OWNER to %DBUSER;
-INSERT INTO ErrorTrackerGlobal."DbVersion (CurrentVersion) VALUES (2);
+INSERT INTO ErrorTrackerGlobal.DbVersion (CurrentVersion) VALUES (2);
 
 
 

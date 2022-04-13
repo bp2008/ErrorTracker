@@ -27,7 +27,8 @@ namespace ErrorTrackerServer.Filtering
 			db = new DB(projectName);
 			folderStructure = new Lazy<FolderStructure>(() =>
 			{
-				return db.GetFolderStructure();
+				using (DB tmpDb = new DB(projectName))
+					return tmpDb.GetFolderStructure();
 			}, false);
 		}
 		/// <summary>
@@ -61,7 +62,7 @@ namespace ErrorTrackerServer.Filtering
 			if (full.filter.ConditionHandling != ConditionHandling.Unconditional && !full.conditions.Any(c => c.Enabled))
 				return; // No enabled conditions, and this is not an unconditional filter
 
-			foreach (Event e in db.GetEventsWithoutTagsInFolderDeferred(folderId, null))
+			foreach (Event e in db.GetEventsInFolderDeferred(folderId, null))
 			{
 				DeferredRunFilterAgainstEvent(full, e, false); // This method can indicate to stop executing filters against the event, but we are already done either way.
 			}
@@ -74,7 +75,7 @@ namespace ErrorTrackerServer.Filtering
 		public void RunEnabledFiltersAgainstFolder(int folderId)
 		{
 			List<FullFilter> enabledFilters = db.GetFilters(true);
-			foreach (Event e in db.GetEventsWithoutTagsInFolderDeferred(folderId, null))
+			foreach (Event e in db.GetEventsInFolderDeferred(folderId, null))
 			{
 				foreach (FullFilter full in enabledFilters)
 				{
@@ -113,7 +114,7 @@ namespace ErrorTrackerServer.Filtering
 			if (full.filter.ConditionHandling != ConditionHandling.Unconditional && !full.conditions.Any(c => c.Enabled))
 				return; // No enabled conditions, and this is not an unconditional filter
 
-			foreach (Event e in db.GetAllEventsNoTagsDeferred(null))
+			foreach (Event e in db.GetAllEventsDeferred(null))
 			{
 				DeferredRunFilterAgainstEvent(full, e, false); // This method can indicate to stop executing filters against the event, but we are already done either way.
 			}
@@ -126,7 +127,7 @@ namespace ErrorTrackerServer.Filtering
 		public void RunEnabledFiltersAgainstAllEvents()
 		{
 			List<FullFilter> enabledFilters = db.GetFilters(true);
-			foreach (Event e in db.GetAllEventsNoTagsDeferred(null))
+			foreach (Event e in db.GetAllEventsDeferred(null))
 			{
 				foreach (FullFilter full in enabledFilters)
 				{
@@ -164,8 +165,7 @@ namespace ErrorTrackerServer.Filtering
 			try
 			{
 				bet.Start("Begin Transaction");
-				// TODO 2022: Make this actually run in a transaction...
-				//db.repo.RunInTransaction(transaction=>
+				db.RunInTransaction(() =>
 				{
 					try
 					{
@@ -202,7 +202,7 @@ namespace ErrorTrackerServer.Filtering
 						{
 							bet.Start("Duplicate Found");
 							bet.Stop();
-							return bet;
+							return;
 						}
 
 						// Add the event to the database
@@ -223,7 +223,7 @@ namespace ErrorTrackerServer.Filtering
 						bet.Start("Rollback Transaction");
 						throw;
 					}
-				}
+				});
 				bet.Stop();
 			}
 			catch (Exception ex)
@@ -245,16 +245,7 @@ namespace ErrorTrackerServer.Filtering
 		/// <summary>
 		/// Runs all enabled filters against the specified event.
 		/// </summary>
-		/// <param name="e">The event to run filters against.</param>
-		public void RunEnabledFiltersAgainstEvent(Event e)
-		{
-			RunEnabledFiltersAgainstEvent(e, false);
-		}
-
-		/// <summary>
-		/// Runs all enabled filters against the specified event.
-		/// </summary>
-		/// <param name="e">The event to run filters against.</param>
+		/// <param name="e">The event to run filters against. Must have tags already loaded!</param>
 		/// <param name="isEventSubmission">Pass true if the current operation is an event submission and this is the automatic filtering run. Additional logging may be performed for debugging purposes.</param>
 		private void RunEnabledFiltersAgainstEvent(Event e, bool isEventSubmission)
 		{
@@ -390,7 +381,6 @@ namespace ErrorTrackerServer.Filtering
 				valueToTest = e.Color.ToString("X").PadLeft(8, '0').Substring(2); // Converts to hex color value (6 chars)
 			else
 			{
-				db.GetEventTags(e);
 				if (e.TryGetTag(keyLower, out string value))
 					valueToTest = value;
 			}
@@ -402,7 +392,7 @@ namespace ErrorTrackerServer.Filtering
 			else
 				result = DoPlaintextOperation(condition, valueToTest);
 
-			if (condition.Not)
+			if (condition.Invert)
 				result = !result;
 
 			if (result && isEventSubmission && Settings.data.verboseSubmitLogging)
@@ -591,7 +581,6 @@ namespace ErrorTrackerServer.Filtering
 			}
 			else
 			{
-				db.GetEventTags(e);
 				if (e.GetAllTags().Any(t => StringContains(t.Value, query)))
 					return true;
 			}
@@ -653,9 +642,9 @@ namespace ErrorTrackerServer.Filtering
 		private IEnumerable<Event> GetEventsForSearchDeferred(int folderId, string eventListCustomTagKey)
 		{
 			if (folderId == -1)
-				return db.GetAllEventsNoTagsDeferred(eventListCustomTagKey);
+				return db.GetAllEventsDeferred(eventListCustomTagKey);
 			else
-				return db.GetEventsWithoutTagsInFolderDeferred(folderId, eventListCustomTagKey);
+				return db.GetEventsInFolderDeferred(folderId, eventListCustomTagKey);
 		}
 		#endregion
 

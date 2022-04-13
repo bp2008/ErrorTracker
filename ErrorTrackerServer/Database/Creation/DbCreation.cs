@@ -23,7 +23,7 @@ namespace ErrorTrackerServer.Database.Creation
 		{
 			if (string.IsNullOrEmpty(Settings.data.postgresPassword))
 				throw new ApplicationException("PostgreSQL has not been initialized yet.");
-			return InternalGetConnectionString(dbUser, Settings.data.postgresPassword, dbName);
+			return InternalGetConnectionString(dbUser, ByteUtil.Utf8NoBOM.GetString(Convert.FromBase64String(Settings.data.postgresPassword)), dbName);
 		}
 		private static string InternalGetConnectionString(string user, string pass, string db)
 		{
@@ -89,7 +89,7 @@ namespace ErrorTrackerServer.Database.Creation
 		public static void CreateInitialErrorTrackerDb(string dbAdminUser, string dbAdminPass, string existingDbName)
 		{
 			if (!string.IsNullOrEmpty(Settings.data.postgresPassword))
-				throw new ApplicationException("Configuration indicates the PostgreSQL database was already created.  To try again, delete the 'postgresPassword' field from your Error Tracker settings file and restart the service.");
+				throw new ApplicationException("Configuration indicates the PostgreSQL database was already created.  Database creation cannot continue in this state.");
 
 			string dbpw = StringUtil.GetRandomAlphaNumericString(23);
 			using (DbHelper db = new DbHelper(InternalGetConnectionString(dbAdminUser, dbAdminPass, existingDbName)))
@@ -118,7 +118,7 @@ namespace ErrorTrackerServer.Database.Creation
 				db._ExecuteNonQuery(SQL(Properties.Resources.DbSetup_D_DropPublicSchema));
 			}
 
-			Settings.data.postgresPassword = dbpw;
+			Settings.data.postgresPassword = Convert.ToBase64String(ByteUtil.Utf8NoBOM.GetBytes(dbpw));
 			Settings.data.Save();
 		}
 		#endregion
@@ -131,7 +131,7 @@ namespace ErrorTrackerServer.Database.Creation
 		/// <returns></returns>
 		private static bool SchemaExists(string schemaName, DbHelper db)
 		{
-			return db._ExecuteScalar<bool>("SELECT exists(select schema_name FROM information_schema.schemata WHERE schema_name = @schname);", new { schname = "ErrorTrackerGlobal" });
+			return db._ExecuteScalar<bool>("SELECT exists(select schema_name FROM information_schema.schemata WHERE schema_name = @schname);", new { schname = schemaName });
 		}
 		#endregion
 		#region Create or Migrate Global Schema and Tables
@@ -144,7 +144,7 @@ namespace ErrorTrackerServer.Database.Creation
 			{
 				db.RunInTransaction(() =>
 				{
-					if (!SchemaExists("ErrorTrackerGlobal", db))
+					if (!SchemaExists("errortrackerglobal", db))
 					{
 						// Create the ErrorTrackerGlobal database at version 2
 						db._ExecuteNonQuery(SQL(Properties.Resources.GlobalSetup_2));
@@ -185,7 +185,6 @@ namespace ErrorTrackerServer.Database.Creation
 					{
 						// Create the project database at version 6
 						db._ExecuteNonQuery(SQL(Properties.Resources.ProjectSetup_6_1_Tables).Replace("%PR", projectName));
-						db._ExecuteNonQuery(SQL(Properties.Resources.ProjectSetup_6_2_GetEventsWithoutTagsByDate).Replace("%PR", projectName));
 					}
 					// Perform any necessary migrations to bring the schema up to date.
 					PerformProjectMigrations(projectName, db);

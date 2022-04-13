@@ -229,7 +229,7 @@ namespace ErrorTrackerServer
 				if (events.Count > 0)
 				{
 					tags = ExecuteQuery<Tag>("SELECT * FROM " + ProjectNameLower + ".Tag WHERE EventId = " + eventId).ToList();
-					events[0].MatchingEvents = ExecuteScalar<long>("SELECT COUNT(EventId) FROM " + ProjectName + ".Event WHERE HashValue = @hasharg", new { hasharg = events[0].HashValue });
+					events[0].MatchingEvents = ExecuteScalar<long>("SELECT COUNT(EventId) FROM " + ProjectNameLower + ".Event WHERE HashValue = @hasharg", new { hasharg = events[0].HashValue });
 				}
 			});
 			if (events.Count > 0)
@@ -246,29 +246,24 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public List<Event> GetAllEventsNoTags(string eventListCustomTagKey)
 		{
-			if (eventListCustomTagKey == null)
-				return QueryAll<Event>();
-			else
-				return ExecuteQuery<EventWithCustomTagValue>(
-					"SELECT e.*, t.Value as CTag FROM " + ProjectNameLower + ".Event e"
-					+ "LEFT JOIN " + ProjectNameLower + ".Tag t ON e.EventId = t.EventId AND t.Key = @customtagkey", new { customtagkey = eventListCustomTagKey })
-					.Select(e => (Event)e)
-					.ToList();
+			return GetEvents(null, null, null, eventListCustomTagKey, includeTags: false, deferred: false).ToList();
+			//if (eventListCustomTagKey == null)
+			//	return QueryAll<Event>();
+			//else
+			//	return ExecuteQuery<EventWithCustomTagValue>(
+			//		"SELECT e.*, t.Value as CTag FROM " + ProjectNameLower + ".Event e "
+			//		+ " LEFT JOIN " + ProjectNameLower + ".Tag t ON e.EventId = t.EventId AND t.Key = @customtagkey", new { customtagkey = eventListCustomTagKey })
+			//		.Select(e => (Event)e)
+			//		.ToList();
 		}
 		/// <summary>
 		/// Returns a collection that iterates through all the Events without needing to load them all into memory first. If you need to use an Event's tags, you will need to call <see cref="GetEventTags"/> on the Event.
 		/// </summary>
 		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <returns></returns>
-		public IEnumerable<Event> GetAllEventsNoTagsDeferred(string eventListCustomTagKey)
+		public IEnumerable<Event> GetAllEventsDeferred(string eventListCustomTagKey)
 		{
-			return GetAllEventsNoTags(eventListCustomTagKey);
-			//if (eventListCustomTagKey == null)
-			//	return DeferredQuery<Event>("SELECT * FROM Event");
-			//else
-			//	return DeferredQuery<EventWithCustomTagValue>(
-			//		"SELECT Event.*, Tag.Value as CTag FROM Event "
-			//		+ "LEFT JOIN Tag ON Event.EventId = Tag.EventId AND Tag.Key = ?", eventListCustomTagKey);
+			return GetEvents(null, null, null, eventListCustomTagKey, includeTags: true, deferred: true).ToList();
 		}
 		/// <summary>
 		/// Loads the event's tags from the database only if the event currently has no tags defined. Meant to be used with deferred event getters such as <see cref="GetAllEventsNoTagsDeferred"/>.
@@ -291,20 +286,74 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public List<Event> GetEventsByDate(long oldestEpoch, long newestEpoch)
 		{
-			return GetEvents(oldestEpoch, newestEpoch, null, null, true).ToList();
+			return GetEvents(oldestEpoch, newestEpoch, null, null, includeTags: true, deferred: false).ToList();
 		}
-		private IEnumerable<Event> GetEvents(long? oldest = null, long? newest = null, int? folderid = null, string customtagkey = null, bool includeTags = false)
+		/// <summary>
+		/// Gets multiple events from the DB using a variety of arguments.
+		/// </summary>
+		/// <param name="oldest">Oldest date of the range (inclusive).</param>
+		/// <param name="newest">Newest date of the range (inclusive).</param>
+		/// <param name="folderid">Folder ID (if null or negative, all folders will be included)</param>
+		/// <param name="customtagkey">Key of a particular tag to include as "CTag" field.</param>
+		/// <param name="includeTags">If true, each event will be prepopulated with tags.</param>
+		/// <param name="deferred">If true, the request will be ongoing while you iterate over the returned value.
+		/// Prevents large data sets from consuming as much memory.
+		/// If false, the returned value is a List and the request is over before the method completes.</param>
+		/// <returns></returns>
+		private IEnumerable<Event> GetEvents(long? oldest = null, long? newest = null, int? folderid = null, string customtagkey = null, bool includeTags = false, bool deferred = false)
 		{
-			//DirectionalQueryField tags = new DirectionalQueryField("tags", typeof(DataTable), ParameterDirection.Output);
-			dynamic args = new { oldest, newest, folderid, customtagkey, includeTags, tags = (DataTable)null };
-			IEnumerable<Event> events = SP<Event>("GetEvents", args);
-			return events;
-			//if (events.Count > 0)
-			//{
-			//	List<Tag> tags = repo.ExecuteQuery<Tag>("SELECT t.* FROM " + ProjectNameLower + ".Tag t INNER JOIN " + ProjectNameLower + ".Event e ON t.EventId = e.EventId WHERE e.Date >= oldest AND e.Date <= newest", new { oldest = oldestEpoch, newest = newestEpoch }, transaction: transaction).ToList();
-			//});
-			//	AddTagsToEvents(events, tags);
-			//}
+			List<string> selections = new List<string>();
+			selections.Add("e.*");
+			if (!string.IsNullOrWhiteSpace(customtagkey))
+				selections.Add("t.Value AS CTag");
+			if (includeTags)
+				selections.Add("(SELECT jsonb_object_agg(t.Key, t.Value) FROM " + ProjectNameLower + ".tag t WHERE t.EventId = e.EventId ) AS TagsJson");
+
+			PetaPoco.Sql request = PetaPoco.Sql.Builder
+				.Select(string.Join(", ", selections))
+				.From(ProjectNameLower + ".Event e");
+
+			if (!string.IsNullOrWhiteSpace(customtagkey))
+				request.Select("").LeftJoin(ProjectNameLower + ".Tag t").On("e.EventId = t.EventId AND t.Key = @0", customtagkey);
+			if (oldest != null && newest != null)
+				request.Where("e.Date >= @0", oldest).Where("e.Date <= @0", newest);
+			if (folderid != null && folderid > -1)
+				request.Where("e.FolderId = @0", folderid);
+
+			if (deferred)
+			{
+				if (includeTags)
+				{
+					if (!string.IsNullOrWhiteSpace(customtagkey))
+						return DeferredExecuteQuery<EventWithTagsAndCustomTagValue>(request);
+					else
+						return DeferredExecuteQuery<EventWithTags>(request);
+				}
+				else
+				{
+					if (!string.IsNullOrWhiteSpace(customtagkey))
+						return DeferredExecuteQuery<EventWithCustomTagValue>(request);
+					else
+						return DeferredExecuteQuery<Event>(request);
+				}
+			}
+			else
+			{
+				if (includeTags)
+				{
+					if (!string.IsNullOrWhiteSpace(customtagkey))
+						return ExecuteQuery<EventWithTagsAndCustomTagValue>(request);
+					else
+						return ExecuteQuery<EventWithTags>(request);
+				}
+				else
+				{
+					if (!string.IsNullOrWhiteSpace(customtagkey))
+						return ExecuteQuery<EventWithCustomTagValue>(request);
+					else
+						return ExecuteQuery<Event>(request);
+				}
+			}
 		}
 		/// <summary>
 		/// Gets all events within the specified date range. Does not populate the Tags field.
@@ -315,7 +364,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public List<Event> GetEventsWithoutTagsByDate(long oldestEpoch, long newestEpoch, string eventListCustomTagKey)
 		{
-			return GetEvents(oldestEpoch, newestEpoch, null, eventListCustomTagKey, true).ToList();
+			return GetEvents(oldestEpoch, newestEpoch, null, eventListCustomTagKey, includeTags: true, deferred: false).ToList();
 		}
 		/// <summary>
 		/// Gets all events from the specified folder.
@@ -340,12 +389,12 @@ namespace ErrorTrackerServer
 		/// <summary>
 		/// Gets all events from the specified folder. Does not populate the Tags field.
 		/// </summary>
-		/// <param name="folderId">Folder ID. Negative ID matches All Folders.</param>
+		/// <param name="folderId">Folder ID. Negative ID matches All Folders. 0 matches root.</param>
 		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <returns></returns>
 		public List<Event> GetEventsWithoutTagsInFolder(int folderId, string eventListCustomTagKey)
 		{
-			return GetEvents(null, null, folderId < 0 ? (int?)null : folderId, eventListCustomTagKey, false).ToList();
+			return GetEvents(null, null, folderId < 0 ? (int?)null : folderId, eventListCustomTagKey, includeTags: false, deferred: false).ToList();
 		}
 
 		/// <summary>
@@ -354,9 +403,9 @@ namespace ErrorTrackerServer
 		/// <param name="folderId">Folder ID. Negative ID matches All Folders.</param>
 		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <returns></returns>
-		public IEnumerable<Event> GetEventsWithoutTagsInFolderDeferred(int folderId, string eventListCustomTagKey)
+		public IEnumerable<Event> GetEventsInFolderDeferred(int folderId, string eventListCustomTagKey)
 		{
-			return GetEvents(null, null, folderId < 0 ? (int?)null : folderId, eventListCustomTagKey, false);
+			return GetEvents(null, null, folderId < 0 ? (int?)null : folderId, eventListCustomTagKey, includeTags: true, deferred: true);
 		}
 
 		/// <summary>
@@ -369,7 +418,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public List<Event> GetEventsWithoutTagsInFolderByDate(int folderId, long oldestEpoch, long newestEpoch, string eventListCustomTagKey)
 		{
-			return GetEvents(oldestEpoch, newestEpoch, folderId < 0 ? (int?)null : folderId, eventListCustomTagKey, false).ToList();
+			return GetEvents(oldestEpoch, newestEpoch, folderId < 0 ? (int?)null : folderId, eventListCustomTagKey, includeTags: false, deferred: false).ToList();
 		}
 		/// <summary>
 		/// Given a list of Event and a list of Tag, adds each tag to the appropriate event.
@@ -383,7 +432,8 @@ namespace ErrorTrackerServer
 				eventDict[e.EventId] = e;
 
 			foreach (Tag t in tags)
-				eventDict[t.EventId].SetTag(t.Key, t.Value);
+				if (eventDict.TryGetValue(t.EventId, out Event e))
+					e.SetTag(t.Key, t.Value);
 		}
 		/// <summary>
 		/// Returns the number of events in the folder. Non-existent folders contain 0 events.
@@ -401,8 +451,8 @@ namespace ErrorTrackerServer
 		public Dictionary<int, uint> CountEventsByFolder()
 		{
 			List<EventsInFolderCount> counts = ExecuteQuery<EventsInFolderCount>("SELECT FolderId, COUNT(EventId) as Count "
-				+ "FROM " + ProjectNameLower + ".Event "
-				+ "GROUP BY FolderId").ToList();
+				+ " FROM " + ProjectNameLower + ".Event"
+				+ " GROUP BY FolderId").ToList();
 
 			return ConvertToDictionary(counts);
 		}
@@ -437,10 +487,10 @@ namespace ErrorTrackerServer
 		public Dictionary<int, uint> CountReadEventsByFolder(int userId)
 		{
 			List<EventsInFolderCount> counts = ExecuteQuery<EventsInFolderCount>("SELECT FolderId, COUNT(e.EventId) as Count "
-				+ "FROM " + ProjectNameLower + ".Event e"
-				+ "INNER JOIN " + ProjectNameLower + ".ReadState rs ON e.EventId = rs.EventId "
-				+ "WHERE rs.UserId = " + userId
-				+ "GROUP BY FolderId").ToList();
+				+ " FROM " + ProjectNameLower + ".Event e"
+				+ " INNER JOIN " + ProjectNameLower + ".ReadState rs ON e.EventId = rs.EventId"
+				+ " WHERE rs.UserId = " + userId
+				+ " GROUP BY FolderId").ToList();
 
 			return ConvertToDictionary(counts);
 		}
@@ -466,7 +516,7 @@ namespace ErrorTrackerServer
 			int eventCount = 0;
 			RunInTransaction(() =>
 			{
-				long[] events = ExecuteQuery<object>("SELECT EventId FROM " + ProjectNameLower + ".Event WHERE Date < @age", new { age = ageCutoff }).Cast<long>().ToArray();
+				long[] events = ExecuteQuery<long>("SELECT EventId FROM " + ProjectNameLower + ".Event WHERE Date < @age", new { age = ageCutoff }).ToArray();
 				eventCount = events.Length;
 				if (!DeleteEvents(events))
 					throw new Exception("Unable to delete all " + eventCount + " events");
@@ -753,8 +803,8 @@ namespace ErrorTrackerServer
 			RunInTransaction(() =>
 			{
 				filters = QueryAll<Filter>();
-				conditions = ExecuteQuery<FilterItemCount>("SELECT FilterId, COUNT(FilterConditionId) as Count FROM " + ProjectNameLower + ".FilterCondition WHERE Enabled = 1 GROUP BY FilterId").ToList();
-				actions = ExecuteQuery<FilterItemCount>("SELECT FilterId, COUNT(FilterActionId) as Count FROM " + ProjectNameLower + ".FilterAction WHERE Enabled = 1 GROUP BY FilterId").ToList();
+				conditions = ExecuteQuery<FilterItemCount>("SELECT FilterId, COUNT(FilterConditionId) as Count FROM " + ProjectNameLower + ".FilterCondition WHERE Enabled = true GROUP BY FilterId").ToList();
+				actions = ExecuteQuery<FilterItemCount>("SELECT FilterId, COUNT(FilterActionId) as Count FROM " + ProjectNameLower + ".FilterAction WHERE Enabled = true GROUP BY FilterId").ToList();
 			});
 			Dictionary<int, uint> filterConditionCounts = conditions.ToDictionary(fic => fic.FilterId, fic => fic.Count);
 			Dictionary<int, uint> filterActionCounts = actions.ToDictionary(fic => fic.FilterId, fic => fic.Count);
@@ -950,7 +1000,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public bool FilterExists(int filterId)
 		{
-			return ExecuteScalar<int>("SELECT COUNT(*) FROM Filter WHERE FilterId = " + filterId) > 0;
+			return ExecuteScalar<int>("SELECT COUNT(*) FROM " + ProjectNameLower + ".Filter WHERE FilterId = " + filterId) > 0;
 		}
 
 		/// <summary>
