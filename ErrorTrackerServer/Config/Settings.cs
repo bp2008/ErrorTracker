@@ -77,6 +77,10 @@ namespace ErrorTrackerServer
 		/// </summary>
 		public string postgresPassword;
 		/// <summary>
+		/// If true, the PostgreSQL DB will be considered to be ready. If there are existing databases, this will be false until SQLite migration is completed.
+		/// </summary>
+		public bool postgresReady = false;
+		/// <summary>
 		/// SMTP server host name or IP Address.
 		/// </summary>
 		public string smtpHost = "";

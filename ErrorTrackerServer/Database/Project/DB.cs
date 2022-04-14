@@ -265,19 +265,19 @@ namespace ErrorTrackerServer
 		{
 			return GetEvents(null, null, null, eventListCustomTagKey, includeTags: true, deferred: true).ToList();
 		}
-		/// <summary>
-		/// Loads the event's tags from the database only if the event currently has no tags defined. Meant to be used with deferred event getters such as <see cref="GetAllEventsNoTagsDeferred"/>.
-		/// </summary>
-		/// <param name="ev">The event to load tags into.</param>
-		/// <returns></returns>
-		public void GetEventTags(Event ev)
-		{
-			if (ev.GetTagCount() > 0 || ev.EventId < 1)
-				return;
-			IEnumerable<Tag> tags = ExecuteQuery<Tag>("SELECT * FROM " + ProjectNameLower + ".Tag WHERE EventId = " + ev.EventId);
-			foreach (Tag t in tags)
-				ev.SetTag(t.Key, t.Value);
-		}
+		///// <summary>
+		///// Loads the event's tags from the database only if the event currently has no tags defined. Meant to be used with deferred event getters such as <see cref="GetAllEventsNoTagsDeferred"/>.
+		///// </summary>
+		///// <param name="ev">The event to load tags into.</param>
+		///// <returns></returns>
+		//public void GetEventTags(Event ev)
+		//{
+		//	if (ev.GetTagCount() > 0 || ev.EventId < 1)
+		//		return;
+		//	IEnumerable<Tag> tags = ExecuteQuery<Tag>("SELECT * FROM " + ProjectNameLower + ".Tag WHERE EventId = " + ev.EventId);
+		//	foreach (Tag t in tags)
+		//		ev.SetTag(t.Key, t.Value);
+		//}
 		/// <summary>
 		/// Gets all events within the specified date range.
 		/// </summary>
@@ -314,7 +314,7 @@ namespace ErrorTrackerServer
 				.From(ProjectNameLower + ".Event e");
 
 			if (!string.IsNullOrWhiteSpace(customtagkey))
-				request.Select("").LeftJoin(ProjectNameLower + ".Tag t").On("e.EventId = t.EventId AND t.Key = @0", customtagkey);
+				request.LeftJoin(ProjectNameLower + ".Tag t").On("e.EventId = t.EventId AND t.Key = @0", customtagkey);
 			if (oldest != null && newest != null)
 				request.Where("e.Date >= @0", oldest).Where("e.Date <= @0", newest);
 			if (folderid != null && folderid > -1)

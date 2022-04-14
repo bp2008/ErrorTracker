@@ -20,6 +20,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErrorTrackerTests", "ErrorTrackerTests\ErrorTrackerTests.csproj", "{5EF44459-D460-48B8-8CF1-5E0932F4EB75}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PetaPoco", "..\..\ThirdParty\PetaPoco-1817f1f70bed769472ccd8a1c9bf25505513177a\PetaPoco\PetaPoco.csproj", "{34950558-C72C-4327-A380-98964A18DF8A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,6 +48,10 @@ Global
 		{5EF44459-D460-48B8-8CF1-5E0932F4EB75}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5EF44459-D460-48B8-8CF1-5E0932F4EB75}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5EF44459-D460-48B8-8CF1-5E0932F4EB75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34950558-C72C-4327-A380-98964A18DF8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34950558-C72C-4327-A380-98964A18DF8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34950558-C72C-4327-A380-98964A18DF8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34950558-C72C-4327-A380-98964A18DF8A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -30,7 +30,7 @@ namespace ErrorTrackerServer.Database.Creation
 		}
 		protected override string GetSchemaName()
 		{
-			throw new ApplicationException("This method is not supported by DbHelper.");
+			return "";
 		}
 		protected override string GetConnectionString()
 		{

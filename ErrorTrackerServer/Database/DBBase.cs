@@ -4,12 +4,12 @@ using Npgsql;
 using PetaPoco;
 using PetaPoco.Providers;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +17,7 @@ using System.Transactions;
 
 namespace ErrorTrackerServer
 {
-	public abstract class DBBase : IDisposable
+	public abstract partial class DBBase : IDisposable
 	{
 		static DBBase()
 		{
@@ -35,28 +35,7 @@ namespace ErrorTrackerServer
 						if (_db == null)
 						{
 							// PetaPoco db setup here:
-							_db = DatabaseConfiguration.Build()
-								.UsingConnectionString(GetConnectionString())
-								.UsingProvider<PostgreSQLDatabaseProvider>()
-								.UsingDefaultMapper<ConventionMapper>(m =>
-								{
-									m.InflectTableName = (inflector, s) => GetSchemaName() + "." + s.ToLower();
-									m.InflectColumnName = (inflector, s) => s.ToLower();
-									// Teach PetaPoco how to handle uint properties by casting to and from int.
-									m.FromDbConverter = (targetProperty, sourceType) =>
-									{
-										if (targetProperty != null && targetProperty.PropertyType == typeof(uint) && sourceType == typeof(int))
-											return i => (uint)(int)i;
-										return null;
-									};
-									m.ToDbConverter = sourceProperty =>
-									{
-										if (sourceProperty != null && sourceProperty.PropertyType == typeof(uint))
-											return i => (int)(uint)i;
-										return null;
-									};
-								})
-								.Create();
+							_db = new PetaPoco.Database(GetConnectionString(), new PostgreSQLDatabaseProvider(), PPMapper.Get(GetSchemaName()));
 						}
 					}
 				}
@@ -87,7 +66,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		protected abstract string GetConnectionString();
 		#region Helpers
-
+		//private long transactionCount = 0;
 		/// <summary>
 		/// <para>Ensures that a transaction is open, then calls the method.  The transaction is automatically committed when the method completes.  If an exception is thrown, the transaction is automatically rolled back and the exception is rethrown.</para>
 		/// </summary>
@@ -95,11 +74,42 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public void RunInTransaction(Action action)
 		{
+			#region Transaction Method 1 (using)
 			using (ITransaction transaction = db.GetTransaction())
 			{
 				action();
 				transaction.Complete();
 			}
+			#endregion
+			#region Transaction Method 2 (try/catch, optional counting)
+			//long activeTransactions = Interlocked.Increment(ref transactionCount);
+			//try
+			//{
+			//	if (activeTransactions == 1)
+			//	{
+			//try
+			//{
+			//	db.BeginTransaction();
+			//	action();
+			//	db.CompleteTransaction();
+			//}
+			//catch
+			//{
+			//	db.AbortTransaction();
+			//	throw;
+			//}
+			//	}
+			//	else
+			//		action();
+			//}
+			//finally
+			//{
+			//	Interlocked.Decrement(ref transactionCount);
+			//}
+			#endregion
+			#region Transaction Method 3 (No Transaction)
+			//action();
+			#endregion
 		}
 
 		/// <summary>

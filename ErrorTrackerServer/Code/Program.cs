@@ -27,7 +27,8 @@ namespace ErrorTrackerServer
 			WindowsServiceInitOptions options = new WindowsServiceInitOptions();
 			options.ServiceManagerButtons = new ButtonDefinition[]
 			{
-				new ButtonDefinition("Configure PostgreSQL", configureDb)
+				new ButtonDefinition("Configure PostgreSQL", configureDb),
+				new ButtonDefinition("Migrate From SQLite", migrateSqlite)
 			};
 			AppInit.WindowsService<ErrorTrackerSvc>(options); // Most of the initialization work happens here, including loading of the Settings.data object. The method blocks, so further initialization should be done in the ErrorTrackerSvc constructor.
 		}
@@ -61,10 +62,12 @@ namespace ErrorTrackerServer
 				{
 					Settings.data.postgresHost = setupForm.PostgresHost;
 					Settings.data.postgresPort = setupForm.PostgresPort;
-					Settings.data.postgresPassword = "";
-					Settings.data.Save();
 					DbCreation.CreateInitialErrorTrackerDb(setupForm.PostgresUser, setupForm.PostgresPass, setupForm.PostgresDB);
+					Settings.data.postgresReady = Settings.data.CountProjects() == 0;
+					Settings.data.Save();
 					MessageBox.Show("Database setup succeeded.");
+					if (!Settings.data.postgresReady)
+						migrateSqlite(sender, e);
 				}
 				else
 					MessageBox.Show("Database setup aborted.");
@@ -73,6 +76,17 @@ namespace ErrorTrackerServer
 			{
 				MessageBox.Show("Database setup failed." + Environment.NewLine + Environment.NewLine + ex.FlattenMessages());
 			}
+		}
+		private static void migrateSqlite(object sender, EventArgs e)
+		{
+			if (string.IsNullOrEmpty(Settings.data.postgresPassword))
+			{
+				MessageBox.Show("Please use the \"Configure PostgreSQL\" button first.");
+				return;
+			}
+
+			DatabaseSqliteMigrateForm migrationForm = new DatabaseSqliteMigrateForm();
+			migrationForm.ShowDialog();
 		}
 	}
 }

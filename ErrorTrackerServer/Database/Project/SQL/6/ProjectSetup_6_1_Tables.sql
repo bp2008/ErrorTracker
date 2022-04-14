@@ -121,7 +121,7 @@ CREATE TABLE %PR.Tag
 	TagId integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	EventId bigint NOT NULL,
 	Key varchar NOT NULL,
-	Value varchar NOT NULL
+	Value varchar NULL
 );
 ALTER TABLE %PR.Tag
 	OWNER to %DBUSER;

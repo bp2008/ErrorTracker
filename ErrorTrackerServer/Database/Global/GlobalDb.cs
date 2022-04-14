@@ -83,7 +83,10 @@ namespace ErrorTrackerServer.Database.Global
 		/// <returns></returns>
 		public List<LoginRecord> GetLoginRecordsByUserName(string userName, long startDate, long endDate)
 		{
-			return ExecuteQuery<LoginRecord>("SELECT * FROM ErrorTrackerGlobal.LoginRecord WHERE UserName = @usernamearg AND Date >= @startdate AND Date <= @enddate ORDER BY Date DESC", new { usernamearg = userName.ToLower(), startdate = startDate, enddate = endDate }).ToList();
+			if(startDate == 0 && endDate == 0)
+				return ExecuteQuery<LoginRecord>("SELECT * FROM ErrorTrackerGlobal.LoginRecord WHERE UserName = @usernamearg ORDER BY Date DESC", new { usernamearg = userName.ToLower() }).ToList();
+			else
+				return ExecuteQuery<LoginRecord>("SELECT * FROM ErrorTrackerGlobal.LoginRecord WHERE UserName = @usernamearg AND Date >= @startdate AND Date <= @enddate ORDER BY Date DESC", new { usernamearg = userName.ToLower(), startdate = startDate, enddate = endDate }).ToList();
 		}
 		/// <summary>
 		/// Gets a list of LoginRecord for the specified date range, ordered by date descending.
@@ -93,7 +96,10 @@ namespace ErrorTrackerServer.Database.Global
 		/// <returns></returns>
 		public List<LoginRecord> GetLoginRecordsGlobal(long startDate, long endDate)
 		{
-			return ExecuteQuery<LoginRecord>("SELECT * FROM ErrorTrackerGlobal.LoginRecord WHERE Date >= @startdate AND Date <= @enddate ORDER BY Date DESC", new { startdate = startDate, enddate = endDate }).ToList();
+			if (startDate == 0 && endDate == 0)
+				return ExecuteQuery<LoginRecord>("SELECT * FROM ErrorTrackerGlobal.LoginRecord ORDER BY Date DESC").ToList();
+			else
+				return ExecuteQuery<LoginRecord>("SELECT * FROM ErrorTrackerGlobal.LoginRecord WHERE Date >= @startdate AND Date <= @enddate ORDER BY Date DESC", new { startdate = startDate, enddate = endDate }).ToList();
 		}
 		#endregion
 	}

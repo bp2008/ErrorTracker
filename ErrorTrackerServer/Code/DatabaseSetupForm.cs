@@ -27,6 +27,7 @@ namespace ErrorTrackerServer.Code
 				txtPgsqlHost.Text = Settings.data.postgresHost;
 			if (Settings.data.postgresPort >= 1 && Settings.data.postgresPort <= 65535)
 				nudPgsqlPort.Value = Settings.data.postgresPort;
+			txtAdminPassword.Focus();
 		}
 
 		private void btnCancel_Click(object sender, EventArgs e)

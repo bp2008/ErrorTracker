@@ -60,36 +60,32 @@ namespace ErrorTrackerServer.Database.Creation
 		{
 			dbName = "ErrorTrackerTest";
 			dbUser = "errortrackertest";
-			TEST_ONLY_DropTestingDatabase(dbAdminUser, dbAdminPass, existingDbName);
 			CreateInitialErrorTrackerDb(dbAdminUser, dbAdminPass, existingDbName);
 		}
 		/// <summary>
-		/// Do not call this method except from a testing project.  Drops and recreates the "errortrackertest" user and "ErrorTrackerTest" database within PostgreSQL.  Creates a random password for the "errortrackertest" user and saves it in Settings.data.postgresPassword.
+		/// Drops the error tracker database and role.
 		/// </summary>
 		/// <param name="dbAdminUser">PostgreSQL administrator username to use for initial setup.</param>
 		/// <param name="dbAdminPass">PostgreSQL administrator password to use for initial setup.</param>
-		/// <param name="existingDbName">Any existing PostgreSQL database name that is not the one being dropped. "postgres" should exist by default in new installations.</param>
-		public static void TEST_ONLY_DropTestingDatabase(string dbAdminUser, string dbAdminPass, string existingDbName)
+		/// <param name="existingDbName">Any existing PostgreSQL database name. "postgres" should exist by default in new installations.</param>
+		private static void DropErrorTrackerDb(string dbAdminUser, string dbAdminPass, string existingDbName)
 		{
-			dbName = "ErrorTrackerTest";
-			dbUser = "errortrackertest";
-			Settings.data.postgresPassword = "";
 			using (DbHelper db = new DbHelper(InternalGetConnectionString(dbAdminUser, dbAdminPass, existingDbName)))
 			{
 				db._ExecuteNonQuery("DROP DATABASE IF EXISTS \"" + dbName + "\" WITH (FORCE);");
 				db._ExecuteNonQuery("DROP ROLE IF EXISTS " + dbUser);
 			}
+			Settings.data.postgresPassword = "";
 		}
 		/// <summary>
-		/// Creates the "errortracker" user and "ErrorTracker" database within PostgreSQL.  Creates a random password for the "errortracker" user and saves it in Settings.data.postgresPassword.
+		/// Drops (if exists) and (re-)creates the "errortracker" user and "ErrorTracker" database within PostgreSQL.  Creates a random password for the "errortracker" user and saves it in Settings.data.postgresPassword.
 		/// </summary>
 		/// <param name="dbAdminUser">PostgreSQL administrator username to use for initial setup.</param>
 		/// <param name="dbAdminPass">PostgreSQL administrator password to use for initial setup.</param>
 		/// <param name="existingDbName">Any existing PostgreSQL database name. "postgres" should exist by default in new installations.</param>
 		public static void CreateInitialErrorTrackerDb(string dbAdminUser, string dbAdminPass, string existingDbName)
 		{
-			if (!string.IsNullOrEmpty(Settings.data.postgresPassword))
-				throw new ApplicationException("Configuration indicates the PostgreSQL database was already created.  Database creation cannot continue in this state.");
+			DropErrorTrackerDb(dbAdminUser, dbAdminPass, existingDbName);
 
 			string dbpw = StringUtil.GetRandomAlphaNumericString(23);
 			using (DbHelper db = new DbHelper(InternalGetConnectionString(dbAdminUser, dbAdminPass, existingDbName)))
