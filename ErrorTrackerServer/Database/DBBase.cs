@@ -247,7 +247,7 @@ namespace ErrorTrackerServer
 		protected int UpdateAll<T>(IEnumerable<T> objs)
 		{
 			foreach (T obj in objs)
-				return db.Update(obj);
+				db.Update(obj);
 			return objs.Count();
 		}
 		/// <summary>
