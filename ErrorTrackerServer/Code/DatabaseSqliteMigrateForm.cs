@@ -92,6 +92,7 @@ namespace ErrorTrackerServer.Code
 		private bool migrationCompleted = false;
 		private void Bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
 		{
+			bw = null;
 			if (migrationCompleted)
 			{
 				Settings.data.postgresReady = true;
@@ -312,6 +313,12 @@ namespace ErrorTrackerServer.Code
 			}
 			foreach (SQLiteMigration.FolderStructure child in src.Children)
 				AddFolderAndChildren(child, folderIdMap, destinationDb);
+		}
+
+		private void DatabaseSqliteMigrateForm_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			if (bw != null)
+				e.Cancel = true;
 		}
 	}
 	class ProgressCounter

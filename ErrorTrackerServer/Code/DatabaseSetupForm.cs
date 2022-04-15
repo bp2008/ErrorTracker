@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 namespace ErrorTrackerServer.Code
 {
-	public partial class DatabaseSetupForm : BPUtil.Forms.SelfCenteredForm
+	public partial class DatabaseSetupForm : Form
 	{
 		public string PostgresHost { get { return txtPgsqlHost.Text; } }
 		public int PostgresPort { get { return (int)nudPgsqlPort.Value; } }

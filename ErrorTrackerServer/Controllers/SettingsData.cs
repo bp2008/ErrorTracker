@@ -67,6 +67,7 @@ namespace ErrorTrackerServer.Controllers
 			Settings.data.serviceWorkerEnabled = request.settings.serviceWorkerEnabled;
 			Settings.data.backup = request.settings.backup;
 			Settings.data.backupPath = request.settings.backupPath;
+			Settings.data.postgresBinPath = request.settings.postgresBinPath;
 			Settings.data.sevenZipCommandLineExePath = request.settings.sevenZipCommandLineExePath;
 			Settings.data.Save();
 
@@ -171,6 +172,7 @@ namespace ErrorTrackerServer.Controllers
 		public bool serviceWorkerEnabled = false;
 		public bool backup = false;
 		public string backupPath = "";
+		public string postgresBinPath = "";
 		public string sevenZipCommandLineExePath = "";
 		public SettingsObject() { }
 		public SettingsObject(Settings settings)
@@ -199,6 +201,7 @@ namespace ErrorTrackerServer.Controllers
 			serviceWorkerEnabled = settings.serviceWorkerEnabled;
 			backup = settings.backup;
 			backupPath = settings.backupPath;
+			postgresBinPath = settings.postgresBinPath;
 			sevenZipCommandLineExePath = settings.sevenZipCommandLineExePath;
 		}
 	}

@@ -23,7 +23,7 @@ namespace ErrorTrackerServer.Database.Creation
 		{
 			if (string.IsNullOrEmpty(Settings.data.postgresPassword))
 				throw new ApplicationException("PostgreSQL has not been initialized yet.");
-			return InternalGetConnectionString(dbUser, ByteUtil.Utf8NoBOM.GetString(Convert.FromBase64String(Settings.data.postgresPassword)), dbName);
+			return InternalGetConnectionString(dbUser, Settings.data.GetPostgresPassword(), dbName);
 		}
 		private static string InternalGetConnectionString(string user, string pass, string db)
 		{
@@ -40,8 +40,8 @@ namespace ErrorTrackerServer.Database.Creation
 			return builder.ConnectionString;
 		}
 
-		private static string dbName = "ErrorTracker";
-		private static string dbUser = "errortracker";
+		public static string dbName { get; private set; } = "ErrorTracker";
+		public static string dbUser { get; private set; } = "errortracker";
 		private static string SQL(string unprocessedSqlTemplate)
 		{
 			return unprocessedSqlTemplate
@@ -67,7 +67,7 @@ namespace ErrorTrackerServer.Database.Creation
 		/// </summary>
 		/// <param name="dbAdminUser">PostgreSQL administrator username to use for initial setup.</param>
 		/// <param name="dbAdminPass">PostgreSQL administrator password to use for initial setup.</param>
-		/// <param name="existingDbName">Any existing PostgreSQL database name. "postgres" should exist by default in new installations.</param>
+		/// <param name="existingDbName">Any existing PostgreSQL database name that is not the ErrorTracker database itself. "postgres" should exist by default in new installations.</param>
 		private static void DropErrorTrackerDb(string dbAdminUser, string dbAdminPass, string existingDbName)
 		{
 			using (DbHelper db = new DbHelper(InternalGetConnectionString(dbAdminUser, dbAdminPass, existingDbName)))
@@ -82,12 +82,14 @@ namespace ErrorTrackerServer.Database.Creation
 		/// </summary>
 		/// <param name="dbAdminUser">PostgreSQL administrator username to use for initial setup.</param>
 		/// <param name="dbAdminPass">PostgreSQL administrator password to use for initial setup.</param>
-		/// <param name="existingDbName">Any existing PostgreSQL database name. "postgres" should exist by default in new installations.</param>
+		/// <param name="existingDbName">Any existing PostgreSQL database name that is not the ErrorTracker database itself. "postgres" should exist by default in new installations.</param>
 		public static void CreateInitialErrorTrackerDb(string dbAdminUser, string dbAdminPass, string existingDbName)
 		{
 			DropErrorTrackerDb(dbAdminUser, dbAdminPass, existingDbName);
 
-			string dbpw = StringUtil.GetRandomAlphaNumericString(23);
+			string dbpw = Settings.data.GetPostgresPassword();
+			if (string.IsNullOrEmpty(dbpw))
+				dbpw = StringUtil.GetRandomAlphaNumericString(23);
 			using (DbHelper db = new DbHelper(InternalGetConnectionString(dbAdminUser, dbAdminPass, existingDbName)))
 			{
 				try
@@ -114,7 +116,7 @@ namespace ErrorTrackerServer.Database.Creation
 				db._ExecuteNonQuery(SQL(Properties.Resources.DbSetup_D_DropPublicSchema));
 			}
 
-			Settings.data.postgresPassword = Convert.ToBase64String(ByteUtil.Utf8NoBOM.GetBytes(dbpw));
+			Settings.data.SetPostgresPassword(dbpw);
 			Settings.data.Save();
 		}
 		#endregion

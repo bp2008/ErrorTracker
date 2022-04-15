@@ -28,6 +28,8 @@ namespace ErrorTrackerServer
 			options.ServiceManagerButtons = new ButtonDefinition[]
 			{
 				new ButtonDefinition("Configure PostgreSQL", configureDb),
+				new ButtonDefinition("Backup Database", dbBackup),
+				new ButtonDefinition("Restore Database", dbRestore),
 				new ButtonDefinition("Migrate From SQLite", migrateSqlite)
 			};
 			AppInit.WindowsService<ErrorTrackerSvc>(options); // Most of the initialization work happens here, including loading of the Settings.data object. The method blocks, so further initialization should be done in the ErrorTrackerSvc constructor.
@@ -87,6 +89,28 @@ namespace ErrorTrackerServer
 
 			DatabaseSqliteMigrateForm migrationForm = new DatabaseSqliteMigrateForm();
 			migrationForm.ShowDialog();
+		}
+		private static void dbBackup(object sender, EventArgs e)
+		{
+			if (string.IsNullOrEmpty(Settings.data.postgresPassword))
+			{
+				MessageBox.Show("Please use the \"Configure PostgreSQL\" button first.");
+				return;
+			}
+
+			DatabaseBackupForm f = new DatabaseBackupForm();
+			f.ShowDialog();
+		}
+		private static void dbRestore(object sender, EventArgs e)
+		{
+			if (string.IsNullOrEmpty(Settings.data.postgresPassword))
+			{
+				MessageBox.Show("Please use the \"Configure PostgreSQL\" button first.");
+				return;
+			}
+
+			DatabaseRestoreForm f = new DatabaseRestoreForm();
+			f.ShowDialog();
 		}
 	}
 }

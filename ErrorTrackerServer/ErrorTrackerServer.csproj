@@ -129,6 +129,18 @@
     <Compile Include="BCrypt\BCrypt.cs" />
     <Compile Include="BCrypt\SaltParseException.cs" />
     <Compile Include="Code\BackupManager.cs" />
+    <Compile Include="Code\DatabaseBackupForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Code\DatabaseBackupForm.Designer.cs">
+      <DependentUpon>DatabaseBackupForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Code\DatabaseRestoreForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Code\DatabaseRestoreForm.Designer.cs">
+      <DependentUpon>DatabaseRestoreForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Code\DatabaseSetupForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -362,6 +374,12 @@
     <Content Include="www\styles\Dialog.css" />
     <Content Include="www\styles\theme.green.css" />
     <Content Include="www\styles\toastr.min.css" />
+    <EmbeddedResource Include="Code\DatabaseBackupForm.resx">
+      <DependentUpon>DatabaseBackupForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Code\DatabaseRestoreForm.resx">
+      <DependentUpon>DatabaseRestoreForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Code\DatabaseSetupForm.resx">
       <DependentUpon>DatabaseSetupForm.cs</DependentUpon>
     </EmbeddedResource>

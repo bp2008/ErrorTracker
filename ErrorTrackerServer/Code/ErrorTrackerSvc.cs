@@ -62,6 +62,21 @@ namespace ErrorTrackerServer
 					u.ClearAllPushNotificationSubscriptions();
 				Settings.data.Save();
 			}
+			if (string.IsNullOrWhiteSpace(Settings.data.postgresBinPath))
+			{
+				try
+				{
+					Process postgresProcess = Process.GetProcessesByName("postgres").FirstOrDefault();
+					if (postgresProcess != null)
+					{
+						FileInfo postgresExe = new FileInfo(postgresProcess.MainModule.FileName);
+						Settings.data.postgresBinPath = postgresExe.Directory.FullName;
+					}
+				}
+				catch { } // Can throw Win32Exception if we don't have enough permission
+				if (!string.IsNullOrWhiteSpace(Settings.data.postgresBinPath))
+					Settings.data.Save();
+			}
 			BPUtil.PasswordReset.StatelessPasswordResetBase.Initialize(Settings.data.privateSigningKey);
 
 			// Initialize User IDs.
@@ -136,16 +151,16 @@ namespace ErrorTrackerServer
 						Emailer.SendError(null, "Error when maintaining projects", ex);
 					}
 
-					//try
-					//{
-					//	BackupManager.RunTasks();
-					//}
-					//catch (ThreadAbortException) { throw; }
-					//catch (Exception ex)
-					//{
-					//	Logger.Debug(ex);
-					//	Emailer.SendError(null, "Error in BackupManager.RunTasks", ex);
-					//}
+					try
+					{
+						BackupManager.BackupNow();
+					}
+					catch (ThreadAbortException) { throw; }
+					catch (Exception ex)
+					{
+						Logger.Debug(ex);
+						Emailer.SendError(null, "Error in BackupManager.RunTasks", ex);
+					}
 
 					Thread.Sleep(TimeSpan.FromMinutes(30));
 				}

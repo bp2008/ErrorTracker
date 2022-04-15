@@ -226,6 +226,7 @@ namespace ErrorTrackerServer.Code
 			this.Controls.Add(this.txtPgsqlHost);
 			this.Controls.Add(this.label1);
 			this.Name = "DatabaseSetupForm";
+			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "PostgreSQL Database Setup Form";
 			this.Load += new System.EventHandler(this.DatabaseSetupForm_Load);
 			((System.ComponentModel.ISupportInitialize)(this.nudPgsqlPort)).EndInit();
