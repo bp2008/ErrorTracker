@@ -1,5 +1,10 @@
 ﻿<template>
-	<div class="editor">
+	<div :class="{ editor: true, showHelp }">
+		<div class="SettingsSettingsContainer">
+			<label>
+				<input type="checkbox" v-model="showHelp" /> Show Editor Help
+			</label>
+		</div>
 		<PropEdit ref="fields" v-for="pair in itemPairs" :key="pair.spec.key" :initialValue="pair.initialValue" :spec="pair.spec" @valueChanged="onValueChanged"
 				  class="propEdit" />
 	</div>
@@ -24,7 +29,8 @@
 		data()
 		{
 			return {
-				specMap: {}
+				specMap: {},
+				showHelp: false
 			};
 		},
 		computed:
@@ -67,6 +73,16 @@
 </script>
 
 <style scoped>
+	.SettingsSettingsContainer
+	{
+		display: inline-block;
+		background-color: #f7e5ac;
+		padding: 10px;
+		border: 1px solid #721f00;
+		border-radius: 5px;
+		margin-bottom: 20px;
+	}
+
 	.propEdit
 	{
 		margin-bottom: 10px;

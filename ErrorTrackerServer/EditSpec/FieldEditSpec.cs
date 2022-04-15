@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Markdig;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -48,6 +49,10 @@ namespace ErrorTrackerServer
 		/// Array of all possible enum values for this field.
 		/// </summary>
 		public string[] enumValues;
+		/// <summary>
+		/// HTML help.
+		/// </summary>
+		public string helpHtml;
 		public FieldEditSpec() { }
 		public FieldEditSpec(FieldInfo f, object objWithDefaultValues)
 		{
@@ -84,7 +89,12 @@ namespace ErrorTrackerServer
 			}
 			else
 				throw new Exception("EditSpec does not support type " + f.FieldType);
+
+			string md = CustomAttributeExtensions.GetCustomAttribute<HelpMd>(f)?.Markdown;
+			if (md != null)
+				helpHtml = Markdown.ToHtml(md, mdPipeline);
 		}
+		private static MarkdownPipeline mdPipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 		private static bool IsNumberType(Type t)
 		{
 			return t == typeof(sbyte) || t == typeof(byte)

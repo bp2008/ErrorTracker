@@ -1,29 +1,33 @@
 ﻿<template>
 	<div class="prop">
-		<label class="propLabel" :for="inputId" v-html="spec.labelHtml" v-if="spec.inputType !== 'checkbox'">
-		</label><span v-if="spec.inputType === 'range'">: {{myValue}}</span>
-		<div v-if="spec.inputType === 'select'">
-			<select v-model="myValue" @change="onChange">
-				<option v-for="v in spec.enumValues" :key="v">{{v}}</option>
-			</select>
-		</div>
-		<div v-else-if="spec.inputType === 'array'" class="arrayEditor">
-			<div class="arrayElement" v-for="(item, index) in arrayValues" :key="index">
-				<select v-if="spec.allowedValues" v-model="item.value" @change="onChange">
-					<option v-for="v in spec.allowedValues" :key="v">{{v}}</option>
-				</select>
-				<input v-else type="spec.arrayType" v-model="item.value" @change="onChange" />
-				<input type="button" value="-" @click="removeArrayItem(index)" />
-			</div>
-			<div>
-				<input type="button" value="+" @click="addArrayItem" />
-			</div>
-		</div>
-		<template v-else>
-			<input class="propInput" :id="inputId" ref="inputEle" v-model="myValue" :type="spec.inputType" :min="spec.min" :max="spec.max" @change="onChange" @dblclick="onDoubleClick" />
-			<label class="checkboxLabel" :for="inputId" v-html="spec.labelHtml" v-if="spec.inputType === 'checkbox'">
+		<div class="propWrapper">
+			<label class="propLabel" :for="inputId" v-html="spec.labelHtml" v-if="spec.inputType !== 'checkbox'">
 			</label>
-		</template>
+			<span v-if="spec.inputType === 'range'">: {{myValue}}</span>
+			<div v-if="spec.inputType === 'select'">
+				<select v-model="myValue" @change="onChange">
+					<option v-for="v in spec.enumValues" :key="v">{{v}}</option>
+				</select>
+			</div>
+			<div v-else-if="spec.inputType === 'array'" class="arrayEditor">
+				<div class="arrayElement" v-for="(item, index) in arrayValues" :key="index">
+					<select v-if="spec.allowedValues" v-model="item.value" @change="onChange">
+						<option v-for="v in spec.allowedValues" :key="v">{{v}}</option>
+					</select>
+					<input v-else type="spec.arrayType" v-model="item.value" @change="onChange" />
+					<input type="button" value="-" @click="removeArrayItem(index)" />
+				</div>
+				<div>
+					<input type="button" value="+" @click="addArrayItem" />
+				</div>
+			</div>
+			<template v-else>
+				<input class="propInput" :id="inputId" ref="inputEle" v-model="myValue" :type="spec.inputType" :min="spec.min" :max="spec.max" @change="onChange" @dblclick="onDoubleClick" />
+				<label class="checkboxLabel" :for="inputId" v-html="spec.labelHtml" v-if="spec.inputType === 'checkbox'">
+				</label>
+			</template>
+		</div>
+		<div class="help" v-if="spec.helpHtml" v-html="spec.helpHtml"></div>
 	</div>
 </template>
 
@@ -118,7 +122,32 @@
 	};
 </script>
 
+<style>
+	.prop .help code
+	{
+		background-color: #e9e9e9;
+		padding: 0px 3px;
+		border: 1px solid #d5d5d5;
+		margin: 1px;
+		font-family: Consolas, monospace;
+	}
+	.showHelp .help
+	{
+		display: block !important;
+	}
+</style>
 <style scoped>
+	.prop
+	{
+		display: flex;
+		flex-direction: column;
+	}
+
+	.propWrapper
+	{
+		max-width: 400px;
+		flex: 1;
+	}
 
 	.propLabel
 	{
@@ -144,5 +173,33 @@
 		display: block;
 		width: 100%;
 		box-sizing: border-box;
+	}
+
+	.help
+	{
+		display: none;
+		flex: 1;
+		padding: 0px 20px;
+		border-bottom: 2px solid #6ba7b5;
+		color: #000000;
+		background-color: #f5faff;
+		margin: 5px 10px 10px 10px;
+	}
+
+	@media (min-width: 600px)
+	{
+		.prop
+		{
+			flex-direction: row;
+			align-items: center;
+		}
+
+		.help
+		{
+			width: 100%;
+			border-left: 2px solid #6ba7b5;
+			border-bottom: none;
+			margin: 0px 10px 0px 20px;
+		}
 	}
 </style>
