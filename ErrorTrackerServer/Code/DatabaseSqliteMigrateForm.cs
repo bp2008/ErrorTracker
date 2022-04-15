@@ -140,7 +140,7 @@ namespace ErrorTrackerServer.Code
 								bw.ReportProgress(0, "Copying GlobalDb LoginRecords (" + pc.total + ")");
 								foreach (SQLiteMigration.Global.Model.LoginRecord r1 in records)
 								{
-									db2.AddLoginRecord(r1.UserName, r1.IPAddress, r1.SessionID);
+									db2.AddLoginRecord(r1.UserName, r1.IPAddress, r1.SessionID, r1.Date);
 									if (pc.Step())
 										bw.ReportProgress(pc.progress);
 								}

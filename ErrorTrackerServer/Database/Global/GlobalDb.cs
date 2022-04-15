@@ -61,9 +61,10 @@ namespace ErrorTrackerServer.Database.Global
 		/// <param name="userName">User name that was logged in. All lower case for effectively case-insensitive matching of user names.</param>
 		/// <param name="ipAddress">IP Address that provided credentials for the login.</param>
 		/// <param name="sessionId">Session ID that was assigned.</param>
-		public void AddLoginRecord(string userName, string ipAddress, string sessionId)
+		/// <param name="date">If not null, overrides the current date for logging the event.</param>
+		public void AddLoginRecord(string userName, string ipAddress, string sessionId, long? date = null)
 		{
-			Insert(new LoginRecord(userName.ToLower(), IPAddress.Parse(ipAddress), sessionId, TimeUtil.GetTimeInMsSinceEpoch()));
+			Insert(new LoginRecord(userName.ToLower(), IPAddress.Parse(ipAddress), sessionId, date != null ? date.Value : TimeUtil.GetTimeInMsSinceEpoch()));
 		}
 		/// <summary>
 		/// Gets a list of LoginRecord filtered by user name, ordered by date descending.
@@ -83,7 +84,7 @@ namespace ErrorTrackerServer.Database.Global
 		/// <returns></returns>
 		public List<LoginRecord> GetLoginRecordsByUserName(string userName, long startDate, long endDate)
 		{
-			if(startDate == 0 && endDate == 0)
+			if (startDate == 0 && endDate == 0)
 				return ExecuteQuery<LoginRecord>("SELECT * FROM ErrorTrackerGlobal.LoginRecord WHERE UserName = @usernamearg ORDER BY Date DESC", new { usernamearg = userName.ToLower() }).ToList();
 			else
 				return ExecuteQuery<LoginRecord>("SELECT * FROM ErrorTrackerGlobal.LoginRecord WHERE UserName = @usernamearg AND Date >= @startdate AND Date <= @enddate ORDER BY Date DESC", new { usernamearg = userName.ToLower(), startdate = startDate, enddate = endDate }).ToList();
