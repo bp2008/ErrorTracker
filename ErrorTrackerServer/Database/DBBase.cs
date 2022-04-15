@@ -226,7 +226,7 @@ namespace ErrorTrackerServer
 		{
 			try
 			{
-				return db.Delete(key);
+				return db.Delete<T>(key);
 			}
 			catch (Exception ex)
 			{

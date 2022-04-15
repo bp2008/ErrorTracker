@@ -803,8 +803,8 @@ namespace ErrorTrackerServer
 			RunInTransaction(() =>
 			{
 				filters = QueryAll<Filter>();
-				conditions = ExecuteQuery<FilterItemCount>("SELECT FilterId, COUNT(FilterConditionId) as Count FROM " + ProjectNameLower + ".FilterCondition WHERE Enabled = true GROUP BY FilterId").ToList();
-				actions = ExecuteQuery<FilterItemCount>("SELECT FilterId, COUNT(FilterActionId) as Count FROM " + ProjectNameLower + ".FilterAction WHERE Enabled = true GROUP BY FilterId").ToList();
+				conditions = ExecuteQuery<FilterItemCount>("SELECT FilterId, COUNT(FilterConditionId) as Count FROM " + ProjectNameLower + ".FilterCondition WHERE Enabled = true GROUP BY FilterId");
+				actions = ExecuteQuery<FilterItemCount>("SELECT FilterId, COUNT(FilterActionId) as Count FROM " + ProjectNameLower + ".FilterAction WHERE Enabled = true GROUP BY FilterId");
 			});
 			Dictionary<int, uint> filterConditionCounts = conditions.ToDictionary(fic => fic.FilterId, fic => fic.Count);
 			Dictionary<int, uint> filterActionCounts = actions.ToDictionary(fic => fic.FilterId, fic => fic.Count);
@@ -835,7 +835,7 @@ namespace ErrorTrackerServer
 			RunInTransaction(() =>
 			{
 				if (onlyEnabledFilters)
-					filters = ExecuteQuery<Filter>("SELECT * FROM " + ProjectNameLower + ".Filter WHERE Enabled = true").ToList();
+					filters = ExecuteQuery<Filter>("SELECT * FROM " + ProjectNameLower + ".Filter WHERE Enabled = true");
 				else
 					filters = QueryAll<Filter>();
 				conditions = QueryAll<FilterCondition>();
@@ -870,8 +870,8 @@ namespace ErrorTrackerServer
 				filters = Query<Filter>("FilterId", filterId);
 				if (filters.Count == 1)
 				{
-					conditions = ExecuteQuery<FilterCondition>("SELECT * FROM " + ProjectNameLower + ".FilterCondition WHERE FilterId = " + filterId).ToList();
-					actions = ExecuteQuery<FilterAction>("SELECT * FROM " + ProjectNameLower + ".FilterAction WHERE FilterId = " + filterId).ToList();
+					conditions = ExecuteQuery<FilterCondition>("SELECT * FROM " + ProjectNameLower + ".FilterCondition WHERE FilterId = " + filterId + " ORDER BY FilterConditionId");
+					actions = ExecuteQuery<FilterAction>("SELECT * FROM " + ProjectNameLower + ".FilterAction WHERE FilterId = " + filterId + " ORDER BY FilterActionId");
 				}
 			});
 			if (filters.Count != 1)
@@ -902,7 +902,7 @@ namespace ErrorTrackerServer
 			{
 				try
 				{
-					List<Filter> existingFilters = ExecuteQuery<Filter>("SELECT * FROM " + ProjectNameLower + ".Filter WHERE Name = @namearg", new { namearg = newFilter.Name }).ToList();
+					List<Filter> existingFilters = ExecuteQuery<Filter>("SELECT * FROM " + ProjectNameLower + ".Filter WHERE Name = @namearg", new { namearg = newFilter.Name });
 					if (existingFilters.Count > 0)
 						emsg = "A filter already exists with that name.";
 					else
