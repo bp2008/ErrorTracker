@@ -400,10 +400,6 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="..\..\..\ThirdParty\PetaPoco-1817f1f70bed769472ccd8a1c9bf25505513177a\PetaPoco\PetaPoco.csproj">
-      <Project>{34950558-c72c-4327-a380-98964a18df8a}</Project>
-      <Name>PetaPoco</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\BPUtil\BPUtil\BPUtil.csproj">
       <Project>{a4981d8d-debf-4b34-b9ce-ff25520a02b7}</Project>
       <Name>BPUtil</Name>
@@ -411,6 +407,10 @@
     <ProjectReference Include="..\ErrorTrackerClient\ErrorTrackerClient.csproj">
       <Project>{1c89beef-fd4d-41d0-b636-7f24b46cbfad}</Project>
       <Name>ErrorTrackerClient</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PetaPoco\PetaPoco.csproj">
+      <Project>{0bdce7c7-16e6-4c23-8342-ad64a1a3f4cf}</Project>
+      <Name>PetaPoco</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
