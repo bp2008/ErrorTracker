@@ -4,12 +4,20 @@ A light-weight event/error tracking service written in C#.  This is supposed to 
 ## Server Installation
 ErrorTrackerServer is a Windows Service with a built-in service manager GUI.
 
+### Prerequisite: PostgreSQL server
+
+Install a PostgreSQL database server somewhere that will be accessible to the ErrorTracker service (on the same machine is ideal).  Take note of the password you create for the `postgres` user.
+
+### ErrorTracker Installation
+
 1) Download a server release from the [releases page](https://github.com/bp2008/ErrorTracker/releases) and extract to a folder of your choosing.
 2) Run ErrorTrackerServer.exe
 
-![Screenshot](https://i.imgur.com/jtrAKDf.png)
+![Screenshot](https://user-images.githubusercontent.com/5639911/164052175-30a9122c-9d5b-40b7-b449-b5bf0852d0a5.png)
 
-3) Press "Install Service", then "Start Service".  
+3) Press "Configure PostgreSQL" and enter the password you created for the `postgres` user into the "Existing Admin Pass" field.  Modify other form fields if necessary, then click OK.  This will create a role (a.k.a. user) named "errortracker" in your PostgreSQL server and create a database named "ErrorTracker" owned by the "errortracker" role.
+
+4) Press "Install Service", then "Start Service".  
 
 A copy of the `Settings.cfg` file will be written in the program's data folder.
 
@@ -17,13 +25,13 @@ By default, the embedded web server listens on port `80` (HTTP) and `443` (HTTPS
 
 The configuration file also contains a number of other settings as well as your User List and Project List, but it is recommended not to edit these values directly.  The **web interface** provides safer access to the configuration.
 
-4) With the service running, access the **web interface** by connecting to your local machine on the specified HTTP port.  E.g. http://127.0.0.1/
+5) With the service running, access the **web interface** by connecting to your local machine on the specified HTTP port.  E.g. http://127.0.0.1/
 
-5) Log in with user name `admin` and password `admin`.
+6) Log in with user name `admin` and password `admin`.
 
-6) You should now be viewing the "Client Home" page, where you may **change the default admin password** to something more secure.
+7) You should now be viewing the "Client Home" page, where you may **change the default admin password** to something more secure.
 
-7) To edit the server configuration and manage users and projects, choose the "Admin" menu item at the top. See [Admin Settings Documentation](https://github.com/bp2008/ErrorTracker/wiki/Admin-Settings-Documentation) for more information about ErrorTracker Settings.
+8) To edit the server configuration and manage users and projects, choose the "Admin" menu item at the top.
 
 ## Client Installation
 `ErrorTrackerClient.dll` is a light-weight library built on .NET Framework 4.5.2 which makes it easy to robustly submit events to ErrorTracker.
