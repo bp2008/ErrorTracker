@@ -105,7 +105,7 @@ namespace ErrorTrackerServer
 					BackupRotate rotator = new BackupRotate(TimeSpan.FromDays(1));
 					DateTime[] backupsToDelete = rotator.DetermineBackupsToDelete(allBackups);
 					foreach (DateTime d in backupsToDelete)
-						File.Delete(Path.Combine(backupRoot.FullName, GetFilenameForDate(d)));
+						File.Delete(Path.Combine(backupRoot.FullName, GetFilenameForDate(d) + ".7z"));
 				}
 			}
 			catch (BackupException ex)
