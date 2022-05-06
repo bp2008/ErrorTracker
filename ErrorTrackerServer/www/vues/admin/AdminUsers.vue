@@ -16,14 +16,13 @@
 </template>
 
 <script>
-	import Editor from 'appRoot/vues/common/editor/Editor.vue';
 	import { GetUserData } from 'appRoot/api/UserData';
 	import { ModalDialog } from 'appRoot/scripts/ModalDialog';
 	import EditUser from 'appRoot/vues/admin/controls/EditUser.vue';
 	import LoginRecordsTable from 'appRoot/vues/common/loginrecords/LoginRecordsTable.vue';
 
 	export default {
-		components: { Editor, LoginRecordsTable },
+		components: { LoginRecordsTable },
 		data()
 		{
 			return {

@@ -25,15 +25,23 @@ namespace ErrorTrackerServer.Controllers
 			if (!request.Validate(out Project p, out ApiResponseBase error))
 				return Json(error);
 
+			BasicEventTimer bet = new BasicEventTimer();
 			SearchResultsResponse response = new SearchResultsResponse();
-			using (FilterEngine fe = new FilterEngine(p.Name))
+			using (DB db = new DB(p.Name))
 			{
-				HashSet<long> readEventIds = new HashSet<long>(fe.db.GetAllReadEventIds(session.GetUser().UserId));
+				bet.Start("Build HashSet of Read Event IDs");
+				HashSet<long> readEventIds = new HashSet<long>(db.GetAllReadEventIds(session.GetUser().UserId));
 
-				response.events = fe.Search(request.query, request.folderId, session.GetUser().GetEventListCustomTagKey(p.Name))
+				bet.Start("Search");
+				IEnumerable<Event> events = db.BasicSearch(request.folderId, session.GetUser().GetEventListCustomTagKey(p.Name), request.query);
+
+				bet.Start("Produce Event Summary");
+				response.events = events
 					.Select(ev => ProduceEventSummary(ev, readEventIds))
 					.ToList();
+				bet.Stop();
 			}
+			Context.AddResponseHeader("Server-Timing", bet.ToServerTimingHeader());
 			return Json(response);
 		}
 		public ActionResult SearchAdvanced()
@@ -43,15 +51,23 @@ namespace ErrorTrackerServer.Controllers
 			if (!request.Validate(out Project p, out ApiResponseBase error))
 				return Json(error);
 
+			BasicEventTimer bet = new BasicEventTimer();
 			SearchResultsResponse response = new SearchResultsResponse();
-			using (FilterEngine fe = new FilterEngine(p.Name))
+			using (DB db = new DB(p.Name))
 			{
-				HashSet<long> readEventIds = new HashSet<long>(fe.db.GetAllReadEventIds(session.GetUser().UserId));
+				bet.Start("Build HashSet of Read Event IDs");
+				HashSet<long> readEventIds = new HashSet<long>(db.GetAllReadEventIds(session.GetUser().UserId));
 
-				response.events = fe.AdvancedSearch(request.conditions, request.matchAll, request.folderId, session.GetUser().GetEventListCustomTagKey(p.Name))
+				bet.Start("Search");
+				IEnumerable<Event> events = db.AdvancedSearch(request.folderId, session.GetUser().GetEventListCustomTagKey(p.Name), request.conditions, request.matchAll);
+
+				bet.Start("Produce Event Summary");
+				response.events = events
 					.Select(ev => ProduceEventSummary(ev, readEventIds))
 					.ToList();
+				bet.Stop();
 			}
+			Context.AddResponseHeader("Server-Timing", bet.ToServerTimingHeader());
 			return Json(response);
 		}
 		private EventSummary ProduceEventSummary(Event ev, HashSet<long> readEventIds)

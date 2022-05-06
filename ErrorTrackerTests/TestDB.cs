@@ -294,5 +294,15 @@ namespace ErrorTrackerTests
 				}
 			}
 		}
+		[TestMethod]
+		public void TestSqlBuilder()
+		{
+			string result = DB.TestSqlBuilder();
+			Assert.IsTrue(result.Contains("Event"));
+			Assert.IsTrue(result.Contains("WHERE"));
+			Assert.IsTrue(result.Contains("one"));
+			Assert.IsTrue(result.Contains("two"));
+			Assert.IsTrue(result.Contains("three"));
+		}
 	}
 }

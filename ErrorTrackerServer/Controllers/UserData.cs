@@ -113,7 +113,7 @@ namespace ErrorTrackerServer.Controllers
 				return new FieldEditSpec(f, uoDefault);
 			}).ToList();
 			FieldEditSpec allowedProjects = editSpec.First(s => s.key == "AllowedProjects");
-			allowedProjects.allowedValues = Settings.data.GetAllProjects().Select(p=>p.Name).ToArray();
+			allowedProjects.allowedValues = Settings.data.GetAllProjects().Select(p => p.Name).ToArray();
 		}
 	}
 	public class SetUserDataRequest : ApiRequestBase
@@ -144,10 +144,15 @@ namespace ErrorTrackerServer.Controllers
 
 	public class UserDataObject
 	{
+		[HelpMd("User Name")]
 		public string Name;
+		[HelpMd("User's email address.  Providing this grants access to the ability to change their own password.")]
 		public string Email;
+		[HelpMd("Enter a password here to set the password, otherwise leave it blank.")]
 		public string SetPassword;
+		[HelpMd("If true, this user will be allowed to use the administrator interface and make changes to the server configuration.")]
 		public bool IsAdmin = false;
+		[HelpMd("List of projects this user is allowed to access.")]
 		public string[] AllowedProjects;
 		public UserDataObject() { }
 		public UserDataObject(User u)

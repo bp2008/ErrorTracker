@@ -1,7 +1,7 @@
 ﻿<template>
 	<div :class="{ condition: true, disabled: !condition.Enabled }">
 		<div class="topRow">
-			<label title="Disabled conditions are ignored when the filter runs"><input type="checkbox" v-model="condition.Enabled" /> Enabled</label>
+			<label title="Disabled conditions are ignored when the filter runs. It will be as if they do not exist."><input type="checkbox" v-model="condition.Enabled" /> Enabled</label>
 			<input type="button" value="Delete" @click="$emit('delete', condition)" :title="deleteBtnTooltip" />
 		</div>
 		<div>

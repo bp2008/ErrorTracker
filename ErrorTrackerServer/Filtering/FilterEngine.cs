@@ -369,7 +369,7 @@ namespace ErrorTrackerServer.Filtering
 			else if (keyLower == "subtype")
 				valueToTest = e.SubType;
 			else if (keyLower == "date")
-				valueToTest = TimeUtil.DateTimeFromEpochMS(e.Date).ToString("yyyy/MM/dd hh/mm/ss tt");
+				valueToTest = TimeUtil.DateTimeFromEpochMS(e.Date).ToString("yyyy/MM/dd hh:mm:ss tt");
 			else if (keyLower == "folder")
 			{
 				if (folderStructure.Value.TryGetNode(e.FolderId, out FolderStructure eventFolder))
@@ -549,6 +549,7 @@ namespace ErrorTrackerServer.Filtering
 		#region Search Feature
 		/// <summary>
 		/// Given a search query, returns a list of matching events.  Each returned event will have its Tags populated from the DB if there was no match in the base event fields -- so you may want to populate or depopulate the tags on all these events before serializing to send to the client.
+		/// Uses clientside matching, so this is slow.
 		/// </summary>
 		/// <param name="query"></param>
 		/// <param name="folderId">Folder ID to search.  If -1, all events are searched.</param>
@@ -595,9 +596,10 @@ namespace ErrorTrackerServer.Filtering
 		}
 
 		/// <summary>
-		/// Given a set of filter conditions, returns a list of matching events.  The Tags of each event may or may not be populated by this search depending to
+		/// Given a set of filter conditions, returns a list of matching events.  The Tags of each event may or may not be populated by this search depending on the requirements of the conditions.
+		/// Uses clientside matching, so this is slow.
 		/// </summary>
-		/// <param name="conditions">Array of filter conditions to evaluate. The FilterCondition.Enabled field is disregarded.</param>
+		/// <param name="conditions">Array of filter conditions to evaluate. Disabled conditions are disregarded.</param>
 		/// <param name="matchAll">If true, only one of the conditions needs to match. If false, all conditions need to match.</param>
 		/// <param name="folderId">Folder ID to search.  If -1, all events are searched.</param>
 		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
@@ -605,10 +607,11 @@ namespace ErrorTrackerServer.Filtering
 		public List<Event> AdvancedSearch(FilterCondition[] conditions, bool matchAll, int folderId, string eventListCustomTagKey)
 		{
 			List<Event> matches = new List<Event>();
-			if (conditions == null || conditions.Length == 0)
+			if (conditions == null)
 				return matches;
-			foreach (FilterCondition condition in conditions)
-				condition.Enabled = true;
+			conditions = conditions.Where(c => c.Enabled).ToArray();
+			if (conditions.Length == 0)
+				return matches;
 			foreach (Event e in GetEventsForSearchDeferred(folderId, eventListCustomTagKey))
 			{
 				if (!matchAll)

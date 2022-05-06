@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -564,6 +565,201 @@ namespace ErrorTrackerServer
 		public long CountEventsWithHashValue(string HashValue)
 		{
 			return ExecuteScalar<long>("SELECT COUNT(EventId) FROM " + ProjectNameLower + ".Event WHERE HashValue = @hasharg", new { hasharg = HashValue });
+		}
+		#endregion
+		#region Search
+		/// <summary>
+		/// Gets all events that have a value containing the search query.
+		/// </summary>
+		/// <param name="folderId">Folder ID.  Negative ID matches All Folders.</param>
+		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
+		/// <param name="query">Search query. Not a regular expression.</param>
+		/// <returns></returns>
+		public List<Event> BasicSearch(int folderId, string eventListCustomTagKey, string query)
+		{
+			string rxQuery = Regex.Escape(query);
+
+			List<string> selections = new List<string>();
+			selections.Add("e.*");
+			if (!string.IsNullOrWhiteSpace(eventListCustomTagKey))
+				selections.Add("t.Value AS CTag");
+
+			PetaPoco.Sql request = PetaPoco.Sql.Builder
+				.Select(string.Join(", ", selections))
+				.From(ProjectNameLower + ".Event e");
+
+			if (!string.IsNullOrWhiteSpace(eventListCustomTagKey))
+				request.LeftJoin(ProjectNameLower + ".Tag t").On("e.EventId = t.EventId AND t.Key = @0", eventListCustomTagKey);
+
+			if (folderId > -1)
+				request.Where("e.FolderId = @0", folderId);
+
+			if (!string.IsNullOrEmpty(query))
+			{
+				StringBuilder sbEventTypeMatcher = new StringBuilder();
+				foreach (EventType et in Enum.GetValues(typeof(EventType)))
+				{
+					if (et.ToString().Contains(query))
+					{
+						if (sbEventTypeMatcher.Length == 0)
+							sbEventTypeMatcher.Append("(");
+						else
+							sbEventTypeMatcher.Append(" OR ");
+						sbEventTypeMatcher.Append("e.EventType = " + (int)et);
+					}
+				}
+				string conditionClause = "(e.Message ~* @0) OR (e.SubType ~* @1)";
+				if (sbEventTypeMatcher.Length != 0)
+				{
+					sbEventTypeMatcher.Append(")");
+					conditionClause += " OR " + sbEventTypeMatcher.ToString();
+				}
+				conditionClause += " OR EXISTS(SELECT * FROM " + ProjectNameLower + ".Tag tc WHERE tc.EventId = e.EventId AND tc.Value ~* @2)";
+				request.Where(conditionClause, rxQuery, rxQuery, rxQuery);
+			}
+
+			if (!string.IsNullOrWhiteSpace(eventListCustomTagKey))
+				return ExecuteQuery<EventWithCustomTagValue>(request).Cast<Event>().ToList();
+			else
+				return ExecuteQuery<Event>(request);
+		}
+		/// <summary>
+		/// Gets all events that have a value containing the search query.
+		/// </summary>
+		/// <param name="folderId">Folder ID.  Negative ID matches All Folders.</param>
+		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
+		/// <param name="conditions">Array of filter conditions to evaluate. The FilterCondition.Enabled field is disregarded.</param>
+		/// <param name="matchAll">If true, only one of the conditions needs to match. If false, all conditions need to match.</param>
+		/// <returns></returns>
+		public List<Event> AdvancedSearch(int folderId, string eventListCustomTagKey, FilterCondition[] conditions, bool matchAll)
+		{
+			// Check conditions array
+			if (conditions == null)
+				return new List<Event>();
+			conditions = conditions.Where(c => c.Enabled).ToArray();
+			if (conditions.Length == 0)
+				return new List<Event>();
+
+			// Begin building query
+			List<string> selections = new List<string>();
+			selections.Add("e.*");
+			if (!string.IsNullOrWhiteSpace(eventListCustomTagKey))
+				selections.Add("t.Value AS CTag");
+
+			PetaPoco.Sql request = PetaPoco.Sql.Builder
+				.Select(string.Join(", ", selections))
+				.From(ProjectNameLower + ".Event e");
+
+			if (!string.IsNullOrWhiteSpace(eventListCustomTagKey))
+				request.LeftJoin(ProjectNameLower + ".Tag t").On("e.EventId = t.EventId AND t.Key = @0", eventListCustomTagKey);
+
+			bool didAddWhereClause = false;
+			if (folderId > -1)
+			{
+				request.Where("e.FolderId = @0", folderId);
+				didAddWhereClause = true;
+			}
+
+			// Create SQL that applies the conditions
+			HashSet<string> reservedKeys = new HashSet<string>(new string[] {
+				"message", "subtype"/*, "eventtype", "date", "folder", "color" << NOT AVAILABLE CURRENTLY because these are not strings in the database. */
+			});
+			// First, figure out how each condition translates to SQL
+			List<Tuple<string, string>> eventConditions = new List<Tuple<string, string>>();
+			List<Tuple<string, string, string>> tagConditions = new List<Tuple<string, string, string>>();
+			foreach (FilterCondition condition in conditions)
+			{
+				string op = condition.Invert ? "!~*" : "~*";
+				string pattern = condition.Query;
+				switch (condition.Operator)
+				{
+					case FilterConditionOperator.Contains:
+						if (!condition.Regex)
+							pattern = Regex.Escape(pattern);
+						break;
+					case FilterConditionOperator.Equals:
+						if (condition.Regex)
+						{
+							if (!pattern.StartsWith("^"))
+								pattern = "^" + pattern;
+							if (!pattern.EndsWith("$"))
+								pattern = pattern + "$";
+						}
+						else
+							pattern = "^" + Regex.Escape(pattern) + "$";
+						break;
+					case FilterConditionOperator.StartsWith:
+						if (condition.Regex)
+						{
+							if (!pattern.StartsWith("^"))
+								pattern = "^" + pattern;
+						}
+						else
+							pattern = "^" + Regex.Escape(pattern);
+						break;
+					case FilterConditionOperator.EndsWith:
+						if (condition.Regex)
+						{
+							if (!pattern.EndsWith("$"))
+								pattern = pattern + "$";
+						}
+						else
+							pattern = Regex.Escape(pattern) + "$";
+						break;
+					default:
+						throw new ApplicationException("Unrecognized FilterConditionOperator: " + condition.Operator + ". Unable to perform advanced search.");
+				}
+				if (reservedKeys.Contains(condition.TagKey.ToLower()))
+					eventConditions.Add(new Tuple<string, string>("e." + condition.TagKey.ToLower() + " " + op + " @0", pattern));
+				else
+					tagConditions.Add(new Tuple<string, string, string>("t.Key = @0 AND t.Value " + op + " @1", condition.TagKey, pattern));
+			}
+
+			// Now create the SQL WHERE clause.
+			string joiner = matchAll ? "AND" : "OR";
+			// We may have 0 or more event conditions and 0 or more tag conditions, which complicates how we construct the SQL string.
+			if (!didAddWhereClause)
+			{
+				request.Append("WHERE ("); // Open main condition block
+				didAddWhereClause = true;
+			}
+			else
+				request.Append("AND ("); // Open main condition block
+			bool firstCondition = true;
+			foreach (Tuple<string, string> eventCondition in eventConditions)
+			{
+				request.Append("  " + (firstCondition ? "" : (joiner + " ")) + eventCondition.Item1, eventCondition.Item2);
+				firstCondition = false;
+			}
+
+			if (tagConditions.Count > 0)
+			{
+				// Add a subquery to check for a matching tag.
+				// Begin EXISTS check, Open section B.
+				request.Append("  " + (firstCondition ? "" : (joiner + " ")) + "EXISTS (\n"
+					+ "    SELECT * FROM " + ProjectNameLower + ".Tag t WHERE t.EventId = e.EventId \n"
+					+ "      AND (");
+
+				// Set firstCondition to true because we're starting a new condition block.
+				firstCondition = true;
+				foreach (Tuple<string, string, string> tagCondition in tagConditions)
+				{
+					request.Append("        " + (firstCondition ? "" : (joiner + " ")) + "(" + tagCondition.Item1 + ")", tagCondition.Item2, tagCondition.Item3);
+					firstCondition = false;
+				}
+				request.Append("      )"); // Close tag condition block
+				request.Append("  )"); // Close EXISTS block
+			}
+
+			if (didAddWhereClause)
+				request.Append(")"); // Close main condition block
+			else
+				throw new ApplicationException("DB.AdvancedSearch started with " + conditions.Length + " enabled conditions but did not produce any SQL conditions");
+
+			if (!string.IsNullOrWhiteSpace(eventListCustomTagKey))
+				return ExecuteQuery<EventWithCustomTagValue>(request).Cast<Event>().ToList();
+			else
+				return ExecuteQuery<Event>(request);
 		}
 		#endregion
 		#region Folder Management
@@ -1208,25 +1404,17 @@ namespace ErrorTrackerServer
 			return QueryAll<ReadState>();
 		}
 		#endregion
-		#region Database Management
-		/// <summary>
-		/// Copies the entire database to the specified directory, using <see cref="DbFilename"/> for the file name.
-		/// </summary>
-		/// <param name="directoryPath">Path to the directory where the copy should be placed.</param>
-		public string CopyToDirectory(string directoryPath)
+		public static string TestSqlBuilder()
 		{
-			throw new NotImplementedException();
-			//object transactionLock = GetTransactionLock();
-			//lock (transactionLock)
-			//{
-			//	FileInfo fi = new FileInfo(DbFileFullPath);
-			//	if (!Directory.Exists(directoryPath))
-			//		Directory.CreateDirectory(directoryPath);
-			//	string destinationPath = Path.Combine(directoryPath, DbFilename);
-			//	fi.CopyTo(destinationPath);
-			//	return destinationPath;
-			//}
+			string arg1 = "one";
+			string arg2 = "two";
+			string arg3 = "three";
+			PetaPoco.Sql request = PetaPoco.Sql.Builder
+				.Select("*")
+				.From("Event e")
+				.Where("e.Message = @0", arg1)
+				.Append("AND (e.SubType = @0 || e.SubType = @1)", arg2, arg3);
+			return request.SQL + "\r\n\r\n" + string.Join(", ", request.Arguments);
 		}
-		#endregion
 	}
 }

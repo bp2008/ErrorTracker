@@ -34,7 +34,7 @@
 				<div class="notesBody">
 					<ul>
 						<li>In <b>conditions</b>, the <code class="inline">Field Name</code> and <code class="inline">Query</code> fields are case-insensitive.</li>
-						<li>A <b>condition's</b> <code class="inline">Field Name</code> field can be <code class="inline">EventType</code>, <code class="inline">SubType</code>, <code class="inline">Message</code>, <code class="inline">Date</code>, <code class="inline">Folder</code>, <code class="inline">Color</code>, or any application-specific tag key. An empty <code class="inline">Field Name</code> will fail the condition.</li>
+						<li>A <b>condition's</b> <code class="inline">Field Name</code> field can be <!--<code class="inline">EventType</code>,--> <code class="inline">SubType</code>, <code class="inline">Message</code><!--, <code class="inline">Date</code>, <code class="inline">Folder</code>, <code class="inline">Color</code>-->, or any application-specific tag key. An empty <code class="inline">Field Name</code> will fail the condition. <code class="inline">EventType</code>, <code class="inline">Date</code>, <code class="inline">Folder</code>, and <code class="inline">Color</code> are not available to be searched at this time using Advanced Search because they are not stored as strings in the database.</li>
 					</ul>
 				</div>
 			</div>

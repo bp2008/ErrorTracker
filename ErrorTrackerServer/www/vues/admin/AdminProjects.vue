@@ -12,14 +12,13 @@
 </template>
 
 <script>
-	import Editor from 'appRoot/vues/common/editor/Editor.vue';
 	import { GetProjectData } from 'appRoot/api/ProjectData';
 	import { ModalDialog } from 'appRoot/scripts/ModalDialog';
 	import EditProject from 'appRoot/vues/admin/controls/EditProject.vue';
 	import AddProject from 'appRoot/vues/admin/controls/AddProject.vue';
 
 	export default {
-		components: { Editor },
+		components: { },
 		data()
 		{
 			return {
