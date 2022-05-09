@@ -33,7 +33,7 @@ namespace ErrorTrackerServer.Controllers
 				HashSet<long> readEventIds = new HashSet<long>(db.GetAllReadEventIds(session.GetUser().UserId));
 
 				bet.Start("Search");
-				IEnumerable<Event> events = db.BasicSearch(request.folderId, session.GetUser().GetEventListCustomTagKey(p.Name), request.query);
+				IEnumerable<Event> events = db.SqlSearch(request.folderId, session.GetUser().GetEventListCustomTagKey(p.Name), request.query);
 
 				bet.Start("Produce Event Summary");
 				response.events = events

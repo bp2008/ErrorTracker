@@ -112,8 +112,8 @@ namespace ErrorTrackerServer
 		protected override void OnStart(string[] args)
 		{
 			Logger.Info(ServiceName + " " + Globals.AssemblyVersion + " is starting.");
-			srv.Start();
 			thrMaintainProjects.Start();
+			srv.Start();
 		}
 
 		protected override void OnStop()
@@ -122,11 +122,27 @@ namespace ErrorTrackerServer
 			srv.Stop();
 			thrMaintainProjects.Abort();
 		}
-
+		/// <summary>
+		/// Current status of DB migration, or null if migration is done.
+		/// </summary>
+		public static bool LoadingDatabases { get; private set; } = true;
 		private void maintainProjects()
 		{
 			try
 			{
+				foreach (Project p in Settings.data.GetAllProjects())
+				{
+					int maxAgeDays = p.MaxEventAgeDays;
+					if (maxAgeDays > 0)
+					{
+						long ageCutoff = TimeUtil.GetTimeInMsSinceEpoch(DateTime.UtcNow.AddDays(-1 * maxAgeDays));
+						using (DB db = new DB(p.Name))
+						{
+							db.DeleteEventsOlderThan(ageCutoff);
+						}
+					}
+				}
+				LoadingDatabases = false;
 				while (true)
 				{
 					try

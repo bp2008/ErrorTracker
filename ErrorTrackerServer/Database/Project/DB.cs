@@ -569,13 +569,54 @@ namespace ErrorTrackerServer
 		#endregion
 		#region Search
 		/// <summary>
+		/// Queries for all events that contain the SQL Full-Text Search query within their Tags, Message, EventType, SubType, Color, or Date fields.
+		/// </summary>
+		/// <param name="folderId">Folder ID.  Negative ID matches All Folders.</param>
+		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
+		/// <param name="query">Search query. Not a regular expression.</param>
+		/// <returns></returns>
+		public List<Event> SqlSearch(int folderId, string eventListCustomTagKey, string query)
+		{
+			List<string> selections = new List<string>();
+			selections.Add("e.*");
+			if (!string.IsNullOrWhiteSpace(eventListCustomTagKey))
+				selections.Add("t.Value AS CTag");
+
+			PetaPoco.Sql request = PetaPoco.Sql.Builder
+				.Select(string.Join(", ", selections))
+				.From(ProjectNameLower + ".Event e");
+
+			if (!string.IsNullOrWhiteSpace(eventListCustomTagKey))
+				request.LeftJoin(ProjectNameLower + ".Tag t").On("e.EventId = t.EventId AND t.Key = @0", eventListCustomTagKey);
+
+			if (folderId > -1)
+				request.Where("e.FolderId = @0", folderId);
+
+			request.Where(@"e.EventId IN
+(
+		SELECT e.EventId
+		FROM %PR.Event e
+		WHERE to_tsvector('english', %PR.EventTypeToString(EventType) || ': ' || SubType || ': ' || %PR.ColorToString(Color) || ': ' || %PR.DateToString(Date) || ': ' || Message)
+			@@@ websearch_to_tsquery('english', @0)
+	UNION
+		SELECT EventId
+		FROM %PR.Tag
+		WHERE to_tsvector('english', Value) @@@ websearch_to_tsquery('english', @0)
+)".Replace("%PR", ProjectNameLower), query);
+
+			if (!string.IsNullOrWhiteSpace(eventListCustomTagKey))
+				return ExecuteQuery<EventWithCustomTagValue>(request).Cast<Event>().ToList();
+			else
+				return ExecuteQuery<Event>(request);
+		}
+		/// <summary>
 		/// Gets all events that have a value containing the search query.
 		/// </summary>
 		/// <param name="folderId">Folder ID.  Negative ID matches All Folders.</param>
 		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <param name="query">Search query. Not a regular expression.</param>
 		/// <returns></returns>
-		public List<Event> BasicSearch(int folderId, string eventListCustomTagKey, string query)
+		public List<Event> BasicDumbSearch(int folderId, string eventListCustomTagKey, string query)
 		{
 			string rxQuery = Regex.Escape(query);
 
@@ -662,7 +703,7 @@ namespace ErrorTrackerServer
 
 			// Create SQL that applies the conditions
 			HashSet<string> reservedKeys = new HashSet<string>(new string[] {
-				"message", "subtype"/*, "eventtype", "date", "folder", "color" << NOT AVAILABLE CURRENTLY because these are not strings in the database. */
+				"message", "subtype", "eventtype", "color", "date"/*, "folder" << NOT AVAILABLE CURRENTLY because these are not strings in the database. */
 			});
 			// First, figure out how each condition translates to SQL
 			List<Tuple<string, string>> eventConditions = new List<Tuple<string, string>>();
@@ -710,7 +751,18 @@ namespace ErrorTrackerServer
 						throw new ApplicationException("Unrecognized FilterConditionOperator: " + condition.Operator + ". Unable to perform advanced search.");
 				}
 				if (reservedKeys.Contains(condition.TagKey.ToLower()))
-					eventConditions.Add(new Tuple<string, string>("e." + condition.TagKey.ToLower() + " " + op + " @0", pattern));
+				{
+					string columnSelector = "e." + condition.TagKey.ToLower();
+
+					if (condition.TagKey.Equals("EventType", StringComparison.OrdinalIgnoreCase))
+						columnSelector = ProjectNameLower + ".EventTypeToString(" + columnSelector + ")";
+					else if (condition.TagKey.Equals("Color", StringComparison.OrdinalIgnoreCase))
+						columnSelector = ProjectNameLower + ".ColorToString(" + columnSelector + ")";
+					else if (condition.TagKey.Equals("Date", StringComparison.OrdinalIgnoreCase))
+						columnSelector = ProjectNameLower + ".DateToString(" + columnSelector + ")";
+
+					eventConditions.Add(new Tuple<string, string>(columnSelector + " " + op + " @0", pattern));
+				}
 				else
 					tagConditions.Add(new Tuple<string, string, string>("t.Key = @0 AND t.Value " + op + " @1", condition.TagKey, pattern));
 			}

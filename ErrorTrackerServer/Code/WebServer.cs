@@ -53,6 +53,11 @@ namespace ErrorTrackerServer
 				p.writeFailure("500 Internal Server Error", GetDbReadynessString());
 				return;
 			}
+			if (ErrorTrackerSvc.LoadingDatabases)
+			{
+				p.writeFailure("500 Internal Server Error", "Service is loading…");
+				return;
+			}
 
 			Settings.data.RemoveAppPath(p);
 
@@ -130,6 +135,11 @@ namespace ErrorTrackerServer
 			if (!IsPostgreSQLDbReady())
 			{
 				p.writeFailure("500 Internal Server Error", GetDbReadynessString());
+				return;
+			}
+			if (ErrorTrackerSvc.LoadingDatabases)
+			{
+				p.writeFailure("500 Internal Server Error", "Service is loading…");
 				return;
 			}
 

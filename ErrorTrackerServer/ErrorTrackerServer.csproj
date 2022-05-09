@@ -245,6 +245,7 @@
     <None Include="app.config" />
     <Content Include="Database\Global\SQL\2\GlobalSetup_2.sql" />
     <Content Include="Database\Project\SQL\6\ProjectSetup_6_1_Tables.sql" />
+    <Content Include="Database\Project\SQL\7\ProjectSetup_7_1.sql" />
     <Content Include="Database\Creation\SQL\DbSetup_C_CommentDb.sql" />
     <Content Include="Database\Creation\SQL\DbSetup_D_DropPublicSchema.sql" />
     <Content Include="Database\Creation\SQL\DbSetup_B_CreateDb.sql" />

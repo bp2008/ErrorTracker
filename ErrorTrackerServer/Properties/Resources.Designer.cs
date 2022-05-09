@@ -19,7 +19,7 @@ namespace ErrorTrackerServer.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -123,7 +123,7 @@ namespace ErrorTrackerServer.Properties {
         ///);
         ///ALTER TABLE ErrorTrackerGlobal.DbVersion
         ///	OWNER to %DBUSER;
-        ///INSERT INTO ErrorTrackerGlobal.&quot;DbVersion (CurrentVersion) VALUES (2);
+        ///INSERT INTO ErrorTrackerGlobal.DbVersion (CurrentVersion) VALUES (2);
         ///
         ///
         ///
@@ -137,7 +137,7 @@ namespace ErrorTrackerServer.Properties {
         ///	Date bigint NOT NULL
         ///);
         ///ALTER TABLE ErrorTrackerGlobal.LoginRecord
-        ///	OWNER to  [rest of string was truncated]&quot;;.
+        ///	OWNER to % [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string GlobalSetup_2 {
             get {
@@ -177,6 +177,41 @@ namespace ErrorTrackerServer.Properties {
         internal static string ProjectSetup_6_1_Tables {
             get {
                 return ResourceManager.GetString("ProjectSetup_6_1_Tables", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to CREATE OR REPLACE FUNCTION %PR.EventTypeToString(EventType smallint)
+        ///    RETURNS character varying
+        ///    LANGUAGE &apos;sql&apos;
+        ///    IMMUTABLE 
+        ///AS $BODY$
+        ///SELECT CASE
+        ///    WHEN EventType = 0 THEN &apos;Error&apos;
+        ///    WHEN EventType = 1 THEN &apos;Info&apos;
+        ///    WHEN EventType = 2 THEN &apos;Debug&apos;    
+        ///    ELSE &apos;Unknown&apos;    
+        ///    END;
+        ///$BODY$;
+        ///
+        ///ALTER FUNCTION %PR.EventTypeToString(smallint)
+        ///    OWNER TO %DBUSER;
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///CREATE OR REPLACE FUNCTION %PR.ColorToString(color integer)
+        ///    RETURNS character varying
+        ///    LANGUAG [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string ProjectSetup_7_1 {
+            get {
+                return ResourceManager.GetString("ProjectSetup_7_1", resourceCulture);
             }
         }
     }
