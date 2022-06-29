@@ -6,6 +6,7 @@ import TextInputPopup from 'appRoot/vues/common/controls/TextInputPopup.vue';
 import ColorInputPopup from 'appRoot/vues/common/controls/ColorInputPopup.vue';
 import SelectFilterPopup from 'appRoot/vues/client/controls/SelectFilterPopup.vue';
 import SelectFolderPopup from 'appRoot/vues/client/controls/SelectFolderPopup.vue';
+import SelectProjectPopup from 'appRoot/vues/client/controls/SelectProjectPopup.vue';
 import GeolocateIPPopup from 'appRoot/vues/common/controls/GeolocateIPPopup.vue';
 import ProgressPopup from 'appRoot/vues/common/controls/ProgressPopup.vue';
 
@@ -224,6 +225,17 @@ export function SelectFolderDialog(projectName, selectedFolderId, dialogAllowsAl
 {
 	let args = { projectName, selectedFolderId, isDialog: true, dialogAllowsAllFolders };
 	return ModalDialog(SelectFolderPopup, args);
+}
+/**
+ * Opens a dialog box where the user can select a Project. Returns a promise that resolves with the selected Project, or a falsy value if canceled.  The promise does not reject.
+ * @param {String} selectedProjectName Name of the project that should be selected upon dialog opening.
+ * @param {String} title Custom title to display. Defaults to "Select a Project".
+ * @returns {Promise} Returns a promise which resolves when the dialog closes. Does not reject.
+ */
+export function SelectProjectDialog(selectedProjectName, title)
+{
+	let args = { selectedProjectName, title };
+	return ModalDialog(SelectProjectPopup, args);
 }
 /**
  * Opens a dialog box which loads geolocation information for an IP Address. Returns a promise which resolves when the dialog closes. Does not reject.

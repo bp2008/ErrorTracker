@@ -60,14 +60,14 @@ namespace ErrorTrackerServer.Controllers
 				ev.SetTag(tag.Key, tag.Value);
 
 			List<SubmitResult> results = new List<SubmitResult>();
-			results.Add(InsertIntoProject(p, ev));
+			results.Add(InsertIntoProject(Context, p, ev));
 			if (p.CloneTo != null)
 			{
 				foreach (string pName in p.CloneTo)
 				{
 					Project pCloneTarget = Settings.data.GetProject(pName);
 					if (pCloneTarget != null && pCloneTarget != p)
-						results.Add(InsertIntoProject(pCloneTarget, ev));
+						results.Add(InsertIntoProject(Context, pCloneTarget, ev));
 				}
 			}
 			if (results.Any(r => r == SubmitResult.FatalError))
@@ -92,11 +92,13 @@ namespace ErrorTrackerServer.Controllers
 		/// <param name="p">Project to insert the event into.</param>
 		/// <param name="eventOriginal">Event to clone and insert.  The event object is not changed by this method.</param>
 		/// <returns>Returns a string that is null if there was no error, or an error code such as "FILTER ERROR" if there was an error.</returns>
-		private SubmitResult InsertIntoProject(Project p, Event eventOriginal)
+		public static SubmitResult InsertIntoProject(RequestContext context, Project p, Event eventOriginal)
 		{
 			try
 			{
 				Event ev = JsonConvert.DeserializeObject<Event>(JsonConvert.SerializeObject(eventOriginal));
+				ev.FolderId = 0;
+				ev.Color = new Event().Color;
 				using (FilterEngine fe = new FilterEngine(p.Name))
 				{
 					BasicEventTimer bet = fe.AddEventAndRunEnabledFilters(ev);
@@ -111,19 +113,19 @@ namespace ErrorTrackerServer.Controllers
 				string timing = "\r\n" + ex.timer.ToString("\r\n");
 				Util.SubmitLog(p.Name, "Event Submission Failed with FilterException" + timing + "\r\n" + ex.ToString());
 				Logger.Debug(ex, "FilterEngine Error" + timing);
-				Emailer.SendError(Context, "FilterEngine Error" + timing, ex);
+				Emailer.SendError(context, "FilterEngine Error" + timing, ex);
 				return SubmitResult.FilterError;
 			}
 			catch (Exception ex)
 			{
 				Util.SubmitLog(p.Name, "Event Submission Failed with Exception\r\n" + ex.ToString());
 				Logger.Debug(ex, "Unhandled exception thrown when inserting event into project \"" + p.Name + "\".");
-				Emailer.SendError(Context, "Unhandled exception thrown when inserting event into project \"" + p.Name + "\".", ex);
+				Emailer.SendError(context, "Unhandled exception thrown when inserting event into project \"" + p.Name + "\".", ex);
 				return SubmitResult.FatalError;
 			}
 		}
 	}
-	enum SubmitResult
+	public enum SubmitResult
 	{
 		OK,
 		FilterError,

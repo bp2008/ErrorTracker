@@ -27,17 +27,27 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public bool Validate(out Project project, out ApiResponseBase apiError)
 		{
+			return Validate(projectName, GetSession(), out project, out apiError);
+		}
+
+		/// <summary>
+		/// <para>Validates a project-based request from the client, returning true if okay and setting the [project] parameter.</para>
+		/// <para>If the project is not found or is not allowed for the user, returns false and sets the [apiError] parameter.</para>
+		/// </summary>
+		/// <returns></returns>
+		public static bool Validate(string projectName, ServerSession session, out Project project, out ApiResponseBase apiError)
+		{
 			Project p = Settings.data.GetProject(projectName);
 			if (p == null)
 			{
 				project = null;
-				apiError = new ApiResponseBase(false, "Project not found");
+				apiError = new ApiResponseBase(false, "Project \"" + projectName + "\" not found.");
 				return false;
 			}
-			else if (!GetSession().GetUser().IsProjectAllowed(p.Name))
+			else if (!session.GetUser().IsProjectAllowed(p.Name))
 			{
 				project = null;
-				apiError = new ApiResponseBase(false, "Project not accessible to your user account");
+				apiError = new ApiResponseBase(false, "Project \"" + projectName + "\" not accessible to your user account.");
 				return false;
 			}
 			else

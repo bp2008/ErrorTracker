@@ -1,6 +1,6 @@
 ﻿<template>
 	<div :class="{ pageRoot: true, noMargin: !!validatedProjectName }">
-		<div v-if="(error)" class="error">{{error}}</div>
+		<div v-if="error" class="error">{{error}}</div>
 		<div v-else-if="loading" class="loading"><ScaleLoader /> Loading…</div>
 		<div v-else-if="validatedProjectName">
 			<ProjectDisplay :projectName="validatedProjectName"

@@ -266,6 +266,7 @@
     <None Include="www\vues\admin\AdminSettings.vue" />
     <None Include="www\vues\admin\AdminUsers.vue" />
     <None Include="www\vues\client\controls\ControlBar.vue" />
+    <None Include="www\vues\client\controls\SelectProjectPopup.vue" />
     <None Include="www\vues\client\controls\SelectFolderPopup.vue" />
     <None Include="www\vues\client\search\AdvancedSearchHome.vue" />
     <None Include="www\vues\client\filters\ClientFiltersHome.vue" />

@@ -229,6 +229,39 @@ namespace ErrorTrackerServer.Controllers
 
 			return Json(new ApiResponseBase(true));
 		}
+		/// <summary>
+		/// Copies the events with the given IDs and submits them to a different project.
+		/// </summary>
+		/// <returns></returns>
+		public ActionResult CopyEventsToProject()
+		{
+			CopyEventsToProjectRequest request = ApiRequestBase.ParseRequest<CopyEventsToProjectRequest>(this);
+
+			if (!request.Validate(out Project pSrc, out ApiResponseBase error))
+				return Json(error);
+
+			if (!ProjectRequestBase.Validate(request.targetProjectName, request.GetSession(), out Project pDest, out ApiResponseBase error2))
+				return Json(error2);
+
+			using (DB dbSrc = new DB(pSrc.Name))
+			{
+				List<long> fatalErrorEventIds = new List<long>();
+				List<long> filterErrorEventIds = new List<long>();
+				foreach (int eventIdSrc in request.eventIds)
+				{
+					Event ev = dbSrc.GetEvent(eventIdSrc);
+					SubmitResult result = Submit.InsertIntoProject(Context, pDest, ev);
+					if (result == SubmitResult.FatalError)
+						fatalErrorEventIds.Add(eventIdSrc);
+					else if (result == SubmitResult.FilterError)
+						filterErrorEventIds.Add(eventIdSrc);
+				}
+				if (fatalErrorEventIds.Count == 0 && filterErrorEventIds.Count == 0)
+					return Json(new ApiResponseBase(true));
+				else
+					return Json(new CopyEventsToProjectFailResponse(fatalErrorEventIds, filterErrorEventIds));
+			}
+		}
 	}
 
 	/// <summary>
@@ -311,6 +344,28 @@ namespace ErrorTrackerServer.Controllers
 	public class MoveEventsRequest : EventIdsRequest
 	{
 		public int newFolderId;
+	}
+	public class CopyEventsToProjectRequest : EventIdsRequest
+	{
+		public string targetProjectName;
+	}
+	public class CopyEventsToProjectFailResponse : ApiResponseBase
+	{
+		/// <summary>
+		/// Event IDs that failed to be copied to the target project.
+		/// </summary>
+		public long[] fatalErroredEventIds;
+		/// <summary>
+		/// Event IDs that failed to be filtered by the target project.
+		/// </summary>
+		public long[] filterErroredEventIds;
+		public CopyEventsToProjectFailResponse(IEnumerable<long> fatalErroredEventIds, IEnumerable<long> filterErroredEventIds)
+			: base(false, "Failed to copy events [" + string.Join(", ", fatalErroredEventIds)
+				  + "]. Failed to filter events [" + string.Join(", ", filterErroredEventIds) + "].")
+		{
+			this.fatalErroredEventIds = fatalErroredEventIds.ToArray();
+			this.filterErroredEventIds = filterErroredEventIds.ToArray();
+		}
 	}
 	public class MoveEventsMapRequest : ProjectRequestBase
 	{

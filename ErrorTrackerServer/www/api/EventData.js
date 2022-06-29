@@ -55,3 +55,7 @@ export function SetEventListCustomTagKey(projectName, eventListCustomTagKey)
 {
 	return ExecAPI("EventData/SetEventListCustomTagKey", { projectName, eventListCustomTagKey });
 }
+export function CopyEventsToProject(projectName, eventIds, projectDest)
+{
+	return ExecAPI("EventData/CopyEventsToProject", { projectName, eventIds, targetProjectName: projectDest });
+}

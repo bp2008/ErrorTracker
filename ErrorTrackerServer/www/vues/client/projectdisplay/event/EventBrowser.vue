@@ -54,6 +54,9 @@
 				<li v-show="event.data && !event.data.Read">
 					<a role="button" @click.prevent="markRead(event.data, true)">Mark as read</a>
 				</li>
+				<li v-show="event.data">
+					<a role="button" @click.prevent="copyEventToProject(event.data)">Copy to other project</a>
+				</li>
 				<li v-if="nextUndo">
 					<a role="button" @click.prevent="undo()">Undo {{nextUndo.description}}</a>
 				</li>
@@ -69,12 +72,11 @@
 </template>
 
 <script>
-	import { GetEvents, SetEventsColor, DeleteEvents, SetEventsReadState } from 'appRoot/api/EventData';
+	import { GetEvents, SetEventsColor, DeleteEvents, SetEventsReadState, CopyEventsToProject } from 'appRoot/api/EventData';
 	import { VueContext } from 'vue-context';
 	import EventNode from 'appRoot/vues/client/projectdisplay/event/EventNode.vue';
 	import EventBus from 'appRoot/scripts/EventBus';
-	import { ColorInputDialog } from 'appRoot/scripts/ModalDialog';
-	import { ModalConfirmDialog } from '../../../../scripts/ModalDialog';
+	import { ColorInputDialog, ModalConfirmDialog, SelectProjectDialog, ProgressDialog } from 'appRoot/scripts/ModalDialog';
 	import { SearchSimple, SearchAdvanced } from 'appRoot/api/SearchData';
 
 	export default {
@@ -435,6 +437,34 @@
 					.catch(err =>
 					{
 						toaster.error(data.error);
+					});
+			},
+			copyEventToProject(event)
+			{
+				let selectedEvents = this.selectedEventIdsArray;
+				if (selectedEvents.indexOf(event.EventId) === -1)
+					selectedEvents = [event.EventId]; // The right-clicked event is not one of the selected events.
+
+				SelectProjectDialog("", "Copy " + selectedEvents.length + " events to a Project")
+					.then(projectDest =>
+					{
+						if (projectDest)
+						{
+							let progressDialog = ProgressDialog("Copying Events…");
+							CopyEventsToProject(this.projectName, selectedEvents, projectDest)
+								.then(data =>
+								{
+									progressDialog.close();
+									toaster.success(selectedEvents.length + " events have been copied.");
+								})
+								.catch(err =>
+								{
+									progressDialog.close();
+									toaster.error(err);
+								});
+						}
+						else
+							toaster.info("Canceled event copy.");
 					});
 			},
 			selectAll()
