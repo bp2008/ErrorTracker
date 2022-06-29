@@ -130,19 +130,6 @@ namespace ErrorTrackerServer
 		{
 			try
 			{
-				foreach (Project p in Settings.data.GetAllProjects())
-				{
-					int maxAgeDays = p.MaxEventAgeDays;
-					if (maxAgeDays > 0)
-					{
-						long ageCutoff = TimeUtil.GetTimeInMsSinceEpoch(DateTime.UtcNow.AddDays(-1 * maxAgeDays));
-						using (DB db = new DB(p.Name))
-						{
-							db.DeleteEventsOlderThan(ageCutoff);
-						}
-					}
-				}
-				LoadingDatabases = false;
 				while (true)
 				{
 					try
@@ -159,6 +146,7 @@ namespace ErrorTrackerServer
 								}
 							}
 						}
+						LoadingDatabases = false;
 					}
 					catch (ThreadAbortException) { throw; }
 					catch (Exception ex)
@@ -167,18 +155,23 @@ namespace ErrorTrackerServer
 						Emailer.SendError(null, "Error when maintaining projects", ex);
 					}
 
-					try
+					if (LoadingDatabases)
+						Thread.Sleep(TimeSpan.FromMinutes(0.5));
+					else
 					{
-						BackupManager.BackupNow();
-					}
-					catch (ThreadAbortException) { throw; }
-					catch (Exception ex)
-					{
-						Logger.Debug(ex);
-						Emailer.SendError(null, "Error in BackupManager.RunTasks", ex);
-					}
+						try
+						{
+							BackupManager.BackupNow();
+						}
+						catch (ThreadAbortException) { throw; }
+						catch (Exception ex)
+						{
+							Logger.Debug(ex);
+							Emailer.SendError(null, "Error in BackupManager.RunTasks", ex);
+						}
 
-					Thread.Sleep(TimeSpan.FromMinutes(30));
+						Thread.Sleep(TimeSpan.FromMinutes(30));
+					}
 				}
 			}
 			catch (ThreadAbortException) { }
