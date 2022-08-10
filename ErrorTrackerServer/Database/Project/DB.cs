@@ -957,7 +957,7 @@ namespace ErrorTrackerServer
 				if (root.TryGetNode(folderId, out FolderStructure current))
 				{
 					if (current.Parent.GetChild(newFolderName) == null)
-						ExecuteNonQuery("UPDATE " + ProjectNameLower + ".Folder SET Name = newname WHERE FolderId = " + folderId, new { newname = newFolderName });
+						ExecuteNonQuery("UPDATE " + ProjectNameLower + ".Folder SET Name = @newname WHERE FolderId = " + folderId, new { newname = newFolderName });
 					else
 						eMsg = "A folder with this name already exists in the location.";
 				}
