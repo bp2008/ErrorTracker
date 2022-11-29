@@ -786,15 +786,43 @@ namespace ErrorTrackerServer
 
 			if (tagConditions.Count > 0)
 			{
-				foreach (Tuple<string, string, string> tagCondition in tagConditions)
+				if (matchAll)
 				{
+					foreach (Tuple<string, string, string> tagCondition in tagConditions)
+					{
+						// Add a subquery to check for a matching tag.
+						// Begin EXISTS check, Open section B.
+						request.Append("  " + (firstCondition ? "" : (joiner + " ")) + "EXISTS (\n"
+						+ "    SELECT * FROM " + ProjectNameLower + ".Tag t WHERE t.EventId = e.EventId \n"
+						+ "      AND (");
+						firstCondition = false;
+						request.Append("        (" + tagCondition.Item1 + ")", tagCondition.Item2, tagCondition.Item3);
+						request.Append("      )"); // Close tag condition block
+						request.Append("  )"); // Close EXISTS block
+					}
+				}
+				else
+				{
+					///////////////////////////////////////////
+					// Special optimization for "OR" joiner. //
+					///////////////////////////////////////////
+					// This optimization only works when using "OR" for the [joiner], and cuts about 33% off the execution time for a long query because we do fewer SELECTs.
+					// The "matchAll" conditional check could be deleted along with this else branch, if the optimized code path becomes a maintenance hassle.
+					///////////////////////////////////////////
+
 					// Add a subquery to check for a matching tag.
 					// Begin EXISTS check, Open section B.
 					request.Append("  " + (firstCondition ? "" : (joiner + " ")) + "EXISTS (\n"
-					+ "    SELECT * FROM " + ProjectNameLower + ".Tag t WHERE t.EventId = e.EventId \n"
-					+ "      AND (");
-					firstCondition = false;
-					request.Append("        (" + tagCondition.Item1 + ")", tagCondition.Item2, tagCondition.Item3);
+						+ "    SELECT * FROM " + ProjectNameLower + ".Tag t WHERE t.EventId = e.EventId \n"
+						+ "      AND (");
+
+					// Set firstCondition to true because we're starting a new condition block.
+					firstCondition = true;
+					foreach (Tuple<string, string, string> tagCondition in tagConditions)
+					{
+						request.Append("        " + (firstCondition ? "" : (joiner + " ")) + "(" + tagCondition.Item1 + ")", tagCondition.Item2, tagCondition.Item3);
+						firstCondition = false;
+					}
 					request.Append("      )"); // Close tag condition block
 					request.Append("  )"); // Close EXISTS block
 				}
