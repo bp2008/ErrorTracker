@@ -1,9 +1,12 @@
 ﻿<template>
 	<div class="loginRecordsRoot">
 		<div v-if="error">{{error}}</div>
-		<div v-if="loading" class="loading"><ScaleLoader /> Loading…</div>
-		<div v-else>
+		<div v-else-if="loading" class="loading"><ScaleLoader /> Loading…</div>
+		<div v-else-if="rows">
 			<vue-good-table :columns="columns" :rows="rows" @on-row-click="rowClick" />
+		</div>
+		<div v-else>
+			No data.
 		</div>
 	</div>
 </template>
