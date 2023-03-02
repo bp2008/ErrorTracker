@@ -2,9 +2,9 @@
 	<div class="loginRoot">
 		<div class="loginPanel">
 			<div class="systemName">{{systemName}}</div>
-			<input type="text" class="txtUser" v-model="user" placeholder="User Name" v-on:keyup.enter="TryLogin" />
-			<input type="password" class="txtPass" v-model="pass" placeholder="Password" v-on:keyup.enter="TryLogin" />
-			<input type="button" class="btnLogin" value="Log in" :disabled="!loginEnabled" @click="TryLogin" @keyup.space.enter="TryLogin" />
+			<input type="text" class="txtUser" v-model="user" placeholder="User Name" v-on:keyup.enter="UserNameEnter" autocomplete="username" />
+			<input type="password" class="txtPass" v-model="pass" placeholder="Password" v-on:keyup.enter="TryLogin" ref="passwordField" autocomplete="current-password" />
+			<input type="button" class="btnLogin" value="Log in" :disabled="loggingIn" @click="TryLogin" @keyup.space.enter="TryLogin" />
 			<div class="forgotPwLinkWrapper" v-if="emailConfigured">
 				<router-link :to="forgotPwRoute" class="forgotPwLink">Forgot Password?</router-link>
 			</div>
@@ -13,6 +13,8 @@
 	</div>
 </template>
 <script>
+	import { ProgressDialog } from 'appRoot/scripts/ModalDialog';
+
 	export default {
 		components: {},
 		data()
@@ -21,7 +23,7 @@
 				systemName: appContext.systemName,
 				user: "",
 				pass: "",
-				loginEnabled: true,
+				loggingIn: false,
 				error: null,
 				emailConfigured: appContext.emailConfigured
 			};
@@ -37,10 +39,11 @@
 		{
 			TryLogin()
 			{
-				if (!this.loginEnabled)
+				if (this.loggingIn)
 					return;
-				this.loginEnabled = false;
+				this.loggingIn = true;
 				this.error = null;
+				let progressDialog = ProgressDialog("Logging in…");
 				this.$store.dispatch("Login", { user: this.user, pass: this.pass })
 					.then(data =>
 					{
@@ -53,8 +56,24 @@
 					.catch(err =>
 					{
 						this.error = err;
-						this.loginEnabled = true;
+					})
+					.finally(() =>
+					{
+						this.loggingIn = false;
+						progressDialog.close();
 					});
+			},
+			UserNameEnter()
+			{
+				if (this.$refs.passwordField)
+				{
+					this.$refs.passwordField.focus();
+					if (this.pass)
+					{
+						this.$refs.passwordField.setSelectionRange(this.pass.length, this.pass.length);
+						this.TryLogin();
+					}
+				}
 			}
 		}
 	}
