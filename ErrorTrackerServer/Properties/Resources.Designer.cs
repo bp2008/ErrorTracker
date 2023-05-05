@@ -19,7 +19,7 @@ namespace ErrorTrackerServer.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -212,6 +212,23 @@ namespace ErrorTrackerServer.Properties {
         internal static string ProjectSetup_7_1 {
             get {
                 return ResourceManager.GetString("ProjectSetup_7_1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to CREATE TABLE %PR.FilterApplied
+        ///(
+        ///	EventId bigint NOT NULL,
+        ///	FilterId integer NOT NULL,
+        ///	Date bigint NOT NULL
+        ///);
+        ///ALTER TABLE %PR.FilterApplied
+        ///	OWNER to %DBUSER;
+        ///CREATE INDEX FilterApplied_EventId ON %PR.FilterApplied USING btree (EventId ASC NULLS LAST);.
+        /// </summary>
+        internal static string ProjectSetup_8_1 {
+            get {
+                return ResourceManager.GetString("ProjectSetup_8_1", resourceCulture);
             }
         }
     }

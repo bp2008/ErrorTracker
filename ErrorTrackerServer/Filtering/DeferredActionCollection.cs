@@ -60,6 +60,17 @@ namespace ErrorTrackerServer.Filtering
 		{
 			readStateMap.Set(ev.EventId, read);
 		}
+		private List<FilterApplied> rememberFilterAppliedList = new List<FilterApplied>();
+		/// <summary>
+		/// Schedules the addition of a row to the FilterApplied table, remembering that a filter was matched to an event.
+		/// </summary>
+		/// <param name="ev">Event object.</param>
+		/// <param name="filterId">Filter ID that was matched to the event.</param>
+		/// <param name="date">Date that the filter was matched to the event (milliseconds since unix epoch).</param>
+		public void RememberFilterApplied(Event ev, int filterId, long date)
+		{
+			rememberFilterAppliedList.Add(new FilterApplied() { EventId = ev.EventId, FilterId = filterId, Date = date });
+		}
 		/// <summary>
 		/// Executes all scheduled actions and resets the state of this collection so it can be reused in a new filtering operation.  Returns true if all scheduled actions executed successfully.
 		/// </summary>
@@ -144,6 +155,10 @@ namespace ErrorTrackerServer.Filtering
 						}
 					}
 				}
+
+				// RememberFilterApplied
+				IEnumerable<FilterApplied> newFilterAppliedRows = rememberFilterAppliedList.Where(fa => !eventIdsToDelete.Contains(fa.EventId));
+				db.AddOrUpdateFilterAppliedRows(newFilterAppliedRows);
 
 				return success;
 			}

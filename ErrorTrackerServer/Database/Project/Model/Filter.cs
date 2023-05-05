@@ -53,6 +53,10 @@ namespace ErrorTrackerServer.Database.Project.Model
 		public Filter filter;
 		public FilterCondition[] conditions;
 		public FilterAction[] actions;
+		/// <summary>
+		/// Number of events this filter's actions have been applied against.  If -1, the count has not been queried.
+		/// </summary>
+		public long eventCount = -1;
 	}
 	public class FilterSummary
 	{

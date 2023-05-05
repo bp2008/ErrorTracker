@@ -10,7 +10,8 @@
 				<div v-if="filter">
 					<div class="inputSection properties">
 						<label class="inputLabel">Filter Properties</label>
-						<div>ID: {{filter.filter.FilterId}}</div>
+						<div><b>ID:</b> {{filter.filter.FilterId}}</div>
+						<div title="Since software version 2.3, this filter's actions have been run this many times."><b>Affected Event Count:</b> {{filter.eventCount}}</div>
 						<div>
 							<input type="text" v-model="filter.filter.Name" class="primaryInput" placeholder="Name" title="Name" /> <span class="hint">← Filter Name</span>
 						</div>

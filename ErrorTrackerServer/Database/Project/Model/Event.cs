@@ -62,6 +62,11 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// This value is not persisted in the database and must be recomputed when retrieving full event records.
 		/// </summary>
 		public long MatchingEvents;
+		/// <summary>
+		/// Array of filters that have applied their actions to this event.  This field should be null if the FilterApplied table has not been queried.
+		/// </summary>
+		public FilterAppliedRecord[] FiltersApplied;
+
 		public override string ToString()
 		{
 			return EventType + ": " + SubType + ": " + Message;

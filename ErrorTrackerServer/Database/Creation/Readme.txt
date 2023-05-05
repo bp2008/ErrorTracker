@@ -31,9 +31,9 @@ The first time any instance of ErrorTracker accesses a schema, it should check t
 New ErrorTracker releases requiring database structure updates shall:
 
 * Add a subfolder named for the next version number.
-* Add all necessary migration script files (*.psql) to this subfolder, named for their purpose and including their DbVersion number in the name.
+* Add all necessary migration script files (*.sql or *.psql) to this subfolder, named for their purpose and including their DbVersion number in the name.
 * Add the update script files to the project's resources file (ErrorTrackerServer > Properties > Resources.resx) with FileType "Text" and Encoding UTF-8.
-* In DbCreation.cs, code must be added to migrate from the previous DB version to the new DB version, which may involve custom C# code and/or executing the *.psql script files that were added, if any.  When finished, it must be ensured that the DbVersion.CurrentVersion number has been set appropriately.
+* In DbCreation.cs, code must be added to migrate from the previous DB version to the new DB version, which may involve custom C# code and/or executing the *.sql or *.psql script files that were added, if any.  When finished, it must be ensured that the DbVersion.CurrentVersion number has been set appropriately.
 * Ideally, the entire migration should occur within a transaction at the Serialized isolation level, such that it will be rolled back if there is any error.
 
 When a schema is added to the ErrorTracker database, it is added at its initial version, then any available migrations are performed sequentially in order to bring the version number up-to-date.

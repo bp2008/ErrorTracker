@@ -31,6 +31,20 @@
 					</tbody>
 				</table>
 			</div>
+			<div class="filtersAppliedHeading title" :style="titleBarStyle">
+				Filters Applied to this Event
+			</div>
+			<div class="tagContainer">
+				<table class="tagTable">
+					<tbody>
+						<tr class="tagRow" v-for="(fa, index) in event.FiltersApplied" :key="index">
+							<td class="filterAppliedCell"><router-link :to="getRouteToFilterDetails(fa.FilterId)">#{{fa.FilterId}}</router-link></td>
+							<td class="filterAppliedCell">{{eventDateFormat(new Date(fa.Date))}}</td>
+							<td class="filterAppliedCell">{{fa.FilterName}}</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 		</div>
 		<div v-else class="noEvent">
 			[no event selected]
@@ -240,6 +254,10 @@
 					{
 						toaster.error(err.message);
 					});
+			},
+			getRouteToFilterDetails(filterId)
+			{
+				return { name: "clientFilters", query: { p: this.projectName }, params: { filterId } };
 			}
 		},
 		watch:
@@ -376,7 +394,6 @@
 	.tagKey
 	{
 		width: 150px;
-		flex: 0 0 auto;
 		font-weight: bold;
 		color: #777777;
 		padding: 7px 5px 7px 10px;
@@ -384,14 +401,35 @@
 
 	.tagValue
 	{
-		flex: 1 1 auto;
 		padding: 7px 10px 7px 5px;
 		white-space: pre-wrap;
+		word-break: break-word;
 	}
 
 	.tagKey,
-	.tagValue
+	.tagValue,
+	.filterAppliedCell
 	{
 		border-bottom: 1px solid #e4e4e4;
 	}
+
+		.filterAppliedCell:nth-child(1)
+		{
+			width: 50px;
+			font-weight: bold;
+			padding: 7px 5px 7px 10px;
+		}
+
+		.filterAppliedCell:nth-child(2)
+		{
+			width: 200px;
+			font-weight: bold;
+			padding: 7px 5px 7px 5px;
+		}
+
+		.filterAppliedCell:nth-child(3)
+		{
+			padding: 7px 10px 7px 5px;
+			word-break: break-word;
+		}
 </style>

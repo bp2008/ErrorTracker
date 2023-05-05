@@ -326,16 +326,23 @@ namespace ErrorTrackerServer.Filtering
 				// Execute Actions if Conditions were sufficiently met.
 				if (conditionsMet)
 				{
-					foreach (FilterAction action in full.actions)
+					if (full.actions.Length > 0)
 					{
-						try
+						// Remember that this filter applied actions to the event.
+						DeferredExecAction(new FilterAction() { FilterId = full.filter.FilterId, Enabled = true, Operator = FilterActionType.RememberFilterApplied }, e, isEventSubmission);
+
+						// Apply actions configured in the filter.
+						foreach (FilterAction action in full.actions)
 						{
-							if (DeferredExecAction(action, e, isEventSubmission))
-								return true;
-						}
-						catch (Exception ex)
-						{
-							Logger.Debug(ex);
+							try
+							{
+								if (DeferredExecAction(action, e, isEventSubmission))
+									return true;
+							}
+							catch (Exception ex)
+							{
+								Logger.Debug(ex);
+							}
 						}
 					}
 				}
@@ -538,6 +545,11 @@ namespace ErrorTrackerServer.Filtering
 						Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + action.FilterId + " Action " + action.FilterActionId + " (MarkUnread) deferred");
 
 					deferredActions.SetReadState(e, false);
+					return false;
+				}
+				else if (action.Operator == FilterActionType.RememberFilterApplied)
+				{
+					deferredActions.RememberFilterApplied(e, action.FilterId, TimeUtil.GetTimeInMsSinceEpoch());
 					return false;
 				}
 				else

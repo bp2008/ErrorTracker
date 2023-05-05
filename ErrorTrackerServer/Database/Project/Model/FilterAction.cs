@@ -59,6 +59,10 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// <summary>
 		/// When processing multiple filters against an event, this filter action causes all remaining unexecuted filters to be canceled. 
 		/// </summary>
-		MarkUnread = 5
+		MarkUnread = 5,
+		/// <summary>
+		/// Just add a FilterApplied row to remember that a filter was applied to the Event.  This action type is for internal use and should not be available via any public interface.
+		/// </summary>
+		RememberFilterApplied = 255
 	}
 }

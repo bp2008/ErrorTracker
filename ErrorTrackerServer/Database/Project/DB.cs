@@ -170,6 +170,7 @@ namespace ErrorTrackerServer
 				affectedRows = ExecuteNonQuery("DELETE FROM " + ProjectNameLower + ".Event WHERE EventId IN (" + string.Join(",", eventIds) + ")");
 				ExecuteNonQuery("DELETE FROM " + ProjectNameLower + ".Tag WHERE EventId IN (" + string.Join(",", eventIds) + ")");
 				ExecuteNonQuery("DELETE FROM " + ProjectNameLower + ".ReadState WHERE EventId IN (" + string.Join(",", eventIds) + ")");
+				RemoveFilterAppliedRowsForEvents(eventIds);
 			});
 			if (affectedRows == eventIds.Length)
 				return true;
@@ -216,7 +217,7 @@ namespace ErrorTrackerServer
 			}
 		}
 		/// <summary>
-		/// Gets the event with the specified ID, or null if the event is not found.
+		/// Gets the event (fully loaded) with the specified ID, or null if the event is not found.
 		/// </summary>
 		/// <param name="eventId"></param>
 		/// <returns></returns>
@@ -231,6 +232,7 @@ namespace ErrorTrackerServer
 				{
 					tags = ExecuteQuery<Tag>("SELECT * FROM " + ProjectNameLower + ".Tag WHERE EventId = " + eventId).ToList();
 					events[0].MatchingEvents = ExecuteScalar<long>("SELECT COUNT(EventId) FROM " + ProjectNameLower + ".Event WHERE HashValue = @hasharg", new { hasharg = events[0].HashValue });
+					events[0].FiltersApplied = GetFiltersAppliedByEvent(eventId);
 				}
 			});
 			if (events.Count > 0)
@@ -1138,6 +1140,7 @@ namespace ErrorTrackerServer
 			List<Filter> filters = null;
 			List<FilterCondition> conditions = null;
 			List<FilterAction> actions = null;
+			long eventCount = 0;
 			RunInTransaction(() =>
 			{
 				filters = Query<Filter>("FilterId", filterId);
@@ -1145,6 +1148,7 @@ namespace ErrorTrackerServer
 				{
 					conditions = ExecuteQuery<FilterCondition>("SELECT * FROM " + ProjectNameLower + ".FilterCondition WHERE FilterId = " + filterId + " ORDER BY FilterConditionId");
 					actions = ExecuteQuery<FilterAction>("SELECT * FROM " + ProjectNameLower + ".FilterAction WHERE FilterId = " + filterId + " ORDER BY FilterActionId");
+					eventCount = GetFiltersAppliedCountByFilter(filterId);
 				}
 			});
 			if (filters.Count != 1)
@@ -1153,6 +1157,7 @@ namespace ErrorTrackerServer
 			f.filter = filters[0];
 			f.conditions = conditions.ToArray();
 			f.actions = actions.ToArray();
+			f.eventCount = eventCount;
 			return f;
 		}
 		/// <summary>
@@ -1430,7 +1435,7 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public bool RemoveReadState(int userId, long eventId)
 		{
-			int affectedRows = ExecuteNonQuery("DELETE FROM " + ProjectNameLower + ".ReadState WHERE UserId = " + userId + " AND EventId =" + eventId);
+			int affectedRows = ExecuteNonQuery("DELETE FROM " + ProjectNameLower + ".ReadState WHERE UserId = " + userId + " AND EventId = " + eventId);
 			return affectedRows == 1;
 		}
 		/// <summary>
@@ -1479,6 +1484,116 @@ namespace ErrorTrackerServer
 		public List<ReadState> GetAllReadStates()
 		{
 			return QueryAll<ReadState>();
+		}
+		#endregion
+		#region FilterApplied Management
+		/// <summary>
+		/// Remembers that a filter was applied to an event at the given date. If a row with this eventId and filterId already exists, its date is updated.
+		/// </summary>
+		/// <param name="eventId">ID of the Event which was affected.</param>
+		/// <param name="filterId">ID of the Filter which was applied.</param>
+		/// <param name="date">Timestamp when the filter matched the event, in milliseconds since the unix epoch.</param>
+		public void AddOrUpdateFilterApplied(long eventId, int filterId, long date)
+		{
+			long[] existingDates = GetFilterAppliedDates(eventId, filterId);
+			if (existingDates.Length == 0)
+				Insert(new FilterApplied() { FilterId = filterId, EventId = eventId, Date = date });
+			else
+				ExecuteNonQuery("UPDATE " + ProjectNameLower + ".FilterApplied SET Date = " + date + " WHERE EventId = " + eventId + " AND FilterId = " + filterId);
+		}
+		/// <summary>
+		/// Adds or updates the given FilterApplied objects in the FilterApplied table.  
+		/// </summary>
+		/// <param name="eventId">ID of the Event which was affected.</param>
+		/// <param name="filterId">ID of the Filter which was applied.</param>
+		/// <param name="date">Timestamp when the filter matched the event, in milliseconds since the unix epoch.</param>
+		public void AddOrUpdateFilterAppliedRows(IEnumerable<FilterApplied> rows)
+		{
+			foreach (FilterApplied row in rows)
+				AddOrUpdateFilterApplied(row.EventId, row.FilterId, row.Date);
+			//{
+			//// This implementation is optimized for speed, so it builds one SQL INSERT INTO statement that inserts all the given objects with one command with no duplicate checking.
+			//if (rows.Count() == 0)
+			//	return;
+			//StringBuilder sb = new StringBuilder();
+			//sb.Append("INSERT INTO " + ProjectNameLower + ".FilterApplied (EventId, FilterId, Date) VALUES ");
+			//bool first = true;
+			//foreach (FilterApplied row in rows)
+			//{
+			//	if (!first)
+			//		sb.Append(",\n");
+			//	first = false;
+			//	sb.Append("(" + row.EventId + ", " + row.FilterId + ", " + row.Date + ")");
+			//}
+			//sb.Append(";");
+			//ExecuteNonQuery(sb.ToString());
+			//}
+		}
+		/// <summary>
+		/// Forgets that a filter was applied to an event, returning the number of rows removed.  It can be more than one if the filter actions were applied multiple times at different timestamps.
+		/// </summary>
+		/// <param name="eventId">ID of the Event which was affected.</param>
+		/// <param name="filterId">ID of the Filter which was applied.</param>
+		/// <returns></returns>
+		public int RemoveFilterApplied(long eventId, int filterId)
+		{
+			return ExecuteNonQuery("DELETE FROM " + ProjectNameLower + ".FilterApplied WHERE FilterId = " + filterId + " AND EventId = " + eventId);
+		}
+		/// <summary>
+		/// Forgets that a filter was applied to an event at a specific date, returning true if successful or false if no such record existed.
+		/// </summary>
+		/// <param name="eventId">ID of the Event which was affected.</param>
+		/// <param name="filterId">ID of the Filter which was applied.</param>
+		/// <param name="date">Timestamp when the filter matched the event, in milliseconds since the unix epoch.</param>
+		/// <returns></returns>
+		public bool RemoveFilterApplied(long eventId, int filterId, long date)
+		{
+			int rows = ExecuteNonQuery("DELETE FROM " + ProjectNameLower + ".FilterApplied WHERE FilterId = " + filterId + " AND EventId = " + eventId + " AND Date = " + date);
+			return rows > 0;
+		}
+		/// <summary>
+		/// Removes all FilterApplied rows matching the specified Event IDs, returning the number of FilterApplied rows that were removed. Intended to be called when deleting Events to remove dangling references.
+		/// </summary>
+		/// <param name="userId">User ID to forget read history for.</param>
+		/// <returns></returns>
+		public int RemoveFilterAppliedRowsForEvents(IEnumerable<long> eventIds)
+		{
+			return ExecuteNonQuery("DELETE FROM " + ProjectNameLower + ".FilterApplied WHERE EventId IN (" + string.Join(",", eventIds) + ")");
+		}
+		/// <summary>
+		/// Returns an array of dates when the specified event had the specified filter matched to it.  The array will be empty if there is no record of the filter being applied to the event. If everything works properly the returned array should only have length 0 or 1.
+		/// </summary>
+		/// <param name="eventId">ID of the Event which was affected.</param>
+		/// <param name="filterId">ID of the Filter which was applied.</param>
+		/// <returns></returns>
+		public long[] GetFilterAppliedDates(long eventId, int filterId)
+		{
+			return ExecuteQuery<long>("SELECT Date FROM " + ProjectNameLower + ".FilterApplied WHERE FilterId = " + filterId + " AND EventId = " + eventId).ToArray();
+		}
+		/// <summary>
+		/// Returns an array of FilterApplied rows indicating which filters were matched against the event and when.
+		/// </summary>
+		/// <param name="eventId">ID of the Event being queried.</param>
+		/// <returns></returns>
+		public FilterAppliedRecord[] GetFiltersAppliedByEvent(long eventId)
+		{
+			return ExecuteQuery<FilterAppliedRecord>("SELECT fa.FilterId, fa.Date, f.Name as FilterName"
+				+ " FROM " + ProjectNameLower + ".FilterApplied fa"
+				+ " LEFT JOIN " + ProjectNameLower + ".Filter f"
+				+ " ON fa.FilterId = f.FilterId"
+				+ " WHERE EventId = " + eventId)
+				.OrderBy(r => r.Date)
+				.ThenBy(r => r.FilterId)
+				.ToArray();
+		}
+		/// <summary>
+		/// Returns the number of FilterApplied rows with the given FilterId.
+		/// </summary>
+		/// <param name="filterId">ID of the Filter.</param>
+		/// <returns></returns>
+		public long GetFiltersAppliedCountByFilter(int filterId)
+		{
+			return ExecuteScalar<long>("SELECT COUNT(*) FROM " + ProjectNameLower + ".FilterApplied WHERE FilterId = " + filterId);
 		}
 		#endregion
 		public static string TestSqlBuilder()

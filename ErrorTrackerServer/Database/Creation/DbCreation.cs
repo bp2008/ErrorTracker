@@ -200,7 +200,7 @@ namespace ErrorTrackerServer.Database.Creation
 			if (dbVersion < 6)
 				throw new ApplicationException("Project \"" + projectName + "\" has unexpected DbVersion.CurrentVersion defined: " + dbVersion);
 
-			if (dbVersion > 7)
+			if (dbVersion > 8)
 				throw new ApplicationException("Project \"" + projectName + "\" has unexpected DbVersion.CurrentVersion defined: " + dbVersion);
 
 			if (dbVersion == 6)
@@ -211,6 +211,16 @@ namespace ErrorTrackerServer.Database.Creation
 				dbVersion = db._ExecuteScalar<int>("SELECT CurrentVersion FROM " + projectName + ".DbVersion LIMIT 1;");
 				if (dbVersion != 7)
 					throw new Exception("Project database version for \"" + projectName + "\" was " + dbVersion + " after performing migration from 6 to 7.");
+			}
+
+			if (dbVersion == 7)
+			{
+				// Migrate the project database to version 8
+				db._ExecuteNonQuery(SQL(Properties.Resources.ProjectSetup_8_1).Replace("%PR", projectName));
+
+				dbVersion = db._ExecuteScalar<int>("SELECT CurrentVersion FROM " + projectName + ".DbVersion LIMIT 1;");
+				if (dbVersion != 8)
+					throw new Exception("Project database version for \"" + projectName + "\" was " + dbVersion + " after performing migration from 7 to 8.");
 			}
 		}
 		#endregion
