@@ -69,6 +69,7 @@ namespace ErrorTrackerServer.Controllers
 			Settings.data.backupPath = request.settings.backupPath;
 			Settings.data.postgresBinPath = request.settings.postgresBinPath;
 			Settings.data.sevenZipCommandLineExePath = request.settings.sevenZipCommandLineExePath;
+			Settings.data.postgresCommandTimeout = request.settings.postgresCommandTimeout;
 			Settings.data.Save();
 
 			BPUtil.SimpleHttp.SimpleHttpLogger.RegisterLogger(Logger.httpLogger, Settings.data.webServerVerboseLogging);
@@ -200,6 +201,8 @@ namespace ErrorTrackerServer.Controllers
 		public string postgresBinPath = "";
 		[HelpMd("Path to 7za executable. Required for database backups.")]
 		public string sevenZipCommandLineExePath = "";
+		[HelpMd("Number of seconds to wait for SQL commands to complete before canceling them. If 0, the timeout is disabled and commands can run forever. Min: 0, Max: 86400. Requires service restart to take effect.")]
+		public int postgresCommandTimeout = 900;
 		public SettingsObject() { }
 		public SettingsObject(Settings settings)
 		{
@@ -229,6 +232,7 @@ namespace ErrorTrackerServer.Controllers
 			backupPath = settings.backupPath;
 			postgresBinPath = settings.postgresBinPath;
 			sevenZipCommandLineExePath = settings.sevenZipCommandLineExePath;
+			postgresCommandTimeout = settings.postgresCommandTimeout;
 		}
 	}
 	public enum LoginStyle

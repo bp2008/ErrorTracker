@@ -95,6 +95,10 @@ namespace ErrorTrackerServer
 			postgresPassword = Convert.ToBase64String(ByteUtil.Utf8NoBOM.GetBytes(pw));
 		}
 		/// <summary>
+		/// Number of seconds to wait for SQL commands to complete before canceling them. If 0, the timeout is disabled and commands can run forever.
+		/// </summary>
+		public int postgresCommandTimeout = 900;
+		/// <summary>
 		/// If true, the PostgreSQL DB will be considered to be ready. If there are existing databases, this will be false until SQLite migration is completed.
 		/// </summary>
 		public bool postgresReady = false;

@@ -37,6 +37,7 @@ namespace ErrorTrackerServer.Database.Creation
 			builder["Username"] = user;
 			builder["Password"] = pass;
 			builder["Database"] = db;
+			builder["CommandTimeout"] = Settings.data.postgresCommandTimeout.Clamp(0, 86400).ToString();
 			return builder.ConnectionString;
 		}
 
