@@ -177,6 +177,9 @@ namespace ErrorTrackerServer.Database.Project.Model
 		}
 	}
 
+	/// <summary>
+	/// Event type enum. If you add a new enum value here, please also add it to the database function EventTypeToString and rebuild the full-text index that uses the function.
+	/// </summary>
 	public enum EventType : byte
 	{
 		/// <summary>

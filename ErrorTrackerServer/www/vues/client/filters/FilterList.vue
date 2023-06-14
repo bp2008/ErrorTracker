@@ -8,8 +8,9 @@
 			</div>
 			<div v-else-if="loading || filterSummaries">
 				<div class="heading">Filter List</div>
+				<div v-if="searchQuery" class="filterSearchDetailsContainer"><b>Filtered by <span v-if="regexSearch" title="Regular Expression">regex</span><span v-else title="SQL Full Text Search">SQL FTS</span>:</b> {{searchQuery}} <input type="button" value="Clear" @click="clearSearchQuery" /></div>
 				<div class="filterSummaryList" v-if="filterSummaries && filterSummaries.length">
-					<draggable v-model="filterSummaries" @start="startDragging" @end="endDragging">
+					<draggable v-model="filterSummaries" @start="startDragging" @end="endDragging" :move="moveDragging">
 						<router-link v-for="f in filterSummaries"
 									 :key="f.filter.FilterId"
 									 class="filterNode"
@@ -51,6 +52,14 @@
 			projectName: {
 				type: String,
 				required: true
+			},
+			searchQuery: {
+				type: String,
+				default: ""
+			},
+			regexSearch: {
+				type: Boolean,
+				default: false
 			}
 		},
 		data()
@@ -76,7 +85,7 @@
 				this.loading = true;
 				this.error = null;
 
-				GetAllFilters(this.projectName)
+				GetAllFilters(this.projectName, this.searchQuery, this.regexSearch)
 					.then(data =>
 					{
 						if (data.success)
@@ -100,7 +109,7 @@
 			{
 				return {
 					name: "clientFilters",
-					query: { p: this.projectName },
+					query: { p: this.projectName, q: this.searchQuery ? this.searchQuery : undefined, rx: this.regexSearch ? undefined : '0' },
 					params: { filterId: f.FilterId }
 				};
 			},
@@ -137,9 +146,18 @@
 			},
 			startDragging(e)
 			{
+				if (this.searchQuery)
+					toaster.warning("Drag-and-drop is disabled while you have an active search query.");
+			},
+			moveDragging(e, originalEvent)
+			{
+				if (this.searchQuery)
+					return false;
 			},
 			endDragging(e)
 			{
+				if (this.searchQuery)
+					return;
 				for (let i = 0; i < this.filterSummaries.length; i++)
 					this.filterSummaries[i].filter.MyOrder = i;
 
@@ -197,6 +215,12 @@
 								});
 						}
 					});
+			},
+			clearSearchQuery()
+			{
+				let query = Object.assign({}, this.$route.query);
+				delete query.q;
+				this.$router.replace({ name: this.$route.name, query });
 			}
 		},
 		watch:
@@ -204,6 +228,15 @@
 			projectName()
 			{
 				this.loadFilterSummaries();
+			},
+			searchQuery()
+			{
+				this.loadFilterSummaries();
+			},
+			regexSearch()
+			{
+				if (this.searchQuery)
+					this.loadFilterSummaries();
 			}
 		}
 	}
@@ -254,7 +287,12 @@
 		font-size: 24px;
 		font-weight: bold;
 		color: #777777;
-		margin-bottom: 15px;
+		margin-bottom: 0.65em;
+	}
+
+	.filterSearchDetailsContainer
+	{
+		margin-bottom: 1em;
 	}
 
 	.filterSummaryList

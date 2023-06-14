@@ -13,7 +13,7 @@
 						<div><b>ID:</b> {{filter.filter.FilterId}}</div>
 						<div title="Since software version 2.3, this filter's actions have been run this many times."><b>Affected Event Count:</b> {{filter.eventCount}}</div>
 						<div>
-							<input type="text" v-model="filter.filter.Name" class="primaryInput" placeholder="Name" title="Name" /> <span class="hint">← Filter Name</span>
+							<input type="text" v-model="filter.filter.Name" :class="{ primaryInput: true, filterName: true, searchMatched }" placeholder="Name" title="Name" /> <span class="hint">← Filter Name</span>
 						</div>
 						<div>
 							<label><input type="checkbox" v-model="filter.filter.Enabled" /> Enabled (run automatically on new events)</label>
@@ -32,6 +32,8 @@
 							<FilterCondition v-for="condition in filter.conditions"
 											 :key="condition.FilterConditionId"
 											 :condition="condition"
+											 :searchQuery="searchQuery"
+											 :regexSearch="regexSearch"
 											 @delete="deleteCondition"
 											 class="condition" />
 						</div>
@@ -46,6 +48,8 @@
 										  :key="action.FilterActionId"
 										  :action="action"
 										  :projectName="projectName"
+										  :searchQuery="searchQuery"
+										  :regexSearch="regexSearch"
 										  @delete="deleteAction"
 										  class="action" />
 						</div>
@@ -91,7 +95,7 @@
 <script>
 	import { GetFilter, EditFilter, DeleteFilter, AddCondition, EditCondition, DeleteCondition, AddAction, EditAction, DeleteAction, RunFilterAgainstAllEvents } from 'appRoot/api/FilterData';
 	import { TextInputDialog, ModalConfirmDialog } from 'appRoot/scripts/ModalDialog';
-	import { GetReadableTextColorHexForBackgroundColorHex } from 'appRoot/scripts/Util';
+	import { FilterMatch } from 'appRoot/scripts/Util';
 	import ControlBar from 'appRoot/vues/client/controls/ControlBar.vue';
 	import FilterCondition from 'appRoot/vues/client/filters/FilterCondition.vue';
 	import FilterAction from 'appRoot/vues/client/filters/FilterAction.vue';
@@ -107,6 +111,14 @@
 			filterId: {
 				type: Number,
 				required: true
+			},
+			searchQuery: {
+				type: String,
+				default: ""
+			},
+			regexSearch: {
+				type: Boolean,
+				default: false
 			}
 		},
 		data()
@@ -132,6 +144,10 @@
 			dirty()
 			{
 				return this.originalFilterJson && (this.originalFilterJson !== this.filterJson);
+			},
+			searchMatched()
+			{
+				return this.filter && FilterMatch(this.filter.filter.Name, this.searchQuery, this.regexSearch);
 			}
 		},
 		methods:
@@ -338,6 +354,11 @@
 	.tryAgain
 	{
 		margin-top: 10px;
+	}
+
+	.filterName.searchMatched
+	{
+		background-color: #FFFF00 !important;
 	}
 
 	.inputSection

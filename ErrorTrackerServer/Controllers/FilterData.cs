@@ -21,14 +21,14 @@ namespace ErrorTrackerServer.Controllers
 	{
 		public ActionResult GetAllFilters()
 		{
-			ProjectRequestBase request = ApiRequestBase.ParseRequest<ProjectRequestBase>(this);
+			GetAllFiltersRequest request = ApiRequestBase.ParseRequest<GetAllFiltersRequest>(this);
 
 			if (!request.Validate(out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			GetAllFiltersResponse response = new GetAllFiltersResponse();
 			using (DB db = new DB(p.Name))
-				response.filters = db.GetAllFiltersSummary();
+				response.filters = db.GetAllFiltersSummary(request.searchQuery, request.regexSearch);
 			return Json(response);
 		}
 		public ActionResult GetFilter()
@@ -259,6 +259,11 @@ namespace ErrorTrackerServer.Controllers
 	{
 		public FullFilter filter;
 		public GetFilterResponse() : base(true, null) { }
+	}
+	public class GetAllFiltersRequest : ProjectRequestBase
+	{
+		public string searchQuery;
+		public bool regexSearch;
 	}
 	public class AddFilterRequest : ProjectRequestBase
 	{

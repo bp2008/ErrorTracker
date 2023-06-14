@@ -224,11 +224,57 @@ namespace ErrorTrackerServer.Properties {
         ///);
         ///ALTER TABLE %PR.FilterApplied
         ///	OWNER to %DBUSER;
-        ///CREATE INDEX FilterApplied_EventId ON %PR.FilterApplied USING btree (EventId ASC NULLS LAST);.
+        ///CREATE INDEX FilterApplied_EventId ON %PR.FilterApplied USING btree (EventId ASC NULLS LAST);
+        ///CREATE INDEX FilterApplied_FilterId ON %PR.FilterApplied USING btree (FilterId ASC NULLS LAST);
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///    
+        ///UPDATE %PR.DbVersion SET CurrentVersion = 8;.
         /// </summary>
         internal static string ProjectSetup_8_1 {
             get {
                 return ResourceManager.GetString("ProjectSetup_8_1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to DROP INDEX IF EXISTS %PR.filter_search_idx;
+        ///CREATE INDEX filter_search_idx ON %PR.Filter
+        ///USING GIN (to_tsvector(&apos;english&apos;, Name ));
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///DROP INDEX IF EXISTS %PR.filtercondition_search_idx;
+        ///CREATE INDEX filtercondition_search_idx ON %PR.FilterCondition
+        ///USING GIN (to_tsvector(&apos;english&apos;, TagKey || &apos;: &apos; || Query));
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///DROP INDEX IF EXISTS %PR.filteraction_search_idx;
+        ///CREATE INDEX filteraction_search_idx ON %PR.FilterAction
+        ///USING GIN (to_tsvector(&apos;english&apos;, Argument));
+        ///
+        ///
+        ///
+        ///
+        ///    [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string ProjectSetup_9_1 {
+            get {
+                return ResourceManager.GetString("ProjectSetup_9_1", resourceCulture);
             }
         }
     }

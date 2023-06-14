@@ -34,6 +34,9 @@ namespace ErrorTrackerServer.Database.Project.Model
 		public string Argument { get; set; } = "";
 	}
 
+	/// <summary>
+	/// FilterActionType type enum that is the type of <see cref="FilterAction.Operator"/>. If you add a new enum value here, please also add it to the database function FilterActionOperatorToString and rebuild the full-text index that uses the function.
+	/// </summary>
 	public enum FilterActionType : byte
 	{
 		/// <summary>

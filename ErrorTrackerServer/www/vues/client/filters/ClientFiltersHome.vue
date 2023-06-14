@@ -1,7 +1,7 @@
 ﻿<template>
 	<div class="clientFiltersHome">
-		<FilterList v-if="!filterId" :projectName="projectName" />
-		<FilterDetails v-else :projectName="projectName" :filterId="parseInt(filterId)" />
+		<FilterList v-if="!filterId" :projectName="projectName" :searchQuery="searchQuery" :regexSearch="regexSearch" />
+		<FilterDetails v-else :projectName="projectName" :filterId="parseInt(filterId)" :searchQuery="searchQuery" :regexSearch="regexSearch" />
 	</div>
 </template>
 
@@ -20,6 +20,14 @@
 			filterId: {
 				type: String,
 				default: ""
+			},
+			searchQuery: {
+				type: String,
+				default: ""
+			},
+			regexSearch: {
+				type: Boolean,
+				default: false
 			}
 		}
 	}

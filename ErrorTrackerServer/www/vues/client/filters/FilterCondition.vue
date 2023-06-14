@@ -1,5 +1,5 @@
 ﻿<template>
-	<div :class="{ condition: true, disabled: !condition.Enabled }">
+	<div :class="{ condition: true, disabled: !condition.Enabled, searchMatched }">
 		<div class="topRow">
 			<label title="Disabled conditions are ignored when the filter runs. It will be as if they do not exist."><input type="checkbox" v-model="condition.Enabled" /> Enabled</label>
 			<input type="button" value="Delete" @click="$emit('delete', condition)" :title="deleteBtnTooltip" />
@@ -20,12 +20,22 @@
 </template>
 
 <script>
+	import { FilterMatch } from 'appRoot/scripts/Util';
+
 	export default {
 		props:
 		{
 			condition: {
 				type: Object,
 				required: true
+			},
+			searchQuery: {
+				type: String,
+				default: ""
+			},
+			regexSearch: {
+				type: Boolean,
+				default: false
 			}
 		},
 		computed:
@@ -33,6 +43,10 @@
 			deleteBtnTooltip()
 			{
 				return 'Delete Condition' + (this.condition.FilterConditionId > 0 ? ' ' + this.condition.FilterConditionId : '');
+			},
+			searchMatched()
+			{
+				return FilterMatch(this.condition.TagKey, this.searchQuery, this.regexSearch) || FilterMatch(this.condition.Query, this.searchQuery, this.regexSearch);
 			}
 		}
 	}
@@ -48,6 +62,11 @@
 		{
 			background-color: #DDBBBB !important;
 		}
+
+	.condition.searchMatched
+	{
+		background-color: #FFFF00 !important;
+	}
 
 	.topRow
 	{

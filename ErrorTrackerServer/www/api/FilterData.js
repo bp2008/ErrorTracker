@@ -1,8 +1,8 @@
 ﻿import ExecAPI from 'appRoot/api/api';
 
-export function GetAllFilters(projectName)
+export function GetAllFilters(projectName, searchQuery, regexSearch)
 {
-	return ExecAPI("FilterData/GetAllFilters", { projectName });
+	return ExecAPI("FilterData/GetAllFilters", { projectName, searchQuery, regexSearch });
 }
 export function GetFilter(projectName, filterId)
 {

@@ -116,7 +116,9 @@ export default function CreateRouter(store, basePath)
 						}
 						, props: (route) => ({
 							projectName: route.query.p ? route.query.p.toString() : "",
-							filterId: route.params.filterId ? route.params.filterId.toString() : ""
+							filterId: route.params.filterId ? route.params.filterId.toString() : "",
+							searchQuery: route.query.q ? route.query.q.toString() : "",
+							regexSearch: route.query.rx !== "0"
 						})
 					},
 					{

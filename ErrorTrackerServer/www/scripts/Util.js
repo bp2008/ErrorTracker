@@ -821,3 +821,18 @@ export function SetSelectedFolder(component, pushRoute, folderId)
 	else
 		component.$router.replace(route);
 }
+/**
+ * Returns true if the field value matches the search query.
+ * @param {String} fieldValue Field value being matched.
+ * @param {String} searchQuery Search Query
+ * @param {Boolean} regexSearch True to make this a regular expression match. False for a simple case-insensitive text contains.
+ */
+export function FilterMatch(fieldValue, searchQuery, regexSearch)
+{
+	if (!searchQuery || !fieldValue)
+		return false;
+	if (regexSearch)
+		return !!fieldValue.match(new RegExp(searchQuery, "i"));
+	else
+		return fieldValue.toUpperCase().indexOf(searchQuery.toUpperCase()) > -1;
+}

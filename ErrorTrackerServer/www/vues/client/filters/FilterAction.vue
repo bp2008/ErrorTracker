@@ -1,17 +1,12 @@
 ﻿<template>
-	<div :class="{ action: true, disabled: !action.Enabled }">
+	<div :class="{ action: true, disabled: !action.Enabled, searchMatched }">
 		<div class="topRow">
 			<label title="Disabled actions are ignored when the filter succeeds"><input type="checkbox" v-model="action.Enabled" /> Enabled</label>
 			<input type="button" value="Delete" @click="$emit('delete', action)" :title="deleteBtnTooltip" />
 		</div>
 		<div>
 			<select v-model="action.Operator">
-				<option value="MoveTo">move event to</option>
-				<option value="Delete">delete event</option>
-				<option value="SetColor">set event color</option>
-				<option value="StopExecution">stop execution against matched event</option>
-				<option value="MarkRead">mark read</option>
-				<option value="MarkUnread">mark unread</option>
+				<option v-for="option in operatorOptions" :value="option.key">{{option.value}}</option>
 			</select>
 		</div>
 		<div v-if="action.Operator === 'MoveTo'" class="moveToInputs">
@@ -29,7 +24,7 @@
 </template>
 
 <script>
-	import { GetReadableTextColorHexForBackgroundColorHex } from 'appRoot/scripts/Util';
+	import { GetReadableTextColorHexForBackgroundColorHex, FilterMatch } from 'appRoot/scripts/Util';
 	import { SelectFolderDialog } from 'appRoot/scripts/ModalDialog';
 
 	export default {
@@ -42,7 +37,26 @@
 			projectName: {
 				type: String,
 				required: true
+			},
+			searchQuery: {
+				type: String,
+				default: ""
+			},
+			regexSearch: {
+				type: Boolean,
+				default: false
 			}
+		},
+		data()
+		{
+			return {
+				operatorOptions: [{ key: "MoveTo", value: "move event to" },
+				{ key: "Delete", value: "delete event" },
+				{ key: "SetColor", value: "set event color" },
+				{ key: "StopExecution", value: "stop execution against matched event" },
+				{ key: "MarkRead", value: "mark read" },
+				{ key: "MarkUnread", value: "mark unread" }]
+			};
 		},
 		computed:
 		{
@@ -68,6 +82,17 @@
 			deleteBtnTooltip()
 			{
 				return 'Delete Action' + (this.action.FilterActionId > 0 ? ' ' + this.action.FilterActionId : '');
+			},
+			searchMatched()
+			{
+				if (this.searchQuery)
+				{
+					for (let i = 0; i < this.operatorOptions.length; i++)
+						if (this.operatorOptions[i].key === this.action.Operator && FilterMatch(this.operatorOptions[i].value, this.searchQuery, this.regexSearch))
+							return true;
+					return FilterMatch(this.action.Argument, this.searchQuery, this.regexSearch);
+				}
+				return false;
 			}
 		},
 		methods:
@@ -95,6 +120,11 @@
 		{
 			background-color: #DDBBBB !important;
 		}
+
+	.action.searchMatched
+	{
+		background-color: #FFFF00 !important;
+	}
 
 	.topRow
 	{

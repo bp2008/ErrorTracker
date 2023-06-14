@@ -316,6 +316,7 @@
     <Content Include="Database\Creation\SQL\DbSetup_A_CreateRole.sql" />
     <Content Include="Database\Creation\Readme.txt" />
     <Content Include="Database\Project\SQL\8\ProjectSetup_8_1.sql" />
+    <Content Include="Database\Project\SQL\9\ProjectSetup_9_1.sql" />
     <Content Include="Database\SQLiteMigration\Readme.txt" />
     <Content Include="webpack.config.js" />
     <Content Include="www\404.html" />

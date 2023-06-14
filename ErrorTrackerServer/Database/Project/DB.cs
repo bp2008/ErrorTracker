@@ -1069,20 +1069,73 @@ namespace ErrorTrackerServer
 		/// <summary>
 		/// Gets a list of FilterSummary for all filters in the database.
 		/// </summary>
+		/// <param name="searchQuery">If provided, a search will be performed on the filter names, conditions, and actions.</param>
+		/// <param name="regexSearch">If true, the search query will be used for a regex search.  If false, it will be an SQL Full Text Search using the `websearch_to_tsquery('english', @0)` operation.</param>
 		/// <returns></returns>
-		public List<FilterSummary> GetAllFiltersSummary()
+		public List<FilterSummary> GetAllFiltersSummary(string searchQuery = null, bool regexSearch = true)
 		{
+			PetaPoco.Sql searchRequest = null;
+
+			if (!string.IsNullOrEmpty(searchQuery))
+			{
+				if (regexSearch)
+				{
+					searchRequest = PetaPoco.Sql.Builder
+						.Select("f.*")
+						.From(ProjectNameLower + ".Filter f")
+						.Where(@"f.FilterId IN
+(
+		SELECT f.FilterId
+		FROM %PR.Filter f
+		WHERE Name ~* @0
+	UNION
+		SELECT fc.FilterId
+		FROM %PR.FilterCondition fc
+		WHERE fc.TagKey ~* @0 OR fc.Query ~* @0
+	UNION
+		SELECT fa.FilterId
+		FROM %PR.FilterAction fa
+		WHERE %PR.FilterActionOperatorToString(fa.Operator) ~* @0 OR fa.Argument ~* @0
+)".Replace("%PR", ProjectNameLower), searchQuery);
+				}
+				else
+				{
+					searchRequest = PetaPoco.Sql.Builder
+						.Select("f.*")
+						.From(ProjectNameLower + ".Filter f")
+						.Where(@"f.FilterId IN
+(
+		SELECT f.FilterId
+		FROM %PR.Filter f
+		WHERE to_tsvector('english', Name)
+			@@@ websearch_to_tsquery('english', @0)
+	UNION
+		SELECT fc.FilterId
+		FROM %PR.FilterCondition fc
+		WHERE to_tsvector('english', TagKey || ': ' || Query) @@@ websearch_to_tsquery('english', @0)
+	UNION
+		SELECT fa.FilterId
+		FROM %PR.FilterAction fa
+		WHERE to_tsvector('english', %PR.FilterActionOperatorToString(Operator) || ': ' || Argument) @@@ websearch_to_tsquery('english', @0)
+)".Replace("%PR", ProjectNameLower), searchQuery);
+				}
+			}
+
 			List<Filter> filters = null;
 			List<FilterItemCount> conditions = null;
 			List<FilterItemCount> actions = null;
 			RunInTransaction(() =>
 			{
-				filters = QueryAll<Filter>();
+				if (searchRequest != null)
+					filters = ExecuteQuery<Filter>(searchRequest);
+				else
+					filters = QueryAll<Filter>();
 				conditions = ExecuteQuery<FilterItemCount>("SELECT FilterId, COUNT(FilterConditionId) as Count FROM " + ProjectNameLower + ".FilterCondition WHERE Enabled = true GROUP BY FilterId");
 				actions = ExecuteQuery<FilterItemCount>("SELECT FilterId, COUNT(FilterActionId) as Count FROM " + ProjectNameLower + ".FilterAction WHERE Enabled = true GROUP BY FilterId");
 			});
 			Dictionary<int, uint> filterConditionCounts = conditions.ToDictionary(fic => fic.FilterId, fic => fic.Count);
 			Dictionary<int, uint> filterActionCounts = actions.ToDictionary(fic => fic.FilterId, fic => fic.Count);
+
 			return filters
 					.Select(f =>
 					{

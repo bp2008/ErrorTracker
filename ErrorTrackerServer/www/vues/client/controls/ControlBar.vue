@@ -10,7 +10,7 @@
 				</template>
 				<template v-if="onFilters">
 					&gt;
-					<router-link :to="{ name: 'clientFilters', query: { p: projectName }}" :class="{ pathComponent: true, clickable: !onFilters || filterId, filterListLink: true }">Filter List</router-link>
+					<router-link :to="{ name: 'clientFilters', query: { p: projectName, q: routeSearchQuery ? routeSearchQuery : undefined, rx: routeRegexSearch ? undefined : '0' }}" :class="{ pathComponent: true, clickable: !onFilters || filterId, filterListLink: true }">Filter List</router-link>
 					<template v-if="filterId">
 						&gt;
 						<router-link :to="{ name: 'clientFilters', query: { p: projectName }, params: { filterId: filterId }}" class="pathComponent">Filter {{filterId}}</router-link>
@@ -27,9 +27,10 @@
 			<vsvg sprite="filter_alt" class="filterIcon" />
 			Edit Filters
 		</router-link>
-		<div v-if="!onFilters && !onAdvancedSearch" class="searchBar" title="Perform a &quot;Contains&quot; search on the Message, EventType, SubType, and all Tag values.">
+		<div v-if="!onAdvancedSearch" class="searchBar" :title="searchTooltip">
 			<input type="search" v-model="searchQuery" class="searchInput" placeholder="Search" @keypress.enter.prevent="doSearch" />
 			<vsvg sprite="search" role="button" tabindex="0" @click="doSearch" @keypress.enter.prevent="doSearch" title="search" class="searchBtn" />
+			<label v-if="onFilters" class="regexCb"><input type="checkbox" v-model="regexSearch" /> Regex</label>
 		</div>
 		<router-link v-if="!onFilters && !onAdvancedSearch"
 					 :to="routeToAdvancedSearch"
@@ -114,12 +115,15 @@
 		{
 			return {
 				searchQuery: "",
+				regexSearch: false,
 				isRegisteredForPush: false
 			};
 		},
 		created()
 		{
 			this.learnPushRegistration();
+			this.searchQuery = this.routeSearchQuery;
+			this.regexSearch = this.routeRegexSearch;
 		},
 		mounted()
 		{
@@ -185,6 +189,26 @@
 			pushSubscription()
 			{
 				return EventBus.pushSubscription;
+			},
+			routeSearchQuery()
+			{
+				return this.$route.query.q ? this.$route.query.q : "";
+			},
+			routeRegexSearch()
+			{
+				return this.$route.query.rx !== "0";
+			},
+			searchTooltip()
+			{
+				if (this.onFilters)
+					return 'Perform a "Regex" or "SQL Full Text" Search \n'
+						+ 'on the filter name, conditions, and actions.\n\n'
+						+ 'When viewing a filter, matches will be \n'
+						+ 'highlighted, but this clientside matching is \n'
+						+ 'different from the search engine in the \n'
+						+ 'database server.';
+				else
+					return 'Perform a "Contains" search on the Message, EventType, SubType, and all Tag values.';
 			}
 		},
 		methods:
@@ -199,14 +223,29 @@
 			},
 			doSearch()
 			{
-				let query = {
-					p: this.projectName,
-					f: this.selectedFolderId,
-					q: this.searchQuery
-				};
-				if (this.uniqueOnly)
-					query.uo = "1";
-				this.$router.push({ name: "clientHome", query });
+				if (this.onFilters)
+				{
+					let query = {
+						p: this.projectName,
+						q: this.searchQuery,
+						rx: this.regexSearch ? undefined : '0'
+					};
+					let params;
+					if (this.filterId)
+						params = { filterId: this.filterId };
+					this.$router.push({ name: "clientFilters", query, params });
+				}
+				else
+				{
+					let query = {
+						p: this.projectName,
+						f: this.selectedFolderId,
+						q: this.searchQuery
+					};
+					if (this.uniqueOnly)
+						query.uo = "1";
+					this.$router.push({ name: "clientHome", query });
+				}
 			},
 			changeFolder()
 			{
@@ -279,6 +318,19 @@
 			pushSubscription()
 			{
 				this.learnPushRegistration();
+			},
+			routeSearchQuery()
+			{
+				this.searchQuery = this.routeSearchQuery;
+			},
+			routeRegexSearch()
+			{
+				this.regexSearch = this.routeRegexSearch;
+			},
+			regexSearch()
+			{
+				if (this.regexSearch !== this.routeRegexSearch)
+					this.doSearch();
 			}
 		}
 	}
@@ -461,6 +513,13 @@
 	{
 		/*		color: #0000ee;*/
 		fill: currentColor;
+	}
+	
+	.regexCb
+	{
+		flex: 1 0 auto;
+		line-height: 35px;
+		padding: 0px 7px 0px 2px;
 	}
 
 	.eventBodyBelow.isBelow
