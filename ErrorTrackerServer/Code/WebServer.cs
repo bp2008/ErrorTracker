@@ -77,7 +77,7 @@ namespace ErrorTrackerServer
 					p.writeFailure("400 Bad Request");
 					return;
 				}
-				if (!p.requestedPage.Equals("service-worker.js", StringComparison.OrdinalIgnoreCase))
+				if (!p.requestedPage.IEquals("service-worker.js"))
 				{
 					if (webpackProxy != null)
 					{
@@ -94,9 +94,9 @@ namespace ErrorTrackerServer
 					}
 				}
 				if (!fi.Exists
-					|| p.requestedPage.Equals("", StringComparison.OrdinalIgnoreCase)
-					|| p.requestedPage.Equals("default", StringComparison.OrdinalIgnoreCase)
-					|| p.requestedPage.Equals("default.html", StringComparison.OrdinalIgnoreCase))
+					|| p.requestedPage.IEquals("")
+					|| p.requestedPage.IEquals("default")
+					|| p.requestedPage.IEquals("default.html"))
 				{
 					mvcMain.ProcessRequest(p, "Default");
 					return;
