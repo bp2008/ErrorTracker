@@ -16,7 +16,7 @@ namespace ErrorTrackerServer
 	{
 		private WebpackProxy webpackProxy = null;
 		private MVCMain mvcMain;
-		public WebServer(int port, int httpsPort, ICertificateSelector certificateSelector, IPAddress bindAddr) : base(port, httpsPort, certificateSelector, bindAddr)
+		public WebServer(ICertificateSelector certificateSelector) : base(certificateSelector)
 		{
 #if DEBUG
 			if (!string.IsNullOrEmpty(Settings.data.postgresPassword))

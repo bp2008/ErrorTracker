@@ -102,7 +102,7 @@ namespace ErrorTrackerServer
 				certSelector = SimpleCertificateSelector.FromCertificate(cert);
 			}
 			SimpleHttpLogger.RegisterLogger(Logger.httpLogger);
-			srv = new WebServer(Settings.data.port_http, Settings.data.port_https, certSelector, IPAddress.Any);
+			srv = new WebServer(certSelector);
 
 			thrMaintainProjects = new Thread(maintainProjects);
 			thrMaintainProjects.Name = "Maintain Projects";
@@ -113,7 +113,7 @@ namespace ErrorTrackerServer
 		{
 			Logger.Info(ServiceName + " " + Globals.AssemblyVersion + " is starting.");
 			thrMaintainProjects.Start();
-			srv.Start();
+			srv.SetBindings(Settings.data.port_http, Settings.data.port_https);
 		}
 
 		protected override void OnStop()

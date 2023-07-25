@@ -1,9 +1,9 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32407.343
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErrorTrackerClient", "ErrorTrackerClient\ErrorTrackerClient.csproj", "{1C89BEEF-FD4D-41D0-B636-7F24B46CBFAD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ErrorTrackerClient", "ErrorTrackerClient\ErrorTrackerClient.csproj", "{1C89BEEF-FD4D-41D0-B636-7F24B46CBFAD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErrorTrackerServer", "ErrorTrackerServer\ErrorTrackerServer.csproj", "{E63FF98F-8AC0-4866-AD15-470E569AD78C}"
 EndProject

@@ -203,15 +203,7 @@ namespace ErrorTrackerServer
 		/// <param name="p">HttpProcessor to remove the appPath from.</param>
 		public void RemoveAppPath(HttpProcessor p)
 		{
-			string ap = appPath == null ? "/" : ('/' + appPath.Trim('/', ' ', '\r', '\n', '\t'));
-			if (ap != "" && p.request_url.AbsolutePath.StartsWith(ap, StringComparison.OrdinalIgnoreCase))
-			{
-				string absolutePath = p.request_url.AbsolutePath.Substring(ap.Length);
-				if (absolutePath.StartsWith("/"))
-					absolutePath = absolutePath.Substring(1);
-				p.request_url = new Uri(p.request_url.Scheme + "://" + p.request_url.DnsSafeHost + (p.request_url.IsDefaultPort ? "" : ":" + p.request_url.Port) + "/" + absolutePath + p.request_url.Query);
-				p.requestedPage = absolutePath;
-			}
+			p.RemoveAppPath(appPath);
 		}
 		#region Project Management
 		/// <summary>

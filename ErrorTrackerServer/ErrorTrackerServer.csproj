@@ -443,10 +443,11 @@ echo *****************
 echo If the following build fails, you may need to run "npm install" from the ErrorTrackerServer project directory.
 echo *****************
 cd "$(ProjectDir)"
-node "$(ProjectDir)node_modules\webpack\bin\webpack" --env=$(ConfigurationName)
+call node --openssl-legacy-provider "$(ProjectDir)node_modules\webpack\bin\webpack" --env=$(ConfigurationName)
 
 
 :afterwebpack
+echo Deploying dist to www
 xcopy "$(ProjectDir)www\dist\*.*" "$(TargetDir)www\dist\*.*" /C /R /Y /I</PostBuildEvent>
   </PropertyGroup>
   <Import Project="..\packages\Microsoft.NETFramework.ReferenceAssemblies.net472.1.0.2\build\Microsoft.NETFramework.ReferenceAssemblies.net472.targets" Condition="Exists('..\packages\Microsoft.NETFramework.ReferenceAssemblies.net472.1.0.2\build\Microsoft.NETFramework.ReferenceAssemblies.net472.targets')" />
