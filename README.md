@@ -34,7 +34,7 @@ The configuration file also contains a number of other settings as well as your 
 8) To edit the server configuration and manage users and projects, choose the "Admin" menu item at the top.
 
 ## Client Installation
-`ErrorTrackerClient.dll` is a light-weight library built on .NET Framework 4.5.2 which makes it easy to robustly submit events to ErrorTracker.
+`ErrorTrackerClient.dll` is a light-weight library built on .NET Standard 2.0 which makes it easy to robustly submit events to ErrorTracker.
 
 1) Download a client release from from the [releases page](https://github.com/bp2008/ErrorTracker/releases) and include `ErrorTrackerClient.dll` as a dependency in your .NET project.
 
@@ -44,16 +44,19 @@ The configuration file also contains a number of other settings as well as your 
 private static ErrorClient client = new ErrorClient(
     JsonConvert.SerializeObject, 
     () => "https://127.0.0.1/Submit?p=MyProject&k=f90ez8feZSFe90sifesLJszfE8", 
-    () => "C:\\ErrorTrackerTemp\\"
+    () => "C:\\ErrorTrackerTemp\\",
+    false // Change to true if using TLS for submissions and your ErrorTracker server's TLS certificate is not trusted.
 );
 ```
-The constructor takes 3 arguments.
+The constructor takes 3 required arguments and one optional:
 
 The first argument should be a reference to the `JsonConvert.SerializeObject` method from JSON.NET.  `ErrorTrackerClient.dll` wasn't built with a JSON.NET dependency, so you can supply your own version without a version conflict.
 
 The second argument should be a function (or lambda expression) which returns the event submission URL for your project (see **Your First Project** section below).
 
 The third argument should be a function (or lambda expression) which returns the path to a directory on a local hard drive where the client can save events temporarily if the ErrorTracker server is unreachable.  The client will automatically try again to submit these events until they succeed.  Don't worry, ErrorTrackerServer also has logic to reject duplicate submissions.
+
+The 4th argument should be true if you need the ErrorClient to accept an untrusted TLS certificate from the ErrorTracker server.
 
 3) Submit an Event
 
