@@ -29,11 +29,11 @@ namespace ErrorTrackerServer.Controllers
 				ActionResult result = new JpegImageResult(img.ext_ImageData);
 
 				if (!string.IsNullOrWhiteSpace(img.hsh))
-					result.AddOrUpdateHeader("ETag", img.hsh);
+					result.headers["ETag"] = img.hsh;
 
-				result.AddOrUpdateHeader("Copyright", img.copyright);
-				result.AddOrUpdateHeader("Link", img.copyrightlink);
-				result.AddOrUpdateHeader("Title", img.title);
+				result.headers["Copyright"] = img.copyright;
+				result.headers["Link"] = img.copyrightlink;
+				result.headers["Title"] = img.title;
 
 				return result;
 			}

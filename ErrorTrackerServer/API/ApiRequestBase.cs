@@ -50,7 +50,7 @@ namespace ErrorTrackerServer
 			if (httpProcessor.http_method != "POST")
 				throw new Exception("This API method must be called using HTTP POST");
 
-			byte[] data = httpProcessor.PostBodyStream.ToArray();
+			byte[] data = ByteUtil.ReadToEnd(httpProcessor.RequestBodyStream);
 			string str = ByteUtil.Utf8NoBOM.GetString(data);
 			return JsonConvert.DeserializeObject<T>(str);
 		}

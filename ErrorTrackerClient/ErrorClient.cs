@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,6 +32,10 @@ namespace ErrorTrackerClient
 		/// Gets the HttpClientHandler in use by this class.
 		/// </summary>
 		public HttpClientHandler httpClientHandler { get; private set; }
+		/// <summary>
+		/// Gets a value indicating if this ErrorClient will allow the server to use an untrusted certificate.
+		/// </summary>
+		public bool acceptAnyCertificate { get; private set; }
 
 		/// <summary>
 		/// <para>Initializes the ErrorClient. Create only one of these per application.</para>
@@ -44,11 +50,13 @@ namespace ErrorTrackerClient
 		/// <para>If this path ever changes, items previously saved in it may not ever be successfully submitted to the server.</para>
 		/// <para>If you use multiple Error Tracker services or multiple ErrorClient instances for any reason, this path must be unique for each one.</para>
 		/// </param>
-		public ErrorClient(Func<object, string> serializeJson, Func<string> submitUrl, Func<string> pathToSaveFailedSubmissions)
+		/// <param name="acceptAnyCertificate">If true, this ErrorClient will allow the server to use an untrusted certificate.  Has no effect when [submitUrl] does not use "https://".</param>
+		public ErrorClient(Func<object, string> serializeJson, Func<string> submitUrl, Func<string> pathToSaveFailedSubmissions, bool acceptAnyCertificate = false)
 		{
 			this.serializeJson = serializeJson;
 			this.submitUrl = submitUrl;
 			this.pathToSaveFailedSubmissions = pathToSaveFailedSubmissions;
+			this.acceptAnyCertificate = acceptAnyCertificate;
 
 			if (!ServicePointManager.SecurityProtocol.HasFlag(SecurityProtocolType.Tls12))
 				ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
@@ -56,6 +64,8 @@ namespace ErrorTrackerClient
 				ServicePointManager.DefaultConnectionLimit = 16;
 
 			httpClientHandler = new HttpClientHandler();
+			if (acceptAnyCertificate)
+				httpClientHandler.ServerCertificateCustomValidationCallback = AcceptAnyCertificate;
 			httpClient = new HttpClient(httpClientHandler);
 			httpClient.DefaultRequestHeaders.ExpectContinue = false;
 			httpClient.Timeout = TimeSpan.FromSeconds(15);
@@ -107,7 +117,7 @@ namespace ErrorTrackerClient
 				if (httpResponse.StatusCode == HttpStatusCode.OK)
 					return true;
 			}
-			catch { }
+			catch (Exception ex) { SubmissionFailureHandler(ex); }
 			return false;
 		}
 
@@ -161,6 +171,74 @@ namespace ErrorTrackerClient
 				}
 			}
 			catch { }
+		}
+
+		private static object writeLastSubmitFailureLock = new object();
+		private void SubmissionFailureHandler(Exception ex)
+		{
+			try
+			{
+				string dirPath = pathToSaveFailedSubmissions();
+				if (!string.IsNullOrWhiteSpace(dirPath))
+				{
+					string failurePath = Path.Combine(dirPath, "LastSubmitFailure.txt");
+					FileInfo fi = new FileInfo(failurePath);
+					if (!fi.Directory.Exists)
+						Directory.CreateDirectory(fi.Directory.FullName);
+					string error = DateTime.Now.ToString() + ": " + ex.ToString();
+					int tries = 4;
+					lock (writeLastSubmitFailureLock)
+					{
+						try
+						{
+							File.WriteAllText(failurePath, error, UTF8NoBOM);
+						}
+						catch
+						{
+							if (--tries > 0)
+								Thread.Sleep(5);
+							else
+								return;
+						}
+					}
+				}
+			}
+			catch { }
+		}
+		private void DebugLog(string str)
+		{
+			try
+			{
+				string dirPath = pathToSaveFailedSubmissions();
+				if (!string.IsNullOrWhiteSpace(dirPath))
+				{
+					string failurePath = Path.Combine(dirPath, "Debug-" + TimeUtil.GetTimeInMsSinceEpoch() + "-" + Guid.NewGuid().ToString() + ".txt");
+					FileInfo fi = new FileInfo(failurePath);
+					if (!fi.Directory.Exists)
+						Directory.CreateDirectory(fi.Directory.FullName);
+					string message = DateTime.Now.ToString() + ": " + str;
+					int tries = 4;
+					lock (writeLastSubmitFailureLock)
+					{
+						try
+						{
+							File.WriteAllText(failurePath, message, UTF8NoBOM);
+						}
+						catch
+						{
+							if (--tries > 0)
+								Thread.Sleep(5);
+							else
+								return;
+						}
+					}
+				}
+			}
+			catch { }
+		}
+		private bool AcceptAnyCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+		{
+			return true;
 		}
 	}
 }

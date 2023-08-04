@@ -122,11 +122,11 @@ namespace ErrorTrackerServer
 		{
 			return new FileInfo(wwwDirectoryBase + "Default.html");
 		}
-		private List<KeyValuePair<string, string>> GetCacheLastModifiedHeaders(TimeSpan maxAge, DateTime lastModifiedUTC)
+		private HttpHeaderCollection GetCacheLastModifiedHeaders(TimeSpan maxAge, DateTime lastModifiedUTC)
 		{
-			List<KeyValuePair<string, string>> additionalHeaders = new List<KeyValuePair<string, string>>();
-			additionalHeaders.Add(new KeyValuePair<string, string>("Cache-Control", "max-age=" + (long)maxAge.TotalSeconds + ", public"));
-			additionalHeaders.Add(new KeyValuePair<string, string>("Last-Modified", lastModifiedUTC.ToString("R")));
+			HttpHeaderCollection additionalHeaders = new HttpHeaderCollection();
+			additionalHeaders.Add("Cache-Control", "max-age=" + (long)maxAge.TotalSeconds + ", public");
+			additionalHeaders.Add("Last-Modified", lastModifiedUTC.ToString("R"));
 			return additionalHeaders;
 		}
 
@@ -161,9 +161,10 @@ namespace ErrorTrackerServer
 		/// <summary>
 		/// This method must return true for the <see cref="XForwardedForHeader"/> and <see cref="XRealIPHeader"/> flags to be honored.  This method should only return true if the provided remote IP address is trusted to provide the related headers.
 		/// </summary>
-		/// <param name="remoteIpAddress"></param>
+		/// <param name="p">HttpProcessor</param>
+		/// <param name="remoteIpAddress">IPAddress of the remote client.</param>
 		/// <returns></returns>
-		public override bool IsTrustedProxyServer(IPAddress remoteIpAddress)
+		public override bool IsTrustedProxyServer(HttpProcessor p, IPAddress remoteIpAddress)
 		{
 			string ip = remoteIpAddress.ToString();
 			string[] trustedProxyIPs = Settings.data.trustedProxyIPs;
