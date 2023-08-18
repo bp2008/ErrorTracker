@@ -130,7 +130,7 @@ namespace ErrorTrackerServer
 			return additionalHeaders;
 		}
 
-		public override void handlePOSTRequest(HttpProcessor p, StreamReader inputData)
+		public override void handlePOSTRequest(HttpProcessor p)
 		{
 			if (!IsPostgreSQLDbReady())
 			{
