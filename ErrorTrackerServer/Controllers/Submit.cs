@@ -43,7 +43,9 @@ namespace ErrorTrackerServer.Controllers
 				return StatusCode("404 Not Found");
 
 			// After this point, the request is allowed.
-			byte[] data = ByteUtil.ReadToEnd(Context.httpProcessor.RequestBodyStream);
+			if (!ByteUtil.ReadToEndWithMaxLength(Context.httpProcessor.RequestBodyStream, 50 * 1024 * 1024, out byte[] data))
+				return StatusCode("400 Request Body is Required");
+
 			string str = ByteUtil.Utf8NoBOM.GetString(data);
 			ErrorTrackerClient.Event clientEvent = JsonConvert.DeserializeObject<ErrorTrackerClient.Event>(str);
 			if (string.IsNullOrEmpty(clientEvent?.Message))
