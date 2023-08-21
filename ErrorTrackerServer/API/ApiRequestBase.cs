@@ -49,14 +49,9 @@ namespace ErrorTrackerServer
 		{
 			if (httpProcessor.http_method != "POST")
 				throw new Exception("This API method must be called using HTTP POST");
-			
-			if (ByteUtil.ReadToEndWithMaxLength(httpProcessor.RequestBodyStream, 50 * 1024 * 1024, out byte[] data))
-			{
-				string str = ByteUtil.Utf8NoBOM.GetString(data);
-				return JsonConvert.DeserializeObject<T>(str);
-			}
-			else
-				throw new Exception("Request body was too long (max 50 MiB).");
+
+			string str = ByteUtil.Utf8NoBOM.GetString(httpProcessor.GetRequestBodyMemoryStream(50 * 1024 * 1024).ToArray());
+			return JsonConvert.DeserializeObject<T>(str);
 		}
 	}
 }
