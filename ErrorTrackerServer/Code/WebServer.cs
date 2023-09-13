@@ -7,7 +7,6 @@ using System.Reflection;
 using BPUtil;
 using BPUtil.MVC;
 using BPUtil.SimpleHttp;
-using ErrorTrackerServer;
 using Newtonsoft.Json;
 
 namespace ErrorTrackerServer
@@ -50,18 +49,18 @@ namespace ErrorTrackerServer
 		{
 			if (!IsPostgreSQLDbReady())
 			{
-				p.writeFailure("500 Internal Server Error", GetDbReadynessString());
+				p.Response.Simple("500 Internal Server Error", GetDbReadynessString());
 				return;
 			}
 			if (ErrorTrackerSvc.LoadingDatabases)
 			{
-				p.writeFailure("500 Internal Server Error", "Service is loading…");
+				p.Response.Simple("500 Internal Server Error", "Service is loading…");
 				return;
 			}
 
 			Settings.data.RemoveAppPath(p);
 
-			if (mvcMain.ProcessRequest(p, p.requestedPage))
+			if (mvcMain.ProcessRequest(p, p.Request.Page))
 			{
 			}
 			else
@@ -70,14 +69,14 @@ namespace ErrorTrackerServer
 				DirectoryInfo WWWDirectory = new DirectoryInfo(Settings.data.GetWWWDirectoryBase());
 				string wwwDirectoryBase = WWWDirectory.FullName.Replace('\\', '/').TrimEnd('/') + '/';
 
-				FileInfo fi = new FileInfo(wwwDirectoryBase + p.requestedPage);
+				FileInfo fi = new FileInfo(wwwDirectoryBase + p.Request.Page);
 				string targetFilePath = fi.FullName.Replace('\\', '/');
 				if (!targetFilePath.StartsWith(wwwDirectoryBase) || targetFilePath.Contains("../"))
 				{
-					p.writeFailure("400 Bad Request");
+					p.Response.Simple("400 Bad Request");
 					return;
 				}
-				if (!p.requestedPage.IEquals("service-worker.js"))
+				if (!p.Request.Page.IEquals("service-worker.js"))
 				{
 					if (webpackProxy != null)
 					{
@@ -94,58 +93,35 @@ namespace ErrorTrackerServer
 					}
 				}
 				if (!fi.Exists
-					|| p.requestedPage.IEquals("")
-					|| p.requestedPage.IEquals("default")
-					|| p.requestedPage.IEquals("default.html"))
+					|| p.Request.Page.IEquals("")
+					|| p.Request.Page.IEquals("default")
+					|| p.Request.Page.IEquals("default.html"))
 				{
 					mvcMain.ProcessRequest(p, "Default");
 					return;
 				}
 
-				if (fi.LastWriteTimeUtc.ToString("R") == p.GetHeaderValue("if-modified-since"))
-				{
-					p.writeSuccess(Mime.GetMimeType(fi.Extension), -1, "304 Not Modified");
-					return;
-				}
-				using (FileStream fs = fi.OpenRead())
-				{
-					p.writeSuccess(Mime.GetMimeType(fi.Extension), fi.Length, additionalHeaders: GetCacheLastModifiedHeaders(TimeSpan.FromHours(1), fi.LastWriteTimeUtc));
-					p.outputStream.Flush();
-					fs.CopyTo(p.tcpStream);
-					p.tcpStream.Flush();
-				}
+				p.Response.StaticFile(fi);
 				#endregion
 			}
-		}
-
-		private FileInfo GetDefaultFile(string wwwDirectoryBase)
-		{
-			return new FileInfo(wwwDirectoryBase + "Default.html");
-		}
-		private HttpHeaderCollection GetCacheLastModifiedHeaders(TimeSpan maxAge, DateTime lastModifiedUTC)
-		{
-			HttpHeaderCollection additionalHeaders = new HttpHeaderCollection();
-			additionalHeaders.Add("Cache-Control", "max-age=" + (long)maxAge.TotalSeconds + ", public");
-			additionalHeaders.Add("Last-Modified", lastModifiedUTC.ToString("R"));
-			return additionalHeaders;
 		}
 
 		public override void handlePOSTRequest(HttpProcessor p)
 		{
 			if (!IsPostgreSQLDbReady())
 			{
-				p.writeFailure("500 Internal Server Error", GetDbReadynessString());
+				p.Response.Simple("500 Internal Server Error", GetDbReadynessString());
 				return;
 			}
 			if (ErrorTrackerSvc.LoadingDatabases)
 			{
-				p.writeFailure("500 Internal Server Error", "Service is loading…");
+				p.Response.Simple("500 Internal Server Error", "Service is loading…");
 				return;
 			}
 
 			Settings.data.RemoveAppPath(p);
 
-			if (mvcMain.ProcessRequest(p, p.requestedPage))
+			if (mvcMain.ProcessRequest(p, p.Request.Page))
 			{
 			}
 			else

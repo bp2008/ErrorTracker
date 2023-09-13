@@ -22,16 +22,14 @@ namespace ErrorTrackerServer.Controllers
 		/// Returns 400 if a body has not been correctly POSTed.
 		/// </summary>
 		/// <returns></returns>
+		[RequiresHttpMethod("POST")]
 		public ActionResult Index()
 		{
-			if (Context.httpProcessor.http_method != "POST")
-				return StatusCode("400 Bad Request");
-
-			string projectName = Context.httpProcessor.GetParam("p");
+			string projectName = Context.httpProcessor.Request.GetParam("p");
 			if (string.IsNullOrWhiteSpace(projectName) || !StringUtil.IsAlphaNumericOrUnderscore(projectName))
 				return StatusCode("404 Not Found");
 
-			string submitKey = Context.httpProcessor.GetParam("k");
+			string submitKey = Context.httpProcessor.Request.GetParam("k");
 			if (string.IsNullOrWhiteSpace(submitKey))
 				return StatusCode("404 Not Found");
 
@@ -43,10 +41,11 @@ namespace ErrorTrackerServer.Controllers
 				return StatusCode("404 Not Found");
 
 			// After this point, the request is allowed.
-			if (!ByteUtil.ReadToEndWithMaxLength(Context.httpProcessor.RequestBodyStream, 50 * 1024 * 1024, out byte[] data))
+			ByteUtil.ReadToEndResult readResult = ByteUtil.ReadToEndWithMaxLength(Context.httpProcessor.Request.RequestBodyStream, 50 * 1024 * 1024);
+			if (readResult.Data == null)
 				return StatusCode("400 Request Body is Required");
 
-			string str = ByteUtil.Utf8NoBOM.GetString(data);
+			string str = ByteUtil.Utf8NoBOM.GetString(readResult.Data);
 			ErrorTrackerClient.Event clientEvent = JsonConvert.DeserializeObject<ErrorTrackerClient.Event>(str);
 			if (string.IsNullOrEmpty(clientEvent?.Message))
 				return StatusCode("400 Bad Request");

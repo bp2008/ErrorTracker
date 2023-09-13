@@ -6,12 +6,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ErrorTrackerServer
 {
 	public class ApiRequestBase
 	{
+		/// <summary>
+		/// Maximum size of a Request Body, in bytes.
+		/// </summary>
+		public static readonly int RequestBodySizeLimit = 20 * 1024 * 1024;
+
 		/// <summary>
 		/// Session ID provided by the client.  See <see cref="GetSession(bool)"/> to retrieve a <see cref="ServerSession"/> object.
 		/// </summary>
@@ -47,11 +53,19 @@ namespace ErrorTrackerServer
 		/// <returns></returns>
 		public static T ParseRequest<T>(HttpProcessor httpProcessor)
 		{
-			if (httpProcessor.http_method != "POST")
+			if (httpProcessor.Request.HttpMethod != "POST")
 				throw new Exception("This API method must be called using HTTP POST");
-
-			string str = ByteUtil.Utf8NoBOM.GetString(httpProcessor.GetRequestBodyMemoryStream(50 * 1024 * 1024).ToArray());
-			return JsonConvert.DeserializeObject<T>(str);
+			httpProcessor.Request.GetRequestBodyMemoryStreamSync(RequestBodySizeLimit);
+			ByteUtil.ReadToEndResult result = ByteUtil.ReadToEndWithMaxLength(httpProcessor.Request.RequestBodyStream, RequestBodySizeLimit);
+			if (result.EndOfStream)
+			{
+				string str = ByteUtil.Utf8NoBOM.GetString(result.Data);
+				return JsonConvert.DeserializeObject<T>(str);
+			}
+			else
+			{
+				throw new HttpProcessor.HttpProcessorException("413 Content Too Large", "This server allows a maximum request body size of " + RequestBodySizeLimit + " bytes.");
+			}
 		}
 	}
 }

@@ -16,14 +16,15 @@ namespace ErrorTrackerServer.Controllers
 		/// <summary>
 		/// May allow or disallow access to the controller.  This is called before the client-specified action method is called.
 		/// </summary>
-		/// <param name="result">If authorization fails, this should be set to an appropriate result such as an HTTP 403 Forbidden response. If null, authorization will be assumed to have succeeded.</param>
-		public override void OnAuthorization(ref ActionResult result)
+		/// <returns>If authorization fails, this should be an appropriate result such as an HTTP 403 Forbidden response. If null, authorization will be assumed to have succeeded.</returns>
+		public override ActionResult OnAuthorization()
 		{
-			base.OnAuthorization(ref result);
+			ActionResult result = base.OnAuthorization();
 			if (result != null)
-				return;
+				return result;
 			if (!session.IsAdminValid)
-				result = StatusCode("418 Insufficient Privilege");
+				return StatusCode("418 Insufficient Privilege");
+			return null;
 		}
 	}
 }

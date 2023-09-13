@@ -203,7 +203,7 @@ namespace ErrorTrackerServer
 		/// <param name="p">HttpProcessor to remove the appPath from.</param>
 		public void RemoveAppPath(HttpProcessor p)
 		{
-			p.RemoveAppPath(appPath);
+			p.Request.RemoveAppPath(appPath);
 		}
 		#region Project Management
 		/// <summary>

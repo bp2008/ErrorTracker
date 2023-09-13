@@ -22,7 +22,7 @@ namespace ErrorTrackerServer.Controllers
 			img = wallpaperCache;
 			if (img == null)
 				return StatusCode("404 Not Found");
-			else if (!string.IsNullOrWhiteSpace(img.hsh) && Context.httpProcessor.GetHeaderValue("If-None-Match") == img.hsh)
+			else if (!string.IsNullOrWhiteSpace(img.hsh) && Context.httpProcessor.Request.Headers.Get("If-None-Match") == img.hsh)
 				return StatusCode("304 Not Modified");
 			else
 			{

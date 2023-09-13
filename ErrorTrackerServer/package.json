@@ -2,10 +2,10 @@
     "version": "1.0.0",
     "name": "ErrorTrackerServer",
     "private": true,
-    "scripts": {
-        "start": "webpack-dev-server --hot --inline",
-        "build": "webpack"
-    },
+  "scripts": {
+    "start": "set NODE_OPTIONS=--openssl-legacy-provider && webpack-dev-server --hot --inline",
+    "build": "set NODE_OPTIONS=--openssl-legacy-provider && webpack"
+  },
     "dependencies": {
         "@deveodk/vue-toastr": "1.1.0",
         "babel-polyfill": "6.26.0",
