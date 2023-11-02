@@ -260,6 +260,12 @@ namespace ErrorTrackerServer
 		/// </summary>
 		public List<string> Internal_AllowedProjects = new List<string>();
 		private ReaderWriterLockSlim allowedProjectsLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+		/// <summary>
+		/// Don't query this directly -- use instance methods like <see cref="AllowReadOnlyProject"/> and <see cref="IsProjectAllowed"/> instead to guarantee thread safety.
+		/// (List of users)
+		/// </summary>
+		public List<string> Internal_ReadOnlyProjects = new List<string>();
+		private ReaderWriterLockSlim readOnlyProjectsLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
 		public User()
 		{

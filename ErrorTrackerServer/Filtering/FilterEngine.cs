@@ -156,12 +156,14 @@ namespace ErrorTrackerServer.Filtering
 		/// Checks for duplicates, adds the event to the database, and runs all enabled filters against it, within a single transaction.
 		/// </summary>
 		/// <param name="ev">The event to run filters against.</param>
+		/// <param name="isDupe">(Output) true if this event was a duplicate of an existing event, and therefore not added to the database.  Some events which happen very rapidly (more than once per millisecond) can be somewhat throttled by this.</param>
 		/// <returns>A BasicEventTimer containing timing data.</returns>
-		public BasicEventTimer AddEventAndRunEnabledFilters(Event ev)
+		public BasicEventTimer AddEventAndRunEnabledFilters(Event ev, out bool isDupe)
 		{
 			BasicEventTimer bet = new BasicEventTimer();
 			if (ev == null)
 				throw new ArgumentNullException("ev", "FilterEngine.AddEventAndRunEnabledFilters was given a null event.");
+			bool anyDupe = false;
 			try
 			{
 				bet.Start("Begin Transaction");
@@ -173,7 +175,7 @@ namespace ErrorTrackerServer.Filtering
 						// If our response is not received by the client, they will most likely submit again, causing a duplicate to be received.
 						// Check for duplicate submissions.
 						List<Event> events = db.GetEventsByDate(ev.Date, ev.Date);
-						bool anyDupe = events.Any(existing =>
+						anyDupe = events.Any(existing =>
 						{
 							if (existing.Date == ev.Date
 							&& existing.EventType == ev.EventType
@@ -231,6 +233,7 @@ namespace ErrorTrackerServer.Filtering
 				bet.Stop();
 				throw new FilterException(bet, "An exception was thrown while adding and filtering a new event.", ex);
 			}
+			isDupe = anyDupe;
 			return bet;
 		}
 

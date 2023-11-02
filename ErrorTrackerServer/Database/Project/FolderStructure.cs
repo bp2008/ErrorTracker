@@ -172,7 +172,7 @@ namespace ErrorTrackerServer
 			{
 				foreach (FolderStructure child in Children)
 				{
-					if (child.Name.Equals(parts[0], StringComparison.OrdinalIgnoreCase))
+					if (child.Name.IEquals(parts[0]))
 					{
 						next = child;
 						break;

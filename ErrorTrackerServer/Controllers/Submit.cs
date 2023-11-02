@@ -100,13 +100,15 @@ namespace ErrorTrackerServer.Controllers
 				Event ev = JsonConvert.DeserializeObject<Event>(JsonConvert.SerializeObject(eventOriginal));
 				ev.FolderId = 0;
 				ev.Color = new Event().Color;
+				bool isDupe;
 				using (FilterEngine fe = new FilterEngine(p.Name))
 				{
-					BasicEventTimer bet = fe.AddEventAndRunEnabledFilters(ev);
+					BasicEventTimer bet = fe.AddEventAndRunEnabledFilters(ev, out isDupe);
 					if (Settings.data.verboseSubmitLogging)
 						Util.SubmitLog(p.Name, "Event " + ev.EventId + " Submission Succeeded\r\n" + bet.ToString("\r\n"));
 				}
-				PushManager.Notify(p.Name, ev);
+				if (!isDupe)
+					PushManager.Notify(p.Name, ev);
 				return SubmitResult.OK;
 			}
 			catch (FilterException ex)

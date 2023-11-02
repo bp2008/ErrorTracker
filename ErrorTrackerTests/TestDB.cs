@@ -234,14 +234,17 @@ namespace ErrorTrackerTests
 
 				using (FilterEngine fe = new FilterEngine(db.ProjectName))
 				{
-					fe.AddEventAndRunEnabledFilters(CreateTestEvent(9));
+					fe.AddEventAndRunEnabledFilters(CreateTestEvent(9), out bool isDupe);
 					Assert.AreEqual(1, db.CountEvents());
+					Assert.IsFalse(isDupe);
 
-					fe.AddEventAndRunEnabledFilters(CreateTestEvent(10));
+					fe.AddEventAndRunEnabledFilters(CreateTestEvent(10), out isDupe);
 					Assert.AreEqual(1, db.CountEvents());
+					Assert.IsFalse(isDupe);
 
-					fe.AddEventAndRunEnabledFilters(CreateTestEvent(11));
+					fe.AddEventAndRunEnabledFilters(CreateTestEvent(11), out isDupe);
 					Assert.AreEqual(2, db.CountEvents());
+					Assert.IsFalse(isDupe);
 				}
 			}
 		}
