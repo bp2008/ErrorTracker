@@ -144,7 +144,7 @@ namespace ErrorTrackerServer
 								}
 							}
 						}
-						Thread.Sleep(1000);
+						Thread.Sleep(5000);
 					}
 					catch (ThreadAbortException) { }
 					catch (Exception ex)
