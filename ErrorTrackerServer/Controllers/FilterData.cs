@@ -23,7 +23,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			GetAllFiltersRequest request = ApiRequestBase.ParseRequest<GetAllFiltersRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			GetAllFiltersResponse response = new GetAllFiltersResponse();
@@ -35,7 +35,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			OneFilterRequest request = ApiRequestBase.ParseRequest<OneFilterRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			GetFilterResponse response = new GetFilterResponse();
@@ -47,7 +47,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			AddFilterRequest request = ApiRequestBase.ParseRequest<AddFilterRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -73,7 +73,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			EditFilterRequest request = ApiRequestBase.ParseRequest<EditFilterRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -91,7 +91,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			OneFilterRequest request = ApiRequestBase.ParseRequest<OneFilterRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -109,7 +109,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			OneFilterConditionRequest request = ApiRequestBase.ParseRequest<OneFilterConditionRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -127,7 +127,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			OneFilterConditionRequest request = ApiRequestBase.ParseRequest<OneFilterConditionRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -145,7 +145,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			OneFilterConditionRequest request = ApiRequestBase.ParseRequest<OneFilterConditionRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -163,7 +163,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			OneFilterActionRequest request = ApiRequestBase.ParseRequest<OneFilterActionRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -181,7 +181,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			OneFilterActionRequest request = ApiRequestBase.ParseRequest<OneFilterActionRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -199,7 +199,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			OneFilterActionRequest request = ApiRequestBase.ParseRequest<OneFilterActionRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -217,7 +217,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			ReorderFiltersRequest request = ApiRequestBase.ParseRequest<ReorderFiltersRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -231,7 +231,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			OneFilterRequest request = ApiRequestBase.ParseRequest<OneFilterRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (FilterEngine fe = new FilterEngine(request.projectName))
@@ -242,7 +242,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			ProjectRequestBase request = ApiRequestBase.ParseRequest<ProjectRequestBase>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (FilterEngine fe = new FilterEngine(request.projectName))

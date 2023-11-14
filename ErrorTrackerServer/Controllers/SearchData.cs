@@ -22,7 +22,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			SearchSimpleRequest request = ApiRequestBase.ParseRequest<SearchSimpleRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			BasicEventTimer bet = new BasicEventTimer();
@@ -48,7 +48,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			SearchAdvancedRequest request = ApiRequestBase.ParseRequest<SearchAdvancedRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			BasicEventTimer bet = new BasicEventTimer();

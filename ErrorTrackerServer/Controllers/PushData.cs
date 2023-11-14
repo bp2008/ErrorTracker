@@ -25,7 +25,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			PushRegistrationRequest request = ApiRequestBase.ParseRequest<PushRegistrationRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			User user = session.GetUser();
@@ -38,7 +38,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			PushRegistrationRequest request = ApiRequestBase.ParseRequest<PushRegistrationRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			User user = session.GetUser();
@@ -51,7 +51,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			PushRegistrationRequest request = ApiRequestBase.ParseRequest<PushRegistrationRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			User user = session.GetUser();

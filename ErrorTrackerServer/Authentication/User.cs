@@ -404,6 +404,51 @@ namespace ErrorTrackerServer
 		{
 			Settings._UpdateList(newAllowedProjects, Internal_AllowedProjects, allowedProjectsLock);
 		}
+
+		/// <summary>
+		/// Adds the project to the user's list of allowed ReadOnly projects (does nothing if the project is already in the list).  Project names are case-insensitive.
+		/// </summary>
+		/// <param name="projectName">Project name (case-insensitive).</param>
+		/// <returns></returns>
+		public void AllowProjectReadOnly(string projectName)
+		{
+			Settings._TryAddListItem(projectName, Internal_ReadOnlyProjects, s => s, readOnlyProjectsLock);
+		}
+		/// <summary>
+		/// Removes the project from the user's list of allowed ReadOnly projects, returning true if the project was removed.  Returns false if the project was not in the list.
+		/// </summary>
+		/// <param name="projectName">Project name (case-insensitive).</param>
+		/// <returns></returns>
+		public bool DisallowProjectReadOnly(string projectName)
+		{
+			return Settings._TryRemoveListItem(projectName, Internal_ReadOnlyProjects, s => s, readOnlyProjectsLock) != null;
+		}
+		/// <summary>
+		/// Returns true if the specified project name is in this user's list of allowed ReadOnly projects.
+		/// </summary>
+		/// <param name="projectName">Project name (case-insensitive).</param>
+		/// <returns></returns>
+		public bool IsProjectAllowedReadOnly(string projectName)
+		{
+			return Settings._GetListItem(projectName, Internal_ReadOnlyProjects, s => s, readOnlyProjectsLock) != null;
+		}
+		/// <summary>
+		/// Returns a snapshot of this user's list of allowed ReadOnly projects.
+		/// </summary>
+		/// <returns></returns>
+		public List<string> GetAllowedProjectsReadOnly()
+		{
+			return Settings._GetList(Internal_ReadOnlyProjects, readOnlyProjectsLock);
+		}
+		/// <summary>
+		/// Returns true if the specified project name is in this user's list of allowed ReadOnly projects.
+		/// </summary>
+		/// <param name="projectName">Project name (case-insensitive).</param>
+		/// <returns></returns>
+		public void SetAllowedProjectsReadOnly(List<string> newAllowedProjects)
+		{
+			Settings._UpdateList(newAllowedProjects, Internal_ReadOnlyProjects, readOnlyProjectsLock);
+		}
 		/// <summary>
 		/// Assigns a unique UserId, only if one is not already set. Returns true if the UserId was set by the method call.
 		/// </summary>

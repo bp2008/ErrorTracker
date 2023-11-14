@@ -27,7 +27,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			GetEventsRequest request = ApiRequestBase.ParseRequest<GetEventsRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			string customTagKey = session.GetUser().GetEventListCustomTagKey(p.Name);
@@ -82,7 +82,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			GetEventRequest request = ApiRequestBase.ParseRequest<GetEventRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			Event ev = null;
@@ -109,7 +109,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			MoveEventsRequest request = ApiRequestBase.ParseRequest<MoveEventsRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -127,7 +127,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			MoveEventsMapRequest request = ApiRequestBase.ParseRequest<MoveEventsMapRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			DeferredActionCollection dac = new DeferredActionCollection();
@@ -148,7 +148,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			EventIdsRequest request = ApiRequestBase.ParseRequest<EventIdsRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -166,7 +166,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			SetEventsColorRequest request = ApiRequestBase.ParseRequest<SetEventsColorRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -184,7 +184,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			SetEventsReadStateRequest request = ApiRequestBase.ParseRequest<SetEventsReadStateRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -204,7 +204,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			ProjectRequestBase request = ApiRequestBase.ParseRequest<ProjectRequestBase>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -221,7 +221,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			SetEventListCustomTagKeyRequest request = ApiRequestBase.ParseRequest<SetEventListCustomTagKeyRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			session.GetUser().SetEventListCustomTagKey(p.Name, request.eventListCustomTagKey);
@@ -237,10 +237,10 @@ namespace ErrorTrackerServer.Controllers
 		{
 			CopyEventsToProjectRequest request = ApiRequestBase.ParseRequest<CopyEventsToProjectRequest>(this);
 
-			if (!request.Validate(out Project pSrc, out ApiResponseBase error))
+			if (!request.Validate(false, out Project pSrc, out ApiResponseBase error))
 				return Json(error);
 
-			if (!ProjectRequestBase.Validate(request.targetProjectName, request.GetSession(), out Project pDest, out ApiResponseBase error2))
+			if (!ProjectRequestBase.Validate(request.targetProjectName, request.GetSession(), true, out Project pDest, out ApiResponseBase error2))
 				return Json(error2);
 
 			using (DB dbSrc = new DB(pSrc.Name))

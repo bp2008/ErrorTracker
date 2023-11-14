@@ -41,6 +41,7 @@ namespace ErrorTrackerServer.Controllers
 			if (!u.Permanent)
 				u.IsAdmin = request.userData.IsAdmin;
 			u.SetAllowedProjects(request.userData.AllowedProjects.ToList());
+			u.SetAllowedProjectsReadOnly(request.userData.AllowedProjectsReadOnly.ToList());
 			Settings.data.Save();
 
 			Logger.Info("User \"" + request.userName + "\" was edited by \"" + session.userName + "\"");
@@ -60,6 +61,7 @@ namespace ErrorTrackerServer.Controllers
 
 			User user = new User(request.userData.Name, request.userData.SetPassword, request.userData.Email, request.userData.IsAdmin);
 			user.SetAllowedProjects(request.userData.AllowedProjects.ToList());
+			user.SetAllowedProjectsReadOnly(request.userData.AllowedProjectsReadOnly.ToList());
 
 			if (Settings.data.TryAddUser(user))
 			{
@@ -114,6 +116,8 @@ namespace ErrorTrackerServer.Controllers
 			}).ToList();
 			FieldEditSpec allowedProjects = editSpec.First(s => s.key == "AllowedProjects");
 			allowedProjects.allowedValues = Settings.data.GetAllProjects().Select(p => p.Name).ToArray();
+			FieldEditSpec allowedProjectsReadOnly = editSpec.First(s => s.key == "AllowedProjectsReadOnly");
+			allowedProjectsReadOnly.allowedValues = Settings.data.GetAllProjects().Select(p => p.Name).ToArray();
 		}
 	}
 	public class SetUserDataRequest : ApiRequestBase
@@ -152,8 +156,10 @@ namespace ErrorTrackerServer.Controllers
 		public string SetPassword;
 		[HelpMd("If true, this user will be allowed to use the administrator interface and make changes to the server configuration.")]
 		public bool IsAdmin = false;
-		[HelpMd("List of projects this user is allowed to access.")]
+		[HelpMd("List of projects this user is allowed to read and modify (grants read + write permissions).")]
 		public string[] AllowedProjects;
+		[HelpMd("List of projects this user is allowed to read (grants read permission).")]
+		public string[] AllowedProjectsReadOnly;
 		public UserDataObject() { }
 		public UserDataObject(User u)
 		{
@@ -161,6 +167,7 @@ namespace ErrorTrackerServer.Controllers
 			Email = u.Email;
 			IsAdmin = u.IsAdmin;
 			AllowedProjects = u.GetAllowedProjects().ToArray();
+			AllowedProjectsReadOnly = u.GetAllowedProjectsReadOnly().ToArray();
 		}
 	}
 }

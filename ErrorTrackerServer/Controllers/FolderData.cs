@@ -22,7 +22,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			ProjectRequestBase request = ApiRequestBase.ParseRequest<ProjectRequestBase>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			GetAllFoldersResponse response = new GetAllFoldersResponse();
@@ -34,7 +34,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			ProjectRequestBase request = ApiRequestBase.ParseRequest<ProjectRequestBase>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			GetFolderStructureResponse response = new GetFolderStructureResponse();
@@ -46,7 +46,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			AddFolderRequest request = ApiRequestBase.ParseRequest<AddFolderRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -61,7 +61,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			MoveFolderRequest request = ApiRequestBase.ParseRequest<MoveFolderRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -76,7 +76,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			RenameFolderRequest request = ApiRequestBase.ParseRequest<RenameFolderRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -91,7 +91,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			OneFolderRequest request = ApiRequestBase.ParseRequest<OneFolderRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			using (DB db = new DB(p.Name))
@@ -106,7 +106,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			OneFolderRequest request = ApiRequestBase.ParseRequest<OneFolderRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			try
@@ -124,7 +124,7 @@ namespace ErrorTrackerServer.Controllers
 		{
 			RunFilterOnFolderRequest request = ApiRequestBase.ParseRequest<RunFilterOnFolderRequest>(this);
 
-			if (!request.Validate(out Project p, out ApiResponseBase error))
+			if (!request.Validate(true, out Project p, out ApiResponseBase error))
 				return Json(error);
 
 			try

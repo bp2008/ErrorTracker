@@ -25,7 +25,7 @@ namespace ErrorTrackerServer.Controllers
 			User u = session.GetUser();
 			GetProjectListResponse response = new GetProjectListResponse();
 			response.projects = Settings.data.GetAllProjects()
-				.Where(p => u.IsProjectAllowed(p.Name))
+				.Where(p => u.IsProjectAllowed(p.Name) || u.IsProjectAllowedReadOnly(p.Name))
 				.Select(p =>
 				{
 					ClientProject proj = new ClientProject(p.Name);
