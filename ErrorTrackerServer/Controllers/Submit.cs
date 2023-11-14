@@ -1,5 +1,6 @@
 ﻿using BPUtil;
 using BPUtil.MVC;
+using BPUtil.SimpleHttp;
 using ErrorTrackerServer.Code;
 using ErrorTrackerServer.Database.Project.Model;
 using ErrorTrackerServer.Filtering;
@@ -41,7 +42,17 @@ namespace ErrorTrackerServer.Controllers
 				return StatusCode("404 Not Found");
 
 			// After this point, the request is allowed.
-			ByteUtil.ReadToEndResult readResult = ByteUtil.ReadToEndWithMaxLength(Context.httpProcessor.Request.RequestBodyStream, 50 * 1024 * 1024);
+			ByteUtil.ReadToEndResult readResult = null;
+			try
+			{
+				readResult = ByteUtil.ReadToEndWithMaxLength(Context.httpProcessor.Request.RequestBodyStream, 50 * 1024 * 1024);
+			}
+			catch (Exception ex)
+			{
+				if (HttpProcessor.IsOrdinaryDisconnectException(ex))
+					return StatusCode("400 Request Body Read Failure"); // This most likely won't be sent.
+				ex.Rethrow();
+			}
 			if (readResult.Data == null)
 				return StatusCode("400 Request Body is Required");
 
