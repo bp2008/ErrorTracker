@@ -18,7 +18,7 @@ namespace ErrorTrackerServer
 {
 	public partial class ErrorTrackerSvc : ServiceBase
 	{
-		WebServer srv;
+		static WebServer srv;
 		Thread thrMaintainProjects;
 		public static string SvcName { get; private set; }
 		public ErrorTrackerSvc()
@@ -101,14 +101,16 @@ namespace ErrorTrackerServer
 					cert = new X509Certificate2(Settings.data.certificatePath);
 				certSelector = SimpleCertificateSelector.FromCertificate(cert);
 			}
-			SimpleHttpLogger.RegisterLogger(Logger.httpLogger);
 			srv = new WebServer(certSelector);
 
 			thrMaintainProjects = new Thread(maintainProjects);
 			thrMaintainProjects.Name = "Maintain Projects";
 			thrMaintainProjects.IsBackground = false;
 		}
-
+		internal static void ConfigureWebserverLogging()
+		{
+			srv?.EnableLogging(Settings.data.webServerVerboseLogging);
+		}
 		protected override void OnStart(string[] args)
 		{
 			Logger.Info(ServiceName + " " + Globals.AssemblyVersion + " is starting.");

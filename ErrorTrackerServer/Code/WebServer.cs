@@ -25,8 +25,7 @@ namespace ErrorTrackerServer
 			}
 #endif
 
-			SimpleHttpLogger.RegisterLogger(Logger.httpLogger, Settings.data.webServerVerboseLogging);
-			Logger.StartLoggingThreads();
+			this.EnableLogging(Settings.data.webServerVerboseLogging);
 
 			this.XForwardedForHeader = Settings.data.useXForwardedFor;
 			this.XRealIPHeader = Settings.data.useXRealIP;

@@ -72,7 +72,7 @@ namespace ErrorTrackerServer.Controllers
 			Settings.data.postgresCommandTimeout = request.settings.postgresCommandTimeout;
 			Settings.data.Save();
 
-			BPUtil.SimpleHttp.SimpleHttpLogger.RegisterLogger(Logger.httpLogger, Settings.data.webServerVerboseLogging);
+			ErrorTrackerSvc.ConfigureWebserverLogging();
 
 			SetSettingsResponse response = new SetSettingsResponse(true, null);
 			if (requiresRestart)
