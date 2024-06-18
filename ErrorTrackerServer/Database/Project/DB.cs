@@ -36,9 +36,9 @@ namespace ErrorTrackerServer
 		/// </summary>
 		private static ConcurrentDictionary<string, bool> initializedDatabases = new ConcurrentDictionary<string, bool>();
 		private static object createMigrateLock = new object();
-		///// <summary>
-		///// Collection for keeping locks for each projectName.
-		///// </summary>
+		/// <summary>
+		/// Collection for keeping locks for each projectName.
+		/// </summary>
 		private static ConcurrentDictionary<string, object> dbTransactionLocks = new ConcurrentDictionary<string, object>();
 		/// <summary>
 		/// Use within a "using" block to guarantee correct disposal.  Provides SQL database access.  Not thread safe.

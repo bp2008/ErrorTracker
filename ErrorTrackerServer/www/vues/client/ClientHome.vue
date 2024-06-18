@@ -46,7 +46,7 @@
 </template>
 
 <script>
-	import { GetProjectList } from 'appRoot/api/ProjectList';
+	import { GetProjectList, GetProjectEventCounts } from 'appRoot/api/ProjectList';
 	import ProjectDisplay from 'appRoot/vues/client/projectdisplay/ProjectDisplay.vue';
 	import LoginRecordsTable from 'appRoot/vues/common/loginrecords/LoginRecordsTable.vue';
 
@@ -114,7 +114,26 @@
 					.then(data =>
 					{
 						if (data.success)
+						{
+							for (let i = 0; i < data.projects.length; i++)
+							{
+								data.projects[i].EventCount = data.projects[i].UniqueEventCount = "…";
+							}
 							this.projects = data.projects;
+
+							GetProjectEventCounts()
+								.then(data =>
+								{
+									if (data.success)
+										this.projects = data.projects;
+									else
+										toaster.error(data.error);
+								})
+								.catch(err =>
+								{
+									toaster.error(err.message);
+								});
+						}
 						else
 							this.error = data.error;
 					})
