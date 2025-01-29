@@ -24,7 +24,6 @@ namespace ErrorTrackerServer.Controllers
 			{
 				isNewSession = true;
 				session = ServerSession.CreateUnauthenticated();
-				SessionManager.AddSession(session);
 			}
 
 			// Initialize challenge data
@@ -58,8 +57,7 @@ namespace ErrorTrackerServer.Controllers
 					if (user.AuthenticateUser(args.token, session.authChallenge))
 					{
 						// Delete challenge data -- it is no longer needed and should not be reused.
-						session.authChallenge = null;
-						session.userName = user.Name;
+						session.UserHasAuthenticated(user.Name);
 						using (GlobalDb db = new GlobalDb())
 							db.AddLoginRecord(user.Name, Context.httpProcessor.RemoteIPAddressStr, session.sid);
 						return Json(new LoginSuccessResponse(session));

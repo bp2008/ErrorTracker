@@ -15,7 +15,7 @@ namespace ErrorTrackerServer
 		/// <summary>
 		/// Session ID string.
 		/// </summary>
-		public string sid;
+		public string sid { get; private set; }
 
 		/// <summary>
 		/// A nonce used in authentication so the client does not have to send the password in plain text.
@@ -25,7 +25,7 @@ namespace ErrorTrackerServer
 		/// <summary>
 		/// The name of the authenticated user, or null until authentication is successful.
 		/// </summary>
-		public string userName = null;
+		public string userName { get; private set; } = null;
 
 		/// <summary>
 		/// Contains SessionManager.CurrentTime from the time this session was last touched by a user.  This value controls idle timeouts.
@@ -86,13 +86,17 @@ namespace ErrorTrackerServer
 		{
 			lastTouched = SessionManager.CurrentTime;
 		}
-
+		/// <summary>
+		/// Creates an unauthenticated session with a random session ID and adds it to the session manager.
+		/// </summary>
+		/// <returns></returns>
 		internal static ServerSession CreateUnauthenticated()
 		{
 			ServerSession session = new ServerSession();
 			// 16 characters, each character having 62 possible values, yields (62 ^ 16 =) 47672401706823533450263330816 possible session strings.
 			session.sid = StringUtil.GetRandomAlphaNumericString(16);
 			session.TouchNow();
+			SessionManager.AddSession(session);
 			return session;
 		}
 
@@ -104,6 +108,15 @@ namespace ErrorTrackerServer
 		{
 			if (userName != null && !Expired)
 				lastTouched = SessionManager.CurrentTime;
+		}
+		/// <summary>
+		/// Call when the session completes an authentication challenge and should now be considered logged in.
+		/// </summary>
+		/// <param name="userName">User name which logged in.</param>
+		public void UserHasAuthenticated(string userName)
+		{
+			this.authChallenge = null;
+			this.userName = userName;
 		}
 	}
 }

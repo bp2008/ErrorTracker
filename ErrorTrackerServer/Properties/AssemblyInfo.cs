@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("ErrorTrackerServer")]
-[assembly: AssemblyCopyright("Copyright © Brian Pearce 2024")]
+[assembly: AssemblyCopyright("Copyright © Brian Pearce 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

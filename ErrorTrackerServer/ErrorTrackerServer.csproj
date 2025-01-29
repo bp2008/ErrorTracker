@@ -56,21 +56,6 @@
     <Reference Include="Npgsql, Version=6.0.5.0, Culture=neutral, PublicKeyToken=5d8b90d52f46fda7, processorArchitecture=MSIL">
       <HintPath>..\packages\Npgsql.6.0.5\lib\netstandard2.0\Npgsql.dll</HintPath>
     </Reference>
-    <Reference Include="SQLite-net, Version=1.8.116.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\sqlite-net-pcl.1.8.116\lib\netstandard2.0\SQLite-net.dll</HintPath>
-    </Reference>
-    <Reference Include="SQLitePCLRaw.batteries_v2, Version=2.0.7.1395, Culture=neutral, PublicKeyToken=8226ea5df37bcae9, processorArchitecture=MSIL">
-      <HintPath>..\packages\SQLitePCLRaw.bundle_green.2.0.7\lib\net461\SQLitePCLRaw.batteries_v2.dll</HintPath>
-    </Reference>
-    <Reference Include="SQLitePCLRaw.core, Version=2.0.7.1395, Culture=neutral, PublicKeyToken=1488e028ca7ab535, processorArchitecture=MSIL">
-      <HintPath>..\packages\SQLitePCLRaw.core.2.0.7\lib\netstandard2.0\SQLitePCLRaw.core.dll</HintPath>
-    </Reference>
-    <Reference Include="SQLitePCLRaw.nativelibrary, Version=2.0.7.1395, Culture=neutral, PublicKeyToken=502ed628492ab262, processorArchitecture=MSIL">
-      <HintPath>..\packages\SQLitePCLRaw.bundle_green.2.0.7\lib\net461\SQLitePCLRaw.nativelibrary.dll</HintPath>
-    </Reference>
-    <Reference Include="SQLitePCLRaw.provider.dynamic_cdecl, Version=2.0.7.1395, Culture=neutral, PublicKeyToken=b68184102cba0b3b, processorArchitecture=MSIL">
-      <HintPath>..\packages\SQLitePCLRaw.provider.dynamic_cdecl.2.0.7\lib\netstandard2.0\SQLitePCLRaw.provider.dynamic_cdecl.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
@@ -127,6 +112,7 @@
     <Compile Include="API\ProjectRequestBase.cs" />
     <Compile Include="API\ApiRequestBase.cs" />
     <Compile Include="API\ApiResponseBase.cs" />
+    <Compile Include="Authentication\ActiveSession.cs" />
     <Compile Include="Authentication\ErrorTrackerPasswordReset.cs" />
     <Compile Include="Authentication\ServerSession.cs" />
     <Compile Include="Authentication\SessionManager.cs" />
@@ -152,12 +138,6 @@
     <Compile Include="Code\DatabaseSetupForm.Designer.cs">
       <DependentUpon>DatabaseSetupForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Code\DatabaseSqliteMigrateForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Code\DatabaseSqliteMigrateForm.Designer.cs">
-      <DependentUpon>DatabaseSqliteMigrateForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="Code\Emailer.cs" />
     <Compile Include="Code\IPAddressConverter.cs" />
     <Compile Include="Code\PushManager.cs" />
@@ -175,21 +155,6 @@
     <Compile Include="Database\Creation\DbHelper.cs" />
     <Compile Include="Database\PPMapper.cs" />
     <Compile Include="Database\Project\Model\FilterApplied.cs" />
-    <Compile Include="Database\SQLiteMigration\DBBase.cs" />
-    <Compile Include="Database\SQLiteMigration\Global\GlobalDb.cs" />
-    <Compile Include="Database\SQLiteMigration\Global\Model\DbVersion.cs" />
-    <Compile Include="Database\SQLiteMigration\Global\Model\LoginRecord.cs" />
-    <Compile Include="Database\SQLiteMigration\HexStringJsonConverter.cs" />
-    <Compile Include="Database\SQLiteMigration\Project\DB.cs" />
-    <Compile Include="Database\SQLiteMigration\Project\FolderStructure.cs" />
-    <Compile Include="Database\SQLiteMigration\Project\Model\DbVersion.cs" />
-    <Compile Include="Database\SQLiteMigration\Project\Model\Event.cs" />
-    <Compile Include="Database\SQLiteMigration\Project\Model\Filter.cs" />
-    <Compile Include="Database\SQLiteMigration\Project\Model\FilterAction.cs" />
-    <Compile Include="Database\SQLiteMigration\Project\Model\FilterCondition.cs" />
-    <Compile Include="Database\SQLiteMigration\Project\Model\Folder.cs" />
-    <Compile Include="Database\SQLiteMigration\Project\Model\ReadState.cs" />
-    <Compile Include="Database\SQLiteMigration\Project\Model\Tag.cs" />
     <Compile Include="EditSpec\HelpMd.cs" />
     <Compile Include="Filtering\FilterException.cs" />
     <Compile Include="Controllers\LoginRecordData.cs" />
@@ -317,7 +282,6 @@
     <Content Include="Database\Creation\Readme.txt" />
     <Content Include="Database\Project\SQL\8\ProjectSetup_8_1.sql" />
     <Content Include="Database\Project\SQL\9\ProjectSetup_9_1.sql" />
-    <Content Include="Database\SQLiteMigration\Readme.txt" />
     <Content Include="webpack.config.js" />
     <Content Include="www\404.html" />
     <Content Include="www\api\PushData.js" />
@@ -394,9 +358,6 @@
     <EmbeddedResource Include="Code\DatabaseSetupForm.resx">
       <DependentUpon>DatabaseSetupForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Code\DatabaseSqliteMigrateForm.resx">
-      <DependentUpon>DatabaseSqliteMigrateForm.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -457,8 +418,6 @@ xcopy "$(ProjectDir)www\dist\*.*" "$(TargetDir)www\dist\*.*" /C /R /Y /I</PostBu
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Microsoft.NETFramework.ReferenceAssemblies.net472.1.0.2\build\Microsoft.NETFramework.ReferenceAssemblies.net472.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.NETFramework.ReferenceAssemblies.net472.1.0.2\build\Microsoft.NETFramework.ReferenceAssemblies.net472.targets'))" />
     <Error Condition="!Exists('..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets'))" />
-    <Error Condition="!Exists('..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.7\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.7\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets'))" />
   </Target>
   <Import Project="..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets" Condition="Exists('..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets')" />
-  <Import Project="..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.7\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets" Condition="Exists('..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.7\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets')" />
 </Project>

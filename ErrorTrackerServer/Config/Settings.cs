@@ -99,7 +99,7 @@ namespace ErrorTrackerServer
 		/// </summary>
 		public int postgresCommandTimeout = 900;
 		/// <summary>
-		/// If true, the PostgreSQL DB will be considered to be ready. If there are existing databases, this will be false until SQLite migration is completed.
+		/// If true, the PostgreSQL DB will be considered to be ready.
 		/// </summary>
 		public bool postgresReady = false;
 		/// <summary>

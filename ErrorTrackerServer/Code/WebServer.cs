@@ -166,14 +166,9 @@ namespace ErrorTrackerServer
 				return "Application error. PostgreSQL database is ready, but web server is asking for the reason it is not ready."; // This method shouldn't have been called.
 
 			if (Settings.data.CountProjects() == 0)
-				return "Error Tracker is unavailable because the PostgreSQL database has not been configured yet. Click \"Configure PostgreSQL\" in the service manager GUI and proceed to configure PostgreSQL, then restart the Error Tracker service.  No existing projects were detected, so you do not need to migrate any databases from SQLite.";
+				return "Error Tracker is unavailable because the PostgreSQL database has not been configured yet. Click \"Configure PostgreSQL\" in the service manager GUI and proceed to configure PostgreSQL, then restart the Error Tracker service.";
 			else
-			{
-				if (string.IsNullOrEmpty(Settings.data.postgresPassword))
-					return "Error Tracker is unavailable because the PostgreSQL database has not been configured yet. Click \"Configure PostgreSQL\" in the service manager GUI and proceed to configure PostgreSQL, then \"Migrate From SQLite\" to migrate your SQLite databases.  Then restart the Error Tracker service.";
-				else
-					return "Error Tracker is unavailable because you have not migrated your SQLite databases to PostgreSQL yet. Click \"Migrate From SQLite\" in the service manager GUI and proceed to migrate your SQLite databases, then restart the Error Tracker service.";
-			}
+				return "Error Tracker is unavailable because the PostgreSQL database has not been configured yet. Click \"Configure PostgreSQL\" in the service manager GUI and proceed to configure PostgreSQL, then restart the Error Tracker service.  Note that you have some projects configured already in the configuration file, suggesting that your configuration may have become corrupted.";
 		}
 	}
 }

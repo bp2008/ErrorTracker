@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 namespace ErrorTrackerServer
 {
 	/// <summary>
-	/// Use within a "using" block to guarantee correct disposal.  Provides SQLite database access.  Not thread safe.  
+	/// Use within a "using" block to guarantee correct disposal.  Provides SQL database access.  Not thread safe.  
 	/// </summary>
 	public class DB : DBBase
 	{
