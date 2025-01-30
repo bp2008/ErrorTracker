@@ -50,7 +50,7 @@ namespace ErrorTrackerServer
 
 				FileInfo pgdumpExe = new FileInfo(Path.Combine(Settings.data.postgresBinPath, "pg_dump.exe"));
 				if (!pgdumpExe.Exists)
-					throw new BackupException(pgdumpExe.FullName + " file was not found. Unable to perform database backup at this time.");
+					throw new BackupException(pgdumpExe.FullName + " file was not found. Unable to perform database backup at this time. If this path is incorrect, please check the postgresBinPath setting.");
 
 				DirectoryInfo backupRoot = new DirectoryInfo(Settings.data.backupPath);
 				if (!backupRoot.Exists)
@@ -137,7 +137,7 @@ namespace ErrorTrackerServer
 
 			FileInfo psqlExe = new FileInfo(Path.Combine(Settings.data.postgresBinPath, "psql.exe"));
 			if (!psqlExe.Exists)
-				throw new Exception(psqlExe.FullName + " file was not found. Unable to perform database restore at this time.");
+				throw new Exception(psqlExe.FullName + " file was not found. Unable to perform database restore at this time. If this path is incorrect, please check the postgresBinPath setting.");
 
 			progressReport("Validating backup archive");
 			SevenZipFileData[] fileData = SevenZip.ListFiles(Settings.data.sevenZipCommandLineExePath, fullFilePath);

@@ -108,6 +108,7 @@
 		{
 			this.learnSelectedEventIds();
 			this.loadEvents();
+			EventBus.$on("folderReadStateChanged", this.folderReadStateChanged);
 		},
 		mounted()
 		{
@@ -127,6 +128,7 @@
 		},
 		beforeDestroy()
 		{
+			EventBus.$off("folderReadStateChanged", this.folderReadStateChanged);
 			if (EventBus.movingItem && EventBus.movingItem.indexOf('e') === 0)
 				EventBus.stopMovingItem();
 		},
@@ -580,7 +582,20 @@
 				}
 				this.selectedEventIdsMap = m;
 				this.selectedEventIdsArray = arr;
-			}
+			},
+			folderReadStateChanged({ FolderId, Read, UnreadEventCount })
+			{
+				if (FolderId === this.selectedFolderId)
+				{
+					if (this.events)
+					{
+						for (let i = 0; i < this.events.length; i++)
+						{
+							this.events[i].Read = Read;
+						}
+					}
+				}
+			},
 		},
 		watch:
 		{

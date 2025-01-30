@@ -47,6 +47,10 @@ export function SetEventsReadState(projectName, eventIds, read)
 {
 	return ExecAPI("EventData/SetEventsReadState", { projectName, eventIds, read });
 }
+export function SetFolderReadState(projectName, folderId, read)
+{
+	return ExecAPI("EventData/SetFolderReadState", { projectName, folderId, read });
+}
 export function CountUnreadEventsByFolder(projectName)
 {
 	return ExecAPI("EventData/CountUnreadEventsByFolder", { projectName });

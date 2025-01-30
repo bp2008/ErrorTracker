@@ -53,7 +53,7 @@ namespace ErrorTrackerServer
 			}
 			if (ErrorTrackerSvc.LoadingDatabases)
 			{
-				p.Response.Simple("500 Internal Server Error", "Service is loading…");
+				p.Response.Simple("500 Internal Server Error", ErrorTrackerSvc.CurrentMaintenanceMessage);
 				return;
 			}
 

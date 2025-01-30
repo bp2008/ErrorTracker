@@ -128,6 +128,7 @@ namespace ErrorTrackerServer
 		/// Current status of DB migration, or null if migration is done.
 		/// </summary>
 		public static bool LoadingDatabases { get; private set; } = true;
+		public static string CurrentMaintenanceMessage = "Service is loading…";
 		private void maintainProjects()
 		{
 			try
@@ -149,10 +150,12 @@ namespace ErrorTrackerServer
 							}
 						}
 						LoadingDatabases = false;
+						CurrentMaintenanceMessage = "Service is ready.";
 					}
 					catch (ThreadAbortException) { throw; }
 					catch (Exception ex)
 					{
+						CurrentMaintenanceMessage = "DB error: " + ex.Message;
 						Logger.Debug(ex);
 						Emailer.SendError(null, "Error when maintaining projects", ex);
 					}

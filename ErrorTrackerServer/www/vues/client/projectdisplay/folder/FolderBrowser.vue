@@ -62,6 +62,12 @@
 				<li v-show="folder.data && folder.data.FolderId > 0">
 					<a role="button" @click.prevent="deleteFolder(folder.data)">Delete</a>
 				</li>
+				<li v-show="folder.data && folder.data.FolderId > -1">
+					<a role="button" @click.prevent="setFolderReadState(folder.data, true)">Mark Folder Read</a>
+				</li>
+				<li v-show="folder.data && folder.data.FolderId > -1">
+					<a role="button" @click.prevent="setFolderReadState(folder.data, false)">Mark Folder Unread</a>
+				</li>
 				<li v-show="folder.data" class="v-context__sub">
 					<a role="button">Run Filter</a>
 					<ul class="v-context">
@@ -89,7 +95,7 @@
 
 <script>
 	import { GetFolderStructure, AddFolder, RenameFolder, MoveFolder, DeleteFolder, RunFilterOnFolder, RunEnabledFiltersOnFolder } from 'appRoot/api/FolderData';
-	import { MoveEvents, CountUnreadEventsByFolder } from 'appRoot/api/EventData';
+	import { MoveEvents, CountUnreadEventsByFolder, SetFolderReadState } from 'appRoot/api/EventData';
 	import { GetAllFilters } from 'appRoot/api/FilterData';
 	import { VueContext } from 'vue-context';
 	import { TextInputDialog, ModalConfirmDialog } from 'appRoot/scripts/ModalDialog';
@@ -137,6 +143,7 @@
 			EventBus.$on("eventReadStateChanged", this.eventReadStateChanged);
 			EventBus.$on("eventMoved", this.eventMoved);
 			EventBus.$on("eventDeleted", this.eventDeleted);
+			EventBus.$on("folderReadStateChanged", this.folderReadStateChanged);
 			this.loadFilters();
 			this.loadFolders();
 		},
@@ -145,6 +152,7 @@
 			EventBus.$off("eventReadStateChanged", this.eventReadStateChanged);
 			EventBus.$off("eventMoved", this.eventMoved);
 			EventBus.$off("eventDeleted", this.eventDeleted);
+			EventBus.$off("folderReadStateChanged", this.folderReadStateChanged);
 			EventBus.stopMovingItem();
 		},
 		computed:
@@ -282,6 +290,29 @@
 						{
 							this.handleAsyncFolderOp(DeleteFolder(this.projectName, folder.FolderId));
 						}
+					});
+			},
+			setFolderReadState(folder, read)
+			{
+				this.loading = true;
+				SetFolderReadState(this.projectName, folder.FolderId, read)
+					.then(data =>
+					{
+						if (data.success)
+						{
+							EventBus.$emit("folderReadStateChanged", { FolderId: folder.FolderId, Read: read, UnreadEventCount: data.unreadEventCount });
+							this.loading = false;
+						}
+						else
+						{
+							toaster.error(data.error);
+							this.loading = false;
+						}
+					})
+					.catch(err =>
+					{
+						toaster.error(err);
+						this.loading = false;
 					});
 			},
 			moveFolder(folderId, newParentFolderId)
@@ -531,6 +562,14 @@
 						folder.Unread--;
 					else
 						folder.Unread++;
+				}
+			},
+			folderReadStateChanged({ FolderId, Read, UnreadEventCount })
+			{
+				let folder = getFolderRecursive(this.rootFolder, FolderId);
+				if (folder)
+				{
+					folder.Unread = UnreadEventCount;
 				}
 			},
 			eventMoved({ event, from, to })

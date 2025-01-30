@@ -1538,6 +1538,27 @@ namespace ErrorTrackerServer
 		{
 			return QueryAll<ReadState>();
 		}
+		/// <summary>
+		/// Sets the read state of all events in a folder.
+		/// </summary>
+		/// <param name="userId">ID of the User to set read state for.</param>
+		/// <param name="folderId">ID of the Folder.</param>
+		/// <param name="read">True to mark the events as read, false to mark as unread.</param>
+		public long SetFolderReadState(int userId, int folderId, bool read)
+		{
+			List<long> eventIds = ExecuteQuery<long>("SELECT EventId FROM " + ProjectNameLower + ".Event WHERE FolderId = " + folderId);
+
+			if (read)
+			{
+				AddReadState(userId, eventIds);
+				return 0;
+			}
+			else
+			{
+				RemoveReadState(userId, eventIds);
+				return CountEventsInFolder(folderId);
+			}
+		}
 		#endregion
 		#region FilterApplied Management
 		/// <summary>

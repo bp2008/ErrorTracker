@@ -197,6 +197,23 @@ namespace ErrorTrackerServer.Controllers
 			}
 		}
 		/// <summary>
+		/// Sets the ReadState of events by ID.
+		/// </summary>
+		/// <returns></returns>
+		public ActionResult SetFolderReadState()
+		{
+			SetFolderReadStateRequest request = ApiRequestBase.ParseRequest<SetFolderReadStateRequest>(this);
+
+			if (!request.Validate(false, out Project p, out ApiResponseBase error))
+				return Json(error);
+
+			using (DB db = new DB(p.Name))
+			{
+				long unreadEvents = db.SetFolderReadState(session.GetUser().UserId, request.folderId, request.read);
+				return Json(new SetFolderReadStateResponse(unreadEvents));
+			}
+		}
+		/// <summary>
 		/// Gets the number of unread events in every folder that contains unread events.
 		/// </summary>
 		/// <returns></returns>
@@ -379,6 +396,19 @@ namespace ErrorTrackerServer.Controllers
 	public class SetEventsReadStateRequest : EventIdsRequest
 	{
 		public bool read;
+	}
+	public class SetFolderReadStateRequest : ProjectRequestBase
+	{
+		public int folderId;
+		public bool read;
+	}
+	public class SetFolderReadStateResponse : ApiResponseBase
+	{
+		public long unreadEventCount;
+		public SetFolderReadStateResponse(long unreadEventCount) : base(true, null)
+		{
+			this.unreadEventCount = unreadEventCount;
+		}
 	}
 	public class CountUnreadEventsByFolderResponse : ApiResponseBase
 	{

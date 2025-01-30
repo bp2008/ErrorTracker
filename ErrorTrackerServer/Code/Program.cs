@@ -30,6 +30,7 @@ namespace ErrorTrackerServer
 				new ButtonDefinition("Configure PostgreSQL", configureDb),
 				new ButtonDefinition("Backup Database", dbBackup),
 				new ButtonDefinition("Restore Database", dbRestore),
+				new ButtonDefinition("Migrate From SQLite", migrateSqlite)
 			};
 			AppInit.WindowsService<ErrorTrackerSvc>(options); // Most of the initialization work happens here, including loading of the Settings.data object. The method blocks, so further initialization should be done in the ErrorTrackerSvc constructor.
 		}
@@ -77,6 +78,10 @@ namespace ErrorTrackerServer
 			{
 				MessageBox.Show("Database setup failed." + Environment.NewLine + Environment.NewLine + ex.FlattenMessages());
 			}
+		}
+		private static void migrateSqlite(object sender, EventArgs e)
+		{
+			MessageBox.Show("SQLite migration was removed from ErrorTracker 2.8.  Please use ErrorTracker 2.7.1 temporarily if you need to migrate SQLite database files to PostgreSQL.");
 		}
 		private static void dbBackup(object sender, EventArgs e)
 		{
