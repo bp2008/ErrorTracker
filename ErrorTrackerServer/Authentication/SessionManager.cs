@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using BPUtil;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace ErrorTrackerServer
 {
@@ -43,6 +45,12 @@ namespace ErrorTrackerServer
 
 		private static ConcurrentDictionary<string, ServerSession> activeSessions = new ConcurrentDictionary<string, ServerSession>();
 
+		static SessionManager()
+		{
+			LoadPersistedSessionsFromDisk();
+			Logger.Info("Loaded persisted sessions from disk: " + JsonConvert.SerializeObject(activeSessions.Values.OrderBy(s => s.lastTouched), Formatting.Indented));
+		}
+
 		/// <summary>
 		/// Attempts to return the specified session, if it is in the active sessions map and has not expired.  If the specified session is expired or not found, returns null.
 		/// </summary>
@@ -66,11 +74,12 @@ namespace ErrorTrackerServer
 		/// <summary>
 		/// Adds a session to the active sessions map.
 		/// </summary>
-		/// <param name="session"></param>
+		/// <param name="session">Session to add.</param>
 		public static void AddSession(ServerSession session)
 		{
 			Maintain();
 			activeSessions.TryAdd(session.sid, session);
+			PersistSessionsToDisk();
 		}
 
 		/// <summary>
@@ -81,12 +90,13 @@ namespace ErrorTrackerServer
 		public static ServerSession RemoveSession(string sid)
 		{
 			activeSessions.TryRemove(sid, out ServerSession session);
+			PersistSessionsToDisk();
 			return session;
 		}
 
 		/// <summary>
 		/// Runs session maintenance if necessary.  It becomes necessary every 1 minute.
-		/// Traditionally this sort of logic would run on a background thread, but I figure we don't need the overhead of that.
+		/// Traditionally this sort of logic would run on a background thread or be synchronized with a lock, but I figure we don't need the overhead of that.  The maintenance process is simple and thread-safe.
 		/// </summary>
 		private static void Maintain()
 		{
@@ -106,6 +116,47 @@ namespace ErrorTrackerServer
 				{
 					Logger.Debug(ex);
 				}
+			}
+		}
+
+		/// <summary>
+		/// <para>Saves the current <see cref="activeSessions"/> dictionary to Sessions.json on disk so it can be loaded the next time ErrorTracker runs.</para>
+		/// <para>This method is throttled such that its body will not run more than once per second.</para>
+		/// </summary>
+		public static Action PersistSessionsToDisk = Throttle.Create(PersistSessionsToDisk_Unthrottled, 1000, ex => Emailer.SendError(null, "SessionManager.PersistToDisk Failed", ex));
+		private static object PersistSessionsToDisk_Lock = new object();
+		private static string SessionsJsonFilePath => Globals.WritableDirectoryBase + "Sessions.json";
+		/// <summary>
+		/// <para>Saves the current <see cref="activeSessions"/> dictionary to Sessions.json on disk so it can be loaded the next time ErrorTracker runs.</para>
+		/// <para>Unless the application is shutting down imminently, use <see cref="PersistSessionsToDisk"/> instead.</para>
+		/// </summary>
+		public static void PersistSessionsToDisk_Unthrottled()
+		{
+			// Do not run Maintain() here.  I think it would be a waste of time currently.
+			lock (PersistSessionsToDisk_Lock)
+			{
+				string json = JsonConvert.SerializeObject(activeSessions.Values.OrderBy(s => s.lastTouched), Formatting.Indented);
+				File.WriteAllText(SessionsJsonFilePath, json, ByteUtil.Utf8NoBOM);
+			}
+		}
+		/// <summary>
+		/// Reads the Sessions.json file and populates the <see cref="activeSessions"/> dictionary.
+		/// </summary>
+		private static void LoadPersistedSessionsFromDisk()
+		{
+			try
+			{
+				if (File.Exists(SessionsJsonFilePath))
+				{
+					string json = File.ReadAllText(SessionsJsonFilePath, ByteUtil.Utf8NoBOM);
+					List<ServerSession> sessions = JsonConvert.DeserializeObject<List<ServerSession>>(json);
+					foreach (ServerSession session in sessions)
+						activeSessions[session.sid] = session;
+				}
+			}
+			catch (Exception ex)
+			{
+				Emailer.SendError(null, "SessionManager.LoadPersistedSessionsFromDisk Failed", ex);
 			}
 		}
 	}

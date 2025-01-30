@@ -1670,6 +1670,7 @@ namespace ErrorTrackerServer
 			return ExecuteScalar<long>("SELECT COUNT(*) FROM " + ProjectNameLower + ".FilterApplied WHERE FilterId = " + filterId);
 		}
 		#endregion
+		#region Unit Test Methods
 		public static string TestSqlBuilder()
 		{
 			string arg1 = "one";
@@ -1682,5 +1683,6 @@ namespace ErrorTrackerServer
 				.Append("AND (e.SubType = @0 || e.SubType = @1)", arg2, arg3);
 			return request.SQL + "\r\n\r\n" + string.Join(", ", request.Arguments);
 		}
+		#endregion
 	}
 }

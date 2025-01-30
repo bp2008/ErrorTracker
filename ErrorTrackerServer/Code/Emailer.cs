@@ -90,7 +90,7 @@ namespace ErrorTrackerServer
 						}
 						catch (Exception ex2)
 						{
-							Logger.Debug(ex2, "Failed to send email (attempt 2/2)");
+							Logger.Debug(ex2, "Failed to send email (attempt 2/2). " + Environment.NewLine + subject + ": " + Environment.NewLine + body);
 						}
 					}
 				}
