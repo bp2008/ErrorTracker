@@ -22,7 +22,7 @@ namespace ErrorTrackerServer.Controllers
 		/// May allow or disallow access to the controller.  This is called before the client-specified action method is called.
 		/// </summary>
 		/// <returns>If authorization fails, this should be an appropriate result such as an HTTP 403 Forbidden response. If null, authorization will be assumed to have succeeded.</returns>
-		public override ActionResult OnAuthorization()
+		protected override ActionResult OnAuthorization()
 		{
 			ActionResult result = base.OnAuthorization();
 			if (result != null)

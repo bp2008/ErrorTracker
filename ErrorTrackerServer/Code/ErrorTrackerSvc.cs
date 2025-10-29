@@ -92,14 +92,14 @@ namespace ErrorTrackerServer
 			SvcName = this.ServiceName;
 
 			ICertificateSelector certSelector = null;
-			if (!string.IsNullOrWhiteSpace(Settings.data.certificatePath) && File.Exists(Settings.data.certificatePath))
+			if (!string.IsNullOrWhiteSpace(Settings.data.certificatePath))
 			{
-				X509Certificate2 cert;
-				if (!string.IsNullOrWhiteSpace(Settings.data.certificatePassword))
-					cert = new X509Certificate2(Settings.data.certificatePath, Settings.data.certificatePassword);
-				else
-					cert = new X509Certificate2(Settings.data.certificatePath);
-				certSelector = SimpleCertificateSelector.FromCertificate(cert);
+				if (!File.Exists(Settings.data.certificatePath))
+					Logger.Info("WARNING! TLS certificate file (.pfx) not found.  The TLS server may fail.  File path: " + Settings.data.certificatePath);
+				certSelector = new ReloadingCertificateSelector(() =>
+				{
+					return new CertificatePfxInfo(Settings.data.certificatePath, string.IsNullOrWhiteSpace(Settings.data.certificatePassword) ? null : Settings.data.certificatePassword);
+				});
 			}
 			srv = new WebServer(certSelector);
 
@@ -121,24 +121,28 @@ namespace ErrorTrackerServer
 		protected override void OnStop()
 		{
 			Logger.Info(ServiceName + " " + Globals.AssemblyVersion + " is stopping.");
+			abort = true;
 			srv.Stop();
 			thrMaintainProjects.Abort();
 		}
 		/// <summary>
-		/// Current status of DB migration, or null if migration is done.
+		/// True if databases are not finished loading yet.
 		/// </summary>
 		public static bool LoadingDatabases { get; private set; } = true;
 		public static string CurrentMaintenanceMessage = "Service is loading…";
+		public static bool abort { get; private set; } = false;
 		private void maintainProjects()
 		{
 			try
 			{
-				while (true)
+				while (!abort)
 				{
 					try
 					{
 						foreach (Project p in Settings.data.GetAllProjects())
 						{
+							if (abort)
+								return;
 							int maxAgeDays = p.MaxEventAgeDays;
 							if (maxAgeDays > 0)
 							{
