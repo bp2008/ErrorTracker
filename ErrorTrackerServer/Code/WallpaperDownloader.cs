@@ -14,10 +14,14 @@ namespace ErrorTrackerServer.Code
 {
 	public static class WallpaperDownloader
 	{
+		public const string UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36";
 		public static string wallpaperDirectoryBase => Globals.WritableDirectoryBase + "Wallpapers/";
 		public static readonly CachedObject<ImageAndHash> latestImageFile = new CachedObject<ImageAndHash>(ReadLatestImageFile, TimeSpan.FromDays(1), TimeSpan.FromDays(1), ex => Logger.Debug(ex));
-		private static WebRequestUtility wru = new WebRequestUtility(null, 30000);
+		private static WebRequestUtility wru = new WebRequestUtility(UserAgent, 30000);
 		private static Thread downloaderThread;
+		private static long longWait = (long)TimeSpan.FromHours(2).TotalMilliseconds;
+		private static long mediumWait = (long)TimeSpan.FromMinutes(15).TotalMilliseconds;
+		private static long shortWait = (long)TimeSpan.FromMinutes(1).TotalMilliseconds;
 		/// <summary>
 		/// Set = true to abort the wallpaper downloader thread for the remainder of this process.
 		/// </summary>
@@ -61,13 +65,18 @@ namespace ErrorTrackerServer.Code
 					try
 					{
 						if (Settings.data.loginStyle == LoginStyle.wallpaper.ToString())
-							DownloadNewBingImage();
+						{
+							long waitTime = DownloadNewBingImage();
+							sleeper.SleepUntil(waitTime, () => abort);
+						}
+						else
+							sleeper.SleepUntil(shortWait, () => abort);
 					}
 					catch (Exception ex)
 					{
 						Logger.Debug(ex, "Wallpaper downloader thread soft-error.");
+						sleeper.SleepUntil(shortWait, () => abort);
 					}
-					sleeper.SleepUntil((long)TimeSpan.FromHours(2).TotalMilliseconds, () => abort);
 				}
 			}
 			catch (Exception ex)
@@ -76,7 +85,7 @@ namespace ErrorTrackerServer.Code
 			}
 		}
 
-		private static void DownloadNewBingImage()
+		private static long DownloadNewBingImage()
 		{
 			Directory.CreateDirectory(wallpaperDirectoryBase);
 			try
@@ -89,7 +98,7 @@ namespace ErrorTrackerServer.Code
 					{
 						// This is the same image as before.  Do not save a duplicate.
 						LogLastImageDownloadString(true, "Image matches what is already cached on disk.");
-						return;
+						return longWait;
 					}
 					string filePath = wallpaperDirectoryBase + "bing_" + img.startdate + ".jpg";
 					if (File.Exists(filePath))
@@ -97,12 +106,19 @@ namespace ErrorTrackerServer.Code
 					File.WriteAllBytes(filePath, img.ext_ImageData);
 					LogLastImageDownloadString(false, "Image written.");
 					latestImageFile.Reload();
+					return longWait;
+				}
+				else
+				{
+					LogLastImageDownloadString(false, "Image download failed (unknown error).");
+					return mediumWait;
 				}
 			}
 			catch (Exception ex)
 			{
 				Logger.Debug(ex);
 				LogLastImageDownloadString(true, ex.ToHierarchicalString());
+				return shortWait;
 			}
 		}
 		private static void LogLastImageDownloadString(bool append, string message)
@@ -116,7 +132,8 @@ namespace ErrorTrackerServer.Code
 		}
 		private static Image GetNewImage()
 		{
-			BpWebResponse jsonResponse = wru.GET("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US");
+			string url = "https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US";
+			BpWebResponse jsonResponse = wru.GET(url);
 			if (jsonResponse.StatusCode == 200 && jsonResponse.str.Length > 0)
 			{
 				BingWallpapers wp = JsonConvert.DeserializeObject<BingWallpapers>(jsonResponse.str);
@@ -135,9 +152,14 @@ namespace ErrorTrackerServer.Code
 
 					if (img.ext_ImageData != null)
 						return img;
+					else
+						throw new Exception("bing image request delivered unexpected response: " + imgResponse.str);
 				}
+				else
+					throw new Exception("\"" + url + "\" request delivered unexpected response: " + jsonResponse.str);
 			}
-			return null;
+			else
+				throw new Exception("\"" + url + "\" request failed with HTTP " + jsonResponse.StatusCode + ": " + jsonResponse.str);
 		}
 	}
 
