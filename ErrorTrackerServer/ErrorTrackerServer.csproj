@@ -144,6 +144,7 @@
     <Compile Include="Code\IPAddressConverter.cs" />
     <Compile Include="Code\PushManager.cs" />
     <Compile Include="Code\PushSubscription.cs" />
+    <Compile Include="Code\WallpaperDownloader.cs" />
     <Compile Include="Code\WebpackChunkResolver.cs" />
     <Compile Include="Config\Settings.cs" />
     <Compile Include="Config\Project.cs" />

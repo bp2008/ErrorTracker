@@ -1,5 +1,6 @@
 ﻿using BPUtil;
 using BPUtil.SimpleHttp;
+using ErrorTrackerServer.Code;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -114,6 +115,7 @@ namespace ErrorTrackerServer
 		protected override void OnStart(string[] args)
 		{
 			Logger.Info(ServiceName + " " + Globals.AssemblyVersion + " is starting.");
+			WallpaperDownloader.Initialize();
 			thrMaintainProjects.Start();
 			srv.SetBindings(Settings.data.port_http, Settings.data.port_https);
 		}
@@ -122,6 +124,7 @@ namespace ErrorTrackerServer
 		{
 			Logger.Info(ServiceName + " " + Globals.AssemblyVersion + " is stopping.");
 			abort = true;
+			WallpaperDownloader.abort = true;
 			srv.Stop();
 			thrMaintainProjects.Abort();
 		}
