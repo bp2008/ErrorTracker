@@ -516,14 +516,21 @@ namespace ErrorTrackerServer
 		/// <param name="ageCutoff">Events with Date lower than this will be deleted.</param>
 		public int DeleteEventsOlderThan(long ageCutoff)
 		{
-			int eventCount = 0;
-			RunInTransaction(() =>
+			int totalEventCount = 0;
+			int eventsPerBatch = 50000;
+			int eventCount = eventsPerBatch;
+			while (eventCount >= eventsPerBatch)
 			{
-				long[] events = ExecuteQuery<long>("SELECT EventId FROM " + ProjectNameLower + ".Event WHERE Date < @age", new { age = ageCutoff }).ToArray();
-				eventCount = events.Length;
-				if (!DeleteEvents(events))
-					throw new Exception("Unable to delete all " + eventCount + " events");
-			});
+				eventCount = 0;
+				RunInTransaction(() =>
+				{
+					long[] events = ExecuteQuery<long>("SELECT EventId FROM " + ProjectNameLower + ".Event WHERE Date < @age LIMIT " + eventsPerBatch + ";", new { age = ageCutoff }).ToArray();
+					eventCount = events.Length;
+					if (!DeleteEvents(events))
+						throw new Exception("Unable to delete all " + eventCount + " events");
+					totalEventCount += eventCount;
+				});
+			}
 			return eventCount;
 		}
 		/// <summary>
