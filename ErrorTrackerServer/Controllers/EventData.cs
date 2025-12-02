@@ -35,20 +35,21 @@ namespace ErrorTrackerServer.Controllers
 			GetEventSummaryResponse response = new GetEventSummaryResponse();
 			using (DB db = new DB(p.Name))
 			{
+				uint ItemLimit = 10000;
 				List<Event> events;
 				if (request.startTime == 0 && request.endTime == 0)
 				{
 					if (request.folderId < 0)
-						events = db.GetAllEventsNoTags(customTagKey);
+						events = db.GetAllEventsNoTags(customTagKey, ItemLimit);
 					else
-						events = db.GetEventsWithoutTagsInFolder(request.folderId, customTagKey);
+						events = db.GetEventsWithoutTagsInFolder(request.folderId, customTagKey, ItemLimit);
 				}
 				else
 				{
 					if (request.folderId < 0)
-						events = db.GetEventsWithoutTagsByDate(request.startTime, request.endTime, customTagKey);
+						events = db.GetEventsWithoutTagsByDate(request.startTime, request.endTime, customTagKey, ItemLimit);
 					else
-						events = db.GetEventsWithoutTagsInFolderByDate(request.folderId, request.startTime, request.endTime, customTagKey);
+						events = db.GetEventsWithoutTagsInFolderByDate(request.folderId, request.startTime, request.endTime, customTagKey, ItemLimit);
 				}
 
 				if (request.uniqueOnly)

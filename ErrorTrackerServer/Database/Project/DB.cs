@@ -246,10 +246,11 @@ namespace ErrorTrackerServer
 		/// Returns a collection that iterates through all the Events. If you need to use an Event's tags, you will need to call <see cref="GetEventTags"/> on the Event.
 		/// </summary>
 		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
+		/// <param name="itemLimit">If not null, this is the maximum number of items to return from the DB.</param>
 		/// <returns></returns>
-		public List<Event> GetAllEventsNoTags(string eventListCustomTagKey)
+		public List<Event> GetAllEventsNoTags(string eventListCustomTagKey, uint? itemLimit = null)
 		{
-			return GetEvents(null, null, null, eventListCustomTagKey, includeTags: false, deferred: false).ToList();
+			return GetEvents(null, null, null, eventListCustomTagKey, includeTags: false, deferred: false, itemLimit: itemLimit).ToList();
 			//if (eventListCustomTagKey == null)
 			//	return QueryAll<Event>();
 			//else
@@ -263,10 +264,11 @@ namespace ErrorTrackerServer
 		/// Returns a collection that iterates through all the Events without needing to load them all into memory first. If you need to use an Event's tags, you will need to call <see cref="GetEventTags"/> on the Event.
 		/// </summary>
 		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
+		/// <param name="itemLimit">If not null, this is the maximum number of items to return from the DB.</param>
 		/// <returns></returns>
-		public IEnumerable<Event> GetAllEventsDeferred(string eventListCustomTagKey)
+		public IEnumerable<Event> GetAllEventsDeferred(string eventListCustomTagKey, uint? itemLimit = null)
 		{
-			return GetEvents(null, null, null, eventListCustomTagKey, includeTags: true, deferred: true).ToList();
+			return GetEvents(null, null, null, eventListCustomTagKey, includeTags: true, deferred: true, itemLimit: itemLimit).ToList();
 		}
 		///// <summary>
 		///// Loads the event's tags from the database only if the event currently has no tags defined. Meant to be used with deferred event getters such as <see cref="GetAllEventsNoTagsDeferred"/>.
@@ -286,10 +288,11 @@ namespace ErrorTrackerServer
 		/// </summary>
 		/// <param name="oldestEpoch">Start date in milliseconds since the unix epoch.</param>
 		/// <param name="newestEpoch">End date in milliseconds since the unix epoch.</param>
+		/// <param name="itemLimit">If not null, this is the maximum number of items to return from the DB.</param>
 		/// <returns></returns>
-		public List<Event> GetEventsByDate(long oldestEpoch, long newestEpoch)
+		public List<Event> GetEventsByDate(long oldestEpoch, long newestEpoch, uint? itemLimit = null)
 		{
-			return GetEvents(oldestEpoch, newestEpoch, null, null, includeTags: true, deferred: false).ToList();
+			return GetEvents(oldestEpoch, newestEpoch, null, null, includeTags: true, deferred: false, itemLimit: itemLimit).ToList();
 		}
 		/// <summary>
 		/// Gets multiple events from the DB using a variety of arguments.
@@ -302,8 +305,9 @@ namespace ErrorTrackerServer
 		/// <param name="deferred">If true, the request will be ongoing while you iterate over the returned value.
 		/// Prevents large data sets from consuming as much memory.
 		/// If false, the returned value is a List and the request is over before the method completes.</param>
+		/// <param name="itemLimit">If not null, this is the maximum number of items to return from the DB.</param>
 		/// <returns></returns>
-		private IEnumerable<Event> GetEvents(long? oldest = null, long? newest = null, int? folderid = null, string customtagkey = null, bool includeTags = false, bool deferred = false)
+		private IEnumerable<Event> GetEvents(long? oldest = null, long? newest = null, int? folderid = null, string customtagkey = null, bool includeTags = false, bool deferred = false, uint? itemLimit = null)
 		{
 			List<string> selections = new List<string>();
 			selections.Add("e.*");
@@ -322,6 +326,11 @@ namespace ErrorTrackerServer
 				request.Where("e.Date >= @0", oldest).Where("e.Date <= @0", newest);
 			if (folderid != null && folderid > -1)
 				request.Where("e.FolderId = @0", folderid);
+
+			request.OrderBy("e.Date DESC");
+
+			if (itemLimit.HasValue)
+				request.Append("LIMIT " + itemLimit.Value);
 
 			if (deferred)
 			{
@@ -364,10 +373,11 @@ namespace ErrorTrackerServer
 		/// <param name="oldestEpoch">Start date in milliseconds since the unix epoch.</param>
 		/// <param name="newestEpoch">End date in milliseconds since the unix epoch.</param>
 		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
+		/// <param name="itemLimit">If not null, this is the maximum number of items to return from the DB.</param>
 		/// <returns></returns>
-		public List<Event> GetEventsWithoutTagsByDate(long oldestEpoch, long newestEpoch, string eventListCustomTagKey)
+		public List<Event> GetEventsWithoutTagsByDate(long oldestEpoch, long newestEpoch, string eventListCustomTagKey, uint? itemLimit = null)
 		{
-			return GetEvents(oldestEpoch, newestEpoch, null, eventListCustomTagKey, includeTags: true, deferred: false).ToList();
+			return GetEvents(oldestEpoch, newestEpoch, null, eventListCustomTagKey, includeTags: true, deferred: false, itemLimit: itemLimit).ToList();
 		}
 		/// <summary>
 		/// Gets all events from the specified folder.
@@ -394,10 +404,11 @@ namespace ErrorTrackerServer
 		/// </summary>
 		/// <param name="folderId">Folder ID. Negative ID matches All Folders. 0 matches root.</param>
 		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
+		/// <param name="itemLimit">If not null, this is the maximum number of items to return from the DB.</param>
 		/// <returns></returns>
-		public List<Event> GetEventsWithoutTagsInFolder(int folderId, string eventListCustomTagKey)
+		public List<Event> GetEventsWithoutTagsInFolder(int folderId, string eventListCustomTagKey, uint? itemLimit = null)
 		{
-			return GetEvents(null, null, folderId < 0 ? (int?)null : folderId, eventListCustomTagKey, includeTags: false, deferred: false).ToList();
+			return GetEvents(null, null, folderId < 0 ? (int?)null : folderId, eventListCustomTagKey, includeTags: false, deferred: false, itemLimit: itemLimit).ToList();
 		}
 
 		/// <summary>
@@ -405,10 +416,11 @@ namespace ErrorTrackerServer
 		/// </summary>
 		/// <param name="folderId">Folder ID. Negative ID matches All Folders.</param>
 		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
+		/// <param name="itemLimit">If not null, this is the maximum number of items to return from the DB.</param>
 		/// <returns></returns>
-		public IEnumerable<Event> GetEventsInFolderDeferred(int folderId, string eventListCustomTagKey)
+		public IEnumerable<Event> GetEventsInFolderDeferred(int folderId, string eventListCustomTagKey, uint? itemLimit = null)
 		{
-			return GetEvents(null, null, folderId < 0 ? (int?)null : folderId, eventListCustomTagKey, includeTags: true, deferred: true);
+			return GetEvents(null, null, folderId < 0 ? (int?)null : folderId, eventListCustomTagKey, includeTags: true, deferred: true, itemLimit: itemLimit);
 		}
 
 		/// <summary>
@@ -418,10 +430,11 @@ namespace ErrorTrackerServer
 		/// <param name="oldestEpoch">Start date in milliseconds since the unix epoch.</param>
 		/// <param name="newestEpoch">End date in milliseconds since the unix epoch.</param>
 		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
+		/// <param name="itemLimit">If not null, this is the maximum number of items to return from the DB.</param>
 		/// <returns></returns>
-		public List<Event> GetEventsWithoutTagsInFolderByDate(int folderId, long oldestEpoch, long newestEpoch, string eventListCustomTagKey)
+		public List<Event> GetEventsWithoutTagsInFolderByDate(int folderId, long oldestEpoch, long newestEpoch, string eventListCustomTagKey, uint? itemLimit = null)
 		{
-			return GetEvents(oldestEpoch, newestEpoch, folderId < 0 ? (int?)null : folderId, eventListCustomTagKey, includeTags: false, deferred: false).ToList();
+			return GetEvents(oldestEpoch, newestEpoch, folderId < 0 ? (int?)null : folderId, eventListCustomTagKey, includeTags: false, deferred: false, itemLimit: itemLimit).ToList();
 		}
 		/// <summary>
 		/// Given a list of Event and a list of Tag, adds each tag to the appropriate event.
