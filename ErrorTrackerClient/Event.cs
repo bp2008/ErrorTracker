@@ -22,6 +22,13 @@ namespace ErrorTrackerClient
 		/// </summary>
 		public string Message;
 		/// <summary>
+		/// <para>If true, <see cref="Message"/> is an HTML fragment instead of plain text.</para>
+		/// <para>The Error Tracker server sanitizes HTML messages before displaying them, removing scripts and
+		/// anything else that could compromise the web interface.  Images are only loaded from origins which
+		/// the server administrator has whitelisted, so do not rely on remote images being visible.</para>
+		/// </summary>
+		public bool MessageHtml;
+		/// <summary>
 		/// A timestamp indicating the date and time of this event, in milliseconds since the unix epoch. Assigned automatically at the start of Event construction.
 		/// </summary>
 		public long Date = TimeUtil.GetTimeInMsSinceEpoch();
@@ -48,6 +55,18 @@ namespace ErrorTrackerClient
 			if (string.IsNullOrWhiteSpace(message))
 				message = "[Message was null or whitespace]";
 			this.Message = message;
+		}
+		/// <summary>
+		/// Constructs a new Event whose message may be an HTML fragment.
+		/// </summary>
+		/// <param name="eventType">Primary type of the event.</param>
+		/// <param name="subType">Sub type of the event, useful for searching/filtering later. This is presented in the Error Tracker UI much like a title.</param>
+		/// <param name="message">Message describing what happened.</param>
+		/// <param name="messageHtml">If true, [message] is treated as an HTML fragment.  See <see cref="MessageHtml"/> for the limitations that apply to HTML messages.</param>
+		public Event(EventType eventType, string subType, string message, bool messageHtml)
+			: this(eventType, subType, message)
+		{
+			this.MessageHtml = messageHtml;
 		}
 		/// <summary>
 		/// Sets a tag. (not thread-safe)
