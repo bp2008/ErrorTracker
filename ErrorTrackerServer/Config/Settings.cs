@@ -174,6 +174,19 @@ namespace ErrorTrackerServer
 		/// Path to 7za(.exe). Required for database backups.
 		/// </summary>
 		public string sevenZipCommandLineExePath = "../7zip/7za.exe";
+		/// <summary>
+		/// <para>Newline-delimited list of regular expressions.  An image in an HTML event message is only loaded by
+		/// the browser if its origin (e.g. "https://example.com" or "http://example.com:8080") matches one of these
+		/// expressions.  Empty lines are skipped, and each expression is anchored so that it must match the entire
+		/// origin.</para>
+		/// <para>Empty by default, meaning no remote image is ever loaded.  See <see cref="HtmlMessageSanitizer"/>.</para>
+		/// </summary>
+		public string htmlMessageImageOriginWhitelist = "";
+		/// <summary>
+		/// If true, HTML event messages may embed images as base64 "data:" URIs.  These do not cause the browser to
+		/// contact anything, so they can't reveal a viewer's IP address.  SVG is never allowed regardless.
+		/// </summary>
+		public bool htmlMessageAllowDataUriImages = true;
 
 		public string GetWWWDirectoryBase()
 		{

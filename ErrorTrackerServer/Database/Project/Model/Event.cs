@@ -41,6 +41,13 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// </summary>
 		public string Message { get; set; }
 		/// <summary>
+		/// <para>If true, <see cref="Message"/> is an HTML fragment instead of plain text.</para>
+		/// <para><see cref="Message"/> is stored in the database exactly as it was submitted; it is only sanitized
+		/// on its way out to the web interface (see <see cref="HtmlMessageSanitizer"/>).  This way, changes to the
+		/// server's sanitizer configuration also apply to events which were submitted previously.</para>
+		/// </summary>
+		public bool MessageHtml { get; set; }
+		/// <summary>
 		/// A timestamp indicating the date and time of this event, in milliseconds since the unix epoch. (assigned by the Error Tracker Client)
 		/// </summary>
 		public long Date { get; set; }
@@ -66,6 +73,22 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// Array of filters that have applied their actions to this event.  This field should be null if the FilterApplied table has not been queried.
 		/// </summary>
 		public FilterAppliedRecord[] FiltersApplied;
+		/// <summary>
+		/// <para>A plain-text rendition of <see cref="Message"/>, for use where markup can't be rendered (window titles, notifications, etc).</para>
+		/// <para>This field is only populated when <see cref="MessageHtml"/> is true and the event is on its way out to a client.  It is not persisted in the database.</para>
+		/// <para>Declared as a field rather than a property so that PetaPoco does not treat it as a database column.</para>
+		/// </summary>
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public string MessageText;
+		/// <summary>
+		/// <para>The leading characters of <see cref="Message"/> as they are stored in the database, before sanitization.
+		/// This is what a "Message" search condition has to be built from, since that is what the database contains.</para>
+		/// <para>Populated alongside <see cref="MessageText"/>, and likewise not persisted in the database.</para>
+		/// <para>The length matches the number of characters <see cref="ComputeHash"/> considers, so events sharing a
+		/// HashValue also share this string.</para>
+		/// </summary>
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public string MessageSearchPrefix;
 
 		public override string ToString()
 		{
@@ -152,6 +175,10 @@ namespace ErrorTrackerServer.Database.Project.Model
 		}
 
 		/// <summary>
+		/// The number of leading characters of <see cref="Message"/> which are included in the event's hash value.
+		/// </summary>
+		public const int messageChars = 250;
+		/// <summary>
 		/// <para>Computes the base64 encoded (without padding) MD5 hash value of this event, which is always 22 characters long.  Sets it as the value of the <see cref="HashValue" /> property.</para>
 		/// <para>Returns true if the value of the Hash property changed as a result of calling this method.</para>
 		/// <para>Only some of the event data is included in the hash so that similar events can be identified by sharing the hash value.</para>
@@ -161,7 +188,6 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// <returns></returns>
 		public bool ComputeHash()
 		{
-			const int messageChars = 250;
 			string strToHash = ((int)EventType).ToString() + "\n"
 				+ SubType + "\n"
 				+ (Message == null || Message.Length <= messageChars ? Message : Message.Substring(0, messageChars));

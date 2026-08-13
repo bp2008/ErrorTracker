@@ -66,7 +66,12 @@ namespace ErrorTrackerServer.Controllers
 			Event ev = new Event();
 			ev.EventType = (EventType)clientEvent.EventType;
 			ev.SubType = StringUtil.VisualizeSpecialCharacters(clientEvent.SubType);
-			ev.Message = StringUtil.VisualizeSpecialCharacters(clientEvent.Message);
+			ev.MessageHtml = clientEvent.MessageHtml;
+			// Special characters are visualized so that unprintable characters don't silently vanish. In an HTML
+			// message, tabs are meaningful whitespace inside <pre> and are left alone rather than being replaced
+			// with an arrow glyph.
+			ev.Message = StringUtil.VisualizeSpecialCharacters(clientEvent.Message,
+				ev.MessageHtml ? StringUtil.TabVisualization.Tab : StringUtil.TabVisualization.Arrow);
 			ev.Date = clientEvent.Date;
 			foreach (ErrorTrackerClient.ReadOnlyTag tag in clientEvent.GetAllTags())
 				ev.SetTag(tag.Key, tag.Value);

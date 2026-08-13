@@ -168,19 +168,20 @@ namespace ErrorTrackerTests
 				// Query subset of events by date
 				fullEvents = db.GetEventsByDate(2, 3);
 				Assert.AreEqual(2, fullEvents.Count);
-				Assert.AreEqual(2, fullEvents[0].Date);
-				Assert.AreEqual(3, fullEvents[1].Date);
+				Assert.AreEqual(3, fullEvents[0].Date);
+				Assert.AreEqual(2, fullEvents[1].Date);
 
-				// Delete the events
-				db.DeleteEvents(new long[] { allAddedEvents[0].EventId });
+				// Delete the events, oldest first.  Because the getters return the newest events first, the oldest
+				// event is the last one in the list.
+				db.DeleteEvents(new long[] { allAddedEvents[allAddedEvents.Count - 1].EventId });
 				allAddedEvents = db.GetAllEventsNoTags(null).ToList();
 				Assert.AreEqual(4, allAddedEvents.Count);
-				Assert.AreEqual(CreateTestEvent(2).Message, allAddedEvents[0].Message);
+				Assert.AreEqual(CreateTestEvent(2).Message, allAddedEvents[allAddedEvents.Count - 1].Message);
 
-				db.DeleteEvents(new long[] { allAddedEvents[0].EventId, allAddedEvents[1].EventId });
+				db.DeleteEvents(new long[] { allAddedEvents[allAddedEvents.Count - 1].EventId, allAddedEvents[allAddedEvents.Count - 2].EventId });
 				allAddedEvents = db.GetAllEventsNoTags(null).ToList();
 				Assert.AreEqual(2, allAddedEvents.Count);
-				Assert.AreEqual(CreateTestEvent(4).Message, allAddedEvents[0].Message);
+				Assert.AreEqual(CreateTestEvent(4).Message, allAddedEvents[allAddedEvents.Count - 1].Message);
 
 				db.DeleteEventsOlderThan(5);
 				allAddedEvents = db.GetAllEventsNoTags(null).ToList();
@@ -261,12 +262,20 @@ namespace ErrorTrackerTests
 			e.ComputeHash();
 			return e;
 		}
+		/// <summary>
+		/// Asserts that the given list contains test events 1 through 5, ordered newest first.
+		/// </summary>
+		/// <param name="events">Events returned by one of the DB getters.</param>
+		/// <param name="expectTags">True if the getter was expected to populate each event's tags.</param>
 		private void ValidateEvents(List<Event> events, bool expectTags)
 		{
 			Assert.AreEqual(5, events.Count);
 			for (int i = 0; i < events.Count; i++)
 			{
-				int eventNumber = i + 1;
+				// Events come back newest first, so the event numbers count down from 5.  CreateTestEvent assigns
+				// the event number as the Date and the Color, and the events were added in ascending order so the
+				// number is also the EventId.
+				int eventNumber = events.Count - i;
 				Event expected = CreateTestEvent(eventNumber);
 				Event actual = events[i];
 				Assert.AreEqual("TestDB1 Subtype", actual.SubType);
@@ -277,6 +286,7 @@ namespace ErrorTrackerTests
 				Assert.AreEqual(0, actual.FolderId);
 				Assert.IsFalse(string.IsNullOrEmpty(actual.HashValue));
 				Assert.AreEqual(expected.Message, actual.Message);
+				Assert.AreEqual(expected.MessageHtml, actual.MessageHtml);
 				if (expectTags)
 				{
 					Assert.AreEqual(2, expected.GetTagCount());

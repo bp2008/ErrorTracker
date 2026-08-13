@@ -6,7 +6,7 @@
 		</div>
 		<div v-else-if="loading" class="loading"><ScaleLoader /> Loading…</div>
 		<div v-else-if="event" class="eventBody">
-			<div class="title" :style="titleBarStyle" v-text="event.Message" :title="'Event ID: ' + event.EventId + ', Color: #' + event.Color" />
+			<div class="title" :style="titleBarStyle" v-text="messageAsText" :title="'Event ID: ' + event.EventId + ', Color: #' + event.Color" />
 			<div class="subTitle" :title="'EventType: ' + event.EventType + ', SubType: ' + event.SubType">
 				<span class="eventType">{{event.EventType}}:</span>
 				<span class="subType" v-text="event.SubType" />
@@ -19,7 +19,10 @@
 			</div>
 			<div class="messageContainer">
 				<div class="messageHeading">Message</div>
-				<div class="messageBody" v-text="event.Message" />
+				<!-- The server sanitizes HTML messages before sending them (see HtmlMessageSanitizer.cs); scripts,
+					 embedded content, and images from non-whitelisted origins have already been removed. -->
+				<div class="messageBody htmlMessageBody" v-if="event.MessageHtml" v-html="event.Message" />
+				<div class="messageBody" v-else v-text="event.Message" />
 			</div>
 			<div class="tagContainer">
 				<table class="tagTable">
@@ -120,6 +123,14 @@
 				}
 				return {};
 			},
+			messageAsText()
+			{
+				// For an HTML message the server also provides a plain-text rendition, since the title bar is a
+				// single line of text and can't render markup.
+				if (this.event)
+					return this.event.MessageText || this.event.Message;
+				return "";
+			},
 			routeToMatchingEvents()
 			{
 				if (this.event && this.event.MatchingEvents > 1)
@@ -130,10 +141,13 @@
 						{ "Enabled": true, "TagKey": "SubType", "Operator": "Equals", "Query": this.event.SubType }
 					];
 					let messageChars = 250;
-					if (this.event.Message.length <= messageChars)
-						conditions.push({ "Enabled": true, "TagKey": "Message", "Operator": "Equals", "Query": this.event.Message });
+					// For an HTML message, event.Message holds sanitized markup, which is not what the database
+					// contains, so the server also sends the leading characters of the message as it was stored.
+					let searchMessage = this.event.MessageSearchPrefix || this.event.Message;
+					if (searchMessage.length < messageChars)
+						conditions.push({ "Enabled": true, "TagKey": "Message", "Operator": "Equals", "Query": searchMessage });
 					else
-						conditions.push({ "Enabled": true, "TagKey": "Message", "Operator": "StartsWith", "Query": this.event.Message.substr(0, messageChars) });
+						conditions.push({ "Enabled": true, "TagKey": "Message", "Operator": "StartsWith", "Query": searchMessage.substr(0, messageChars) });
 
 					let query = {
 						p: this.projectName
@@ -273,6 +287,54 @@
 		}
 	}
 </script>
+<!-- Styling for the sanitized markup of an HTML message. This block is intentionally not scoped, because
+	 scoped styles are not applied to elements created by v-html. Every selector is namespaced under
+	 .htmlMessageBody, and the sanitizer strips the "class" attribute from message content, so nothing in a
+	 message can reach these rules or the rest of the app's styling. -->
+<style>
+	.htmlMessageBody
+	{
+		overflow-x: auto;
+		word-break: break-word;
+	}
+
+		.htmlMessageBody img
+		{
+			max-width: 100%;
+			height: auto;
+		}
+
+		.htmlMessageBody pre
+		{
+			white-space: pre-wrap;
+			word-break: break-all;
+		}
+
+		.htmlMessageBody table
+		{
+			border-collapse: collapse;
+		}
+
+		.htmlMessageBody blockquote
+		{
+			margin-left: 0px;
+			padding-left: 10px;
+			border-left: 3px solid #cccccc;
+		}
+
+		/* Placeholder inserted by HtmlMessageSanitizer where an image was not allowed to load. */
+		.htmlMessageBody .blockedImage
+		{
+			display: inline-block;
+			padding: 2px 6px;
+			border: 1px dashed #aaaaaa;
+			border-radius: 3px;
+			background-color: #f4f4f4;
+			color: #777777;
+			font-size: 13px;
+			font-style: italic;
+		}
+</style>
 <style scoped>
 	.eventDetails
 	{
@@ -377,6 +439,13 @@
 	{
 		white-space: pre-wrap;
 		padding-bottom: 12px;
+	}
+
+	/* Rendered markup brings its own line breaks, so it must not inherit the pre-wrap used for plain text.
+	   This override lives in the scoped block because it has to outrank .messageBody, which is also scoped. */
+	.htmlMessageBody
+	{
+		white-space: normal;
 	}
 
 	.tagContainer

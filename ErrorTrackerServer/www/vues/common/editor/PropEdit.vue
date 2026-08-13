@@ -1,5 +1,5 @@
 ﻿<template>
-	<div class="prop">
+	<div :class="{ prop: true, wideProp: spec.inputType === 'textarea' }">
 		<div class="propWrapper">
 			<label class="propLabel" :for="inputId" v-html="spec.labelHtml" v-if="spec.inputType !== 'checkbox'">
 			</label>
@@ -21,6 +21,7 @@
 					<input type="button" value="+" @click="addArrayItem" />
 				</div>
 			</div>
+			<textarea v-else-if="spec.inputType === 'textarea'" class="propInput propTextArea" :id="inputId" ref="inputEle" v-model="myValue" :rows="spec.rows || 6" @change="onChange"></textarea>
 			<template v-else>
 				<input class="propInput" :id="inputId" ref="inputEle" v-model="myValue" :type="spec.inputType" :min="spec.min" :max="spec.max" @change="onChange" @dblclick="onDoubleClick" />
 				<label class="checkboxLabel" :for="inputId" v-html="spec.labelHtml" v-if="spec.inputType === 'checkbox'">
@@ -149,6 +150,11 @@
 		flex: 1;
 	}
 
+	.wideProp .propWrapper
+	{
+		max-width: 700px;
+	}
+
 	.propLabel
 	{
 		display: block;
@@ -168,11 +174,21 @@
 	input[type="text"],
 	input[type="number"],
 	input[type="range"],
-	input[type="color"]
+	input[type="color"],
+	.propTextArea
 	{
 		display: block;
 		width: 100%;
 		box-sizing: border-box;
+	}
+
+	.propTextArea
+	{
+		font-family: Consolas, monospace;
+		resize: vertical;
+		white-space: pre;
+		overflow-wrap: normal;
+		overflow-x: auto;
 	}
 
 	.help

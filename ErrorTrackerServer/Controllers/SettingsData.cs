@@ -70,6 +70,8 @@ namespace ErrorTrackerServer.Controllers
 			Settings.data.postgresBinPath = request.settings.postgresBinPath;
 			Settings.data.sevenZipCommandLineExePath = request.settings.sevenZipCommandLineExePath;
 			Settings.data.postgresCommandTimeout = request.settings.postgresCommandTimeout;
+			Settings.data.htmlMessageImageOriginWhitelist = request.settings.htmlMessageImageOriginWhitelist;
+			Settings.data.htmlMessageAllowDataUriImages = request.settings.htmlMessageAllowDataUriImages;
 			Settings.data.Save();
 
 			ErrorTrackerSvc.ConfigureWebserverLogging();
@@ -203,6 +205,23 @@ namespace ErrorTrackerServer.Controllers
 		public string sevenZipCommandLineExePath = "";
 		[HelpMd("Number of seconds to wait for SQL commands to complete before canceling them. If 0, the timeout is disabled and commands can run forever. Min: 0, Max: 86400. Requires service restart to take effect.")]
 		public int postgresCommandTimeout = 900;
+		[HelpMd(@"Events may be submitted with an HTML message instead of a plain text message.  HTML messages are sanitized before being displayed, and like an email client, Error Tracker refuses to load any external resource except images.
+
+Even an image is enough to reveal your IP address (and the fact that you read the event) to whoever controls the server hosting it, so remote images are only loaded from origins you list here.
+
+Write **one regular expression per line**.  Empty lines are ignored.  Each expression must match an entire **origin**, which is a URL reduced to its scheme, host, and non-default port.  Matching is case-insensitive.
+
+Examples:
+
+* `https://example\.com` matches `https://example.com/logo.png` but not `http://example.com/logo.png` and not `https://cdn.example.com/logo.png`.
+* `https://([a-z0-9-]+\.)*example\.com` matches `https://example.com` and any subdomain of it, over HTTPS only.
+* `https?://10\.0\.0\.5(:\d+)?` matches that IP address on any port, over HTTP or HTTPS.
+
+An empty list (the default) means no remote image is ever loaded; blocked images are replaced with a placeholder in the web interface.  Changes take effect immediately and apply to events that were submitted previously.")]
+		[MultiLineText(8)]
+		public string htmlMessageImageOriginWhitelist = "";
+		[HelpMd("If checked, HTML event messages may embed images directly as base64 `data:` URIs.  These are part of the event itself, so displaying one does not cause your browser to contact anything and cannot reveal your IP address.  SVG images are never allowed, because an SVG document can contain script.")]
+		public bool htmlMessageAllowDataUriImages = true;
 		public SettingsObject() { }
 		public SettingsObject(Settings settings)
 		{
@@ -233,6 +252,8 @@ namespace ErrorTrackerServer.Controllers
 			postgresBinPath = settings.postgresBinPath;
 			sevenZipCommandLineExePath = settings.sevenZipCommandLineExePath;
 			postgresCommandTimeout = settings.postgresCommandTimeout;
+			htmlMessageImageOriginWhitelist = settings.htmlMessageImageOriginWhitelist;
+			htmlMessageAllowDataUriImages = settings.htmlMessageAllowDataUriImages;
 		}
 	}
 	public enum LoginStyle

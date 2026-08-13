@@ -53,6 +53,10 @@ namespace ErrorTrackerServer
 		/// HTML help.
 		/// </summary>
 		public string helpHtml;
+		/// <summary>
+		/// Number of visible text rows, for the "textarea" input type.
+		/// </summary>
+		public int? rows;
 		public FieldEditSpec() { }
 		public FieldEditSpec(FieldInfo f, object objWithDefaultValues)
 		{
@@ -60,8 +64,17 @@ namespace ErrorTrackerServer
 			key = f.Name;
 			value = f.GetValue(objWithDefaultValues);
 
+			MultiLineText multiLine = CustomAttributeExtensions.GetCustomAttribute<MultiLineText>(f);
 			if (f.FieldType == typeof(string))
-				inputType = "text";
+			{
+				if (multiLine != null)
+				{
+					inputType = "textarea";
+					rows = multiLine.Rows;
+				}
+				else
+					inputType = "text";
+			}
 			else if (IsNumberType(f.FieldType))
 			{
 				inputType = "number";

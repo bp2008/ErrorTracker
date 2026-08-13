@@ -95,6 +95,14 @@ namespace ErrorTrackerServer.Controllers
 			}
 			if (ev != null)
 			{
+				if (ev.MessageHtml)
+				{
+					// The database holds the message exactly as it was submitted; it is sanitized here, on its way
+					// out, so that changes to the sanitizer's settings also apply to events submitted previously.
+					ev.MessageText = HtmlMessageSanitizer.ToPlainText(ev.Message);
+					ev.MessageSearchPrefix = ev.Message == null || ev.Message.Length <= Event.messageChars ? ev.Message : ev.Message.Substring(0, Event.messageChars);
+					ev.Message = HtmlMessageSanitizer.Sanitize(ev.Message);
+				}
 				GetEventDataResponse response = new GetEventDataResponse();
 				response.ev = ev;
 				response.eventListCustomTagKey = session.GetUser().GetEventListCustomTagKey(p.Name);
@@ -309,7 +317,9 @@ namespace ErrorTrackerServer.Controllers
 			EventType = ev.EventType.ToString();
 			SubType = ev.SubType;
 			Date = ev.Date;
-			Message = ev.Message;
+			// Event lists show a short preview as text, so an HTML message is reduced to plain text here rather
+			// than being sanitized. Truncating a sanitized HTML fragment would just produce broken markup.
+			Message = ev.MessageHtml ? HtmlMessageSanitizer.ToPlainText(ev.Message) : ev.Message;
 			if (Message != null && Message.Length > 150)
 				Message = Message.Substring(0, 150);
 			Color = ev.Color;

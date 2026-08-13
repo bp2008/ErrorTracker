@@ -277,5 +277,27 @@ namespace ErrorTrackerServer.Properties {
                 return ResourceManager.GetString("ProjectSetup_9_1", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to -- DB version 10 adds the Event.MessageHtml flag, which indicates that Event.Message contains HTML markup
+        ///-- instead of plain text.  The HTML is stored exactly as it was submitted and is sanitized when it is served
+        ///-- to the web interface, so that changes to the server&apos;s sanitizer configuration apply to existing events.
+        ///
+        ///ALTER TABLE %PR.Event
+        ///	ADD COLUMN MessageHtml boolean NOT NULL DEFAULT false;
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///
+        ///UPDATE %PR.DbVersion SET CurrentVersion = 10;
+        /// [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string ProjectSetup_10_1 {
+            get {
+                return ResourceManager.GetString("ProjectSetup_10_1", resourceCulture);
+            }
+        }
     }
 }

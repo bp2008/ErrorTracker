@@ -76,6 +76,28 @@ catch (Exception ex)
 }
 ```
 
+### HTML Messages
+
+An event's message is plain text by default.  Pass `true` as the 4th constructor argument to send an HTML fragment instead:
+
+```cs
+Event ev = new Event(EventType.Info, "Daily Report", "<b>42</b> widgets processed.<br /><a href=\"https://example.com/report\">Full report</a>", true);
+```
+
+HTML messages are sanitized by the server every time they are displayed, using [HtmlSanitizer](https://github.com/mganss/HtmlSanitizer).  The policy resembles an email client:
+
+* Scripts, event handler attributes, `javascript:` URLs, and embedded content (`iframe`, `object`, `embed`, `video`, `audio`, `svg`, `form` elements, and so on) are removed.
+* The `class` and `id` attributes are removed, so a message cannot borrow the web interface's own styling.
+* Inline `style` attributes are kept, but only for a whitelist of CSS properties, and no CSS value may reference a URL.
+* Links are kept.  They open in a new tab and are given `rel="noopener noreferrer nofollow"`.
+* **Images are the only resource the browser is allowed to fetch**, and only from origins you have whitelisted.  Loading an image reveals your IP address (and the fact that you read the event) to whoever runs the server hosting it, so the whitelist is empty by default and blocked images are replaced with a placeholder.
+
+Configure the whitelist under Admin > Settings > `htmlMessageImageOriginWhitelist`.  Write one regular expression per line; empty lines are ignored.  Each expression must match an entire **origin** -- a URL reduced to its scheme, host, and non-default port -- so `https://example\.com` matches `https://example.com/logo.png` but not `http://example.com/logo.png` and not `https://cdn.example.com/logo.png`.  Changes take effect immediately, including for events that were submitted earlier.
+
+Images can also be embedded directly in the message as base64 `data:` URIs, which never cause the browser to contact anything.  This is allowed by default (`htmlMessageAllowDataUriImages`); SVG is never allowed in a data URI because an SVG document can contain script.
+
+Wherever markup can't be rendered -- the event list, the title bar of the event details pane -- an HTML message is shown as plain text with the markup stripped.
+
 ## Your First Project
 
 ### Create a Project

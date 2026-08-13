@@ -21,7 +21,8 @@ namespace ErrorTrackerServer
 		static void Main()
 		{
 			System.Reflection.Assembly assembly = System.Reflection.Assembly.GetEntryAssembly();
-			Globals.Initialize(assembly.Location, "Data/");
+			Globals.InitializeCommonApplicationData();
+			Globals.SetWritableDirectory(Globals.ApplicationDirectoryBase + "Data/");
 			Directory.CreateDirectory(Globals.WritableDirectoryBase + "Projects/");
 
 			WindowsServiceInitOptions options = new WindowsServiceInitOptions();
