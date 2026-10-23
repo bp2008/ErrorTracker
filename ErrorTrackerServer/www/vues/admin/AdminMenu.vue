@@ -4,6 +4,7 @@
 		<router-link :to="{name: 'adminSettings' }" class="adminSettings">Settings</router-link>
 		<router-link :to="{name: 'adminUsers' }" class="adminUsers">Users</router-link>
 		<router-link :to="{name: 'adminProjects' }" class="adminProjects">Projects</router-link>
+		<router-link :to="{name: 'adminMcp' }" class="adminMcp">MCP</router-link>
 		<router-link :to="{name: 'clientHome' }" class="clientHome">Client</router-link>
 		<a role="button" @click="logoutClicked" class="logoutButton">Log Out</a>
 	</nav>

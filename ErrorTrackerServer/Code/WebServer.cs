@@ -59,6 +59,13 @@ namespace ErrorTrackerServer
 
 			Settings.data.RemoveAppPath(p);
 
+			if (IsOAuthDiscoveryRequest(p))
+			{
+				// MCP clients probe these after a 401. There is no OAuth support, so answer quickly instead of serving the web app.
+				p.Response.Simple("404 Not Found");
+				return;
+			}
+
 			if (mvcMain.ProcessRequest(p, p.Request.Page))
 			{
 			}
@@ -126,6 +133,37 @@ namespace ErrorTrackerServer
 			else
 			{
 			}
+		}
+
+		public override void handleOtherRequest(HttpProcessor p, string method)
+		{
+			Settings.data.RemoveAppPath(p);
+			if (IsMcpEndpoint(p) && IsPostgreSQLDbReady() && !ErrorTrackerSvc.LoadingDatabases)
+			{
+				// The MCP controller answers other methods (e.g. DELETE) with 405 Method Not Allowed, or 404 if MCP is disabled.
+				if (mvcMain.ProcessRequest(p, p.Request.Page))
+					return;
+			}
+			base.handleOtherRequest(p, method);
+		}
+
+		/// <summary>
+		/// Returns true if the request is for the MCP endpoint ("{appPath}mcp").
+		/// </summary>
+		private static bool IsMcpEndpoint(HttpProcessor p)
+		{
+			string page = p.Request.Page ?? "";
+			return page.Equals("mcp", StringComparison.OrdinalIgnoreCase) || page.Equals("mcp/", StringComparison.OrdinalIgnoreCase);
+		}
+
+		/// <summary>
+		/// Returns true if the request is for OAuth discovery metadata (e.g. "/.well-known/oauth-protected-resource").
+		/// </summary>
+		private static bool IsOAuthDiscoveryRequest(HttpProcessor p)
+		{
+			string page = p.Request.Page ?? "";
+			return page.StartsWith(".well-known/oauth-", StringComparison.OrdinalIgnoreCase)
+				|| page.StartsWith(".well-known/openid-configuration", StringComparison.OrdinalIgnoreCase);
 		}
 
 		protected override void stopServer()

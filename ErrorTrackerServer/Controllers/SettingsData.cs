@@ -72,6 +72,13 @@ namespace ErrorTrackerServer.Controllers
 			Settings.data.postgresCommandTimeout = request.settings.postgresCommandTimeout;
 			Settings.data.htmlMessageImageOriginWhitelist = request.settings.htmlMessageImageOriginWhitelist;
 			Settings.data.htmlMessageAllowDataUriImages = request.settings.htmlMessageAllowDataUriImages;
+			Settings.data.mcpEnabled = request.settings.mcpEnabled;
+			Settings.data.publicBaseUrl = request.settings.publicBaseUrl?.Trim() ?? "";
+			Settings.data.mcpAllowedOrigins = (request.settings.mcpAllowedOrigins ?? new string[0]).Select(o => o?.Trim()).Where(o => !string.IsNullOrEmpty(o)).ToArray();
+			Settings.data.mcpQueryTimeoutSeconds = request.settings.mcpQueryTimeoutSeconds.Clamp(1, 3600);
+			Settings.data.mcpMaxFieldChars = request.settings.mcpMaxFieldChars.Clamp(1000, 10000000);
+			Settings.data.mcpMaxConcurrentCallsPerToken = request.settings.mcpMaxConcurrentCallsPerToken.Clamp(1, 100);
+			Settings.data.mcpAuditRetentionDays = request.settings.mcpAuditRetentionDays;
 			Settings.data.Save();
 
 			ErrorTrackerSvc.ConfigureWebserverLogging();
@@ -222,6 +229,20 @@ An empty list (the default) means no remote image is ever loaded; blocked images
 		public string htmlMessageImageOriginWhitelist = "";
 		[HelpMd("If checked, HTML event messages may embed images directly as base64 `data:` URIs.  These are part of the event itself, so displaying one does not cause your browser to contact anything and cannot reveal your IP address.  SVG images are never allowed, because an SVG document can contain script.")]
 		public bool htmlMessageAllowDataUriImages = true;
+		[HelpMd("If checked, the `/mcp` endpoint is enabled.  It lets AI agents (Claude Code, Codex, VS Code Copilot, Cursor, Gemini CLI, and other [Model Context Protocol](https://modelcontextprotocol.io/) clients) search events and manage filters, using personal API tokens that users create on their **API Tokens** page.  When unchecked, `/mcp` returns 404 and token management is hidden.  Configure redaction and see the audit log on the **MCP** admin page.")]
+		public bool mcpEnabled = false;
+		[HelpMd("The URL people use to reach this web interface, e.g. `https://errors.example.com/`.  It is used to give AI agents clickable links to events and filters.  If empty, no links are provided.")]
+		public string publicBaseUrl = "";
+		[HelpMd("Values of the HTTP `Origin` header accepted by the `/mcp` endpoint, e.g. `https://example.com`.  Requests with any other `Origin` are rejected (protection against DNS rebinding attacks).  Agent apps normally send no `Origin` header, so this list is usually left empty.")]
+		public string[] mcpAllowedOrigins = new string[0];
+		[HelpMd("Maximum time, in seconds, that one MCP database query or filter preview may run.  Min: 1, Max: 3600.")]
+		public int mcpQueryTimeoutSeconds = 30;
+		[HelpMd("Upper bound for the message and tag value lengths an AI agent may request from the `get_events` MCP tool.")]
+		public int mcpMaxFieldChars = 100000;
+		[HelpMd("Maximum number of MCP tool calls that may be in progress at the same time for one API token.")]
+		public int mcpMaxConcurrentCallsPerToken = 4;
+		[HelpMd("MCP audit log entries older than this many days are deleted.  0 keeps them forever.")]
+		public int mcpAuditRetentionDays = 90;
 		public SettingsObject() { }
 		public SettingsObject(Settings settings)
 		{
@@ -254,6 +275,13 @@ An empty list (the default) means no remote image is ever loaded; blocked images
 			postgresCommandTimeout = settings.postgresCommandTimeout;
 			htmlMessageImageOriginWhitelist = settings.htmlMessageImageOriginWhitelist;
 			htmlMessageAllowDataUriImages = settings.htmlMessageAllowDataUriImages;
+			mcpEnabled = settings.mcpEnabled;
+			publicBaseUrl = settings.publicBaseUrl;
+			mcpAllowedOrigins = settings.mcpAllowedOrigins;
+			mcpQueryTimeoutSeconds = settings.mcpQueryTimeoutSeconds;
+			mcpMaxFieldChars = settings.mcpMaxFieldChars;
+			mcpMaxConcurrentCallsPerToken = settings.mcpMaxConcurrentCallsPerToken;
+			mcpAuditRetentionDays = settings.mcpAuditRetentionDays;
 		}
 	}
 	public enum LoginStyle

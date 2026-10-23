@@ -34,6 +34,8 @@ namespace ErrorTrackerServer.Controllers
 			if (request.userData.AllowedProjects == null)
 				request.userData.AllowedProjects = new string[0];
 
+			if (!u.Name.Equals(request.userData.Name, StringComparison.OrdinalIgnoreCase))
+				RevokeApiTokens(u, "renamed");
 			u.Name = request.userData.Name;
 			u.Email = request.userData.Email;
 			if (!string.IsNullOrWhiteSpace(request.userData.SetPassword))
@@ -84,12 +86,32 @@ namespace ErrorTrackerServer.Controllers
 
 			if (Settings.data.TryRemoveUser(request.userName) != null)
 			{
+				RevokeApiTokens(u, "deleted");
 				Settings.data.Save();
 				Logger.Info("User \"" + request.userName + "\" was deleted by \"" + session.userName + "\"");
 				return Json(new ApiResponseBase(true));
 			}
 			else
 				return Json(new ApiResponseBase(false, "user could not be found"));
+		}
+		/// <summary>
+		/// Revokes all of the user's API tokens.  (Tokens also stop working on their own when their user is renamed or deleted, because each token is bound to its user's ID and name.)
+		/// </summary>
+		private void RevokeApiTokens(User u, string reason)
+		{
+			try
+			{
+				using (Database.Global.GlobalDb db = new Database.Global.GlobalDb())
+				{
+					int count = db.RevokeApiTokensForUser(u.UserId);
+					if (count > 0)
+						Logger.Info(count + " API token(s) of user \"" + u.Name + "\" were revoked because the user was " + reason + " by \"" + session.userName + "\"");
+				}
+			}
+			catch (Exception ex)
+			{
+				Logger.Debug(ex, "Failed to revoke API tokens of user \"" + u.Name + "\".");
+			}
 		}
 		private static bool ValidateUserName(string userName)
 		{

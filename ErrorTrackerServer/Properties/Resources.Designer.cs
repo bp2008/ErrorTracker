@@ -299,5 +299,32 @@ namespace ErrorTrackerServer.Properties {
                 return ResourceManager.GetString("ProjectSetup_10_1", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to -- DB version 11 supports the MCP (Model Context Protocol) endpoint. [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string ProjectSetup_11_1 {
+            get {
+                return ResourceManager.GetString("ProjectSetup_11_1", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to -- DB version 12 widens Tag.TagId from integer to bigint. [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string ProjectSetup_12_1 {
+            get {
+                return ResourceManager.GetString("ProjectSetup_12_1", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to -- DB version 3 adds personal API tokens and the audit log for the MCP (Model Context Protocol) endpoint. [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string GlobalSetup_3 {
+            get {
+                return ResourceManager.GetString("GlobalSetup_3", resourceCulture);
+            }
+        }
     }
 }

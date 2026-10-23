@@ -8,9 +8,22 @@ namespace ErrorTrackerServer.Filtering
 	/// <summary>
 	/// Maintains lists of actions that have been deferred until later so the actions can be performed in batches for efficiency. Not thread safe.
 	/// </summary>
-	public class DeferredActionCollection
+	public class DeferredActionCollection : IFilterActionSink
 	{
+		/// <summary>
+		/// Counts what <see cref="ExecuteDeferredActions(DB, bool)"/> has done since this collection was created.  Accumulates across executions.
+		/// </summary>
+		public FilterRunEffects Effects { get; private set; } = new FilterRunEffects();
+
 		ActionAggregator<int> folderMap = new ActionAggregator<int>();
+		/// <summary>
+		/// Maps EventId to the folder the event was in before any MoveTo action was scheduled for it.
+		/// </summary>
+		private Dictionary<long, int> originalFolderIds = new Dictionary<long, int>();
+		/// <summary>
+		/// Maps FolderId to the folder's absolute path, for effect reporting.
+		/// </summary>
+		private Dictionary<int, string> folderPaths = new Dictionary<int, string>();
 		/// <summary>
 		/// Schedules a MoveTo action.  Any previously-scheduled MoveEventTo actions for this Event will be unscheduled.
 		/// </summary>
@@ -18,7 +31,23 @@ namespace ErrorTrackerServer.Filtering
 		/// <param name="folderId">ID of the folder to move the event to.</param>
 		public void MoveEventTo(Event ev, int folderId)
 		{
+			if (!originalFolderIds.ContainsKey(ev.EventId))
+				originalFolderIds[ev.EventId] = ev.FolderId;
 			folderMap.Set(ev.EventId, folderId);
+		}
+		/// <summary>
+		/// Schedules a MoveTo action.  Any previously-scheduled MoveEventTo actions for this Event will be unscheduled.
+		/// </summary>
+		/// <param name="ev">Event to move.</param>
+		/// <param name="folderId">ID of the folder to move the event to.</param>
+		/// <param name="folderPath">Absolute path of the folder, for effect reporting.</param>
+		public void MoveEventTo(Event ev, int folderId, string folderPath)
+		{
+			if (folderId < 0)
+				throw new ArgumentException("DeferredActionCollection cannot move an event to a folder that does not exist.", "folderId");
+			if (folderPath != null)
+				folderPaths[folderId] = folderPath;
+			MoveEventTo(ev, folderId);
 		}
 		/// <summary>
 		/// Schedules a MoveTo action.  Any previously-scheduled MoveEventTo actions for this Event will be unscheduled.
@@ -32,12 +61,18 @@ namespace ErrorTrackerServer.Filtering
 
 		ActionAggregator<uint> colorMap = new ActionAggregator<uint>();
 		/// <summary>
+		/// Maps EventId to the event's color before any SetColor action was scheduled for it.
+		/// </summary>
+		private Dictionary<long, uint> originalColors = new Dictionary<long, uint>();
+		/// <summary>
 		/// Schedules a SetColor action.
 		/// </summary>
 		/// <param name="ev"></param>
 		/// <param name="color"></param>
 		public void SetEventColor(Event ev, uint color)
 		{
+			if (!originalColors.ContainsKey(ev.EventId))
+				originalColors[ev.EventId] = ev.Color;
 			colorMap.Set(ev.EventId, color);
 		}
 
@@ -104,6 +139,13 @@ namespace ErrorTrackerServer.Filtering
 							if (isEventSubmission && Settings.data.verboseSubmitLogging)
 								Util.SubmitLog(db.ProjectName, "Action indicated failure");
 						}
+						else
+						{
+							long movedCount = eventIds.Count(id => !originalFolderIds.TryGetValue(id, out int originalFolderId) || originalFolderId != kvp.Key);
+							if (!folderPaths.TryGetValue(kvp.Key, out string path))
+								path = "Folder ID " + kvp.Key;
+							Effects.AddMoved(path, movedCount);
+						}
 					}
 				}
 
@@ -121,6 +163,8 @@ namespace ErrorTrackerServer.Filtering
 							if (isEventSubmission && Settings.data.verboseSubmitLogging)
 								Util.SubmitLog(db.ProjectName, "Action indicated failure");
 						}
+						else
+							Effects.AddColored(kvp.Key, eventIds.Count(id => !originalColors.TryGetValue(id, out uint originalColor) || originalColor != kvp.Key));
 					}
 				}
 
@@ -136,6 +180,8 @@ namespace ErrorTrackerServer.Filtering
 						if (isEventSubmission && Settings.data.verboseSubmitLogging)
 							Util.SubmitLog(db.ProjectName, "Action indicated failure");
 					}
+					else
+						Effects.Deleted += idsToDelete.Length;
 				}
 
 				// SetReadState
@@ -153,6 +199,10 @@ namespace ErrorTrackerServer.Filtering
 							else
 								db.RemoveReadState(user.UserId, eventIds);
 						}
+						if (kvp.Key)
+							Effects.MarkedRead += eventIds.Length;
+						else
+							Effects.MarkedUnread += eventIds.Length;
 					}
 				}
 
@@ -165,9 +215,12 @@ namespace ErrorTrackerServer.Filtering
 			finally
 			{
 				folderMap.Clear();
+				originalFolderIds.Clear();
 				colorMap.Clear();
+				originalColors.Clear();
 				eventIdsToDelete.Clear();
 				readStateMap.Clear();
+				rememberFilterAppliedList.Clear();
 			}
 		}
 	}

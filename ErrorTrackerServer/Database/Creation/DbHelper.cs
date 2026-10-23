@@ -48,5 +48,14 @@ namespace ErrorTrackerServer.Database.Creation
 		{
 			return ExecuteNonQuery(sql, param);
 		}
+		/// <summary>
+		/// Executes a SQL statement with a command timeout that overrides the configured one, for long-running migrations.
+		/// </summary>
+		/// <param name="sql">SQL to execute.</param>
+		/// <param name="commandTimeoutSeconds">Command timeout in seconds (greater than 0).</param>
+		public int _ExecuteNonQuery(string sql, int commandTimeoutSeconds)
+		{
+			return ExecuteNonQueryWithTimeout(sql, commandTimeoutSeconds);
+		}
 	}
 }

@@ -76,6 +76,8 @@ namespace ErrorTrackerServer.Database.Creation
 				db._ExecuteNonQuery("DROP DATABASE IF EXISTS \"" + dbName + "\" WITH (FORCE);");
 				db._ExecuteNonQuery("DROP ROLE IF EXISTS " + dbUser);
 			}
+			// Dropping the database "WITH (FORCE)" terminated any pooled connections to it; don't let them be reused.
+			NpgsqlConnection.ClearAllPools();
 			Settings.data.postgresPassword = "";
 		}
 		/// <summary>
@@ -164,8 +166,18 @@ namespace ErrorTrackerServer.Database.Creation
 			if (dbVersion < 2)
 				throw new ApplicationException("ErrorTracker schema \"ErrorTrackerGlobal\" has unexpected DbVersion.CurrentVersion defined: " + dbVersion);
 
-			if (dbVersion > 2)
+			if (dbVersion > 3)
 				throw new ApplicationException("ErrorTracker schema \"ErrorTrackerGlobal\" has unexpected DbVersion.CurrentVersion defined: " + dbVersion);
+
+			if (dbVersion == 2)
+			{
+				// Migrate the global schema to version 3
+				db._ExecuteNonQuery(SQL(Properties.Resources.GlobalSetup_3));
+
+				dbVersion = db._ExecuteScalar<int>("SELECT CurrentVersion FROM ErrorTrackerGlobal.DbVersion LIMIT 1;");
+				if (dbVersion != 3)
+					throw new Exception("Global schema version was " + dbVersion + " after performing migration from 2 to 3.");
+			}
 		}
 		#endregion
 		#region Create or Migrate Project
@@ -201,7 +213,7 @@ namespace ErrorTrackerServer.Database.Creation
 			if (dbVersion < 6)
 				throw new ApplicationException("Project \"" + projectName + "\" has unexpected DbVersion.CurrentVersion defined: " + dbVersion);
 
-			if (dbVersion > 10)
+			if (dbVersion > 12)
 				throw new ApplicationException("Project \"" + projectName + "\" has unexpected DbVersion.CurrentVersion defined: " + dbVersion);
 
 			if (dbVersion == 6)
@@ -243,7 +255,34 @@ namespace ErrorTrackerServer.Database.Creation
 				if (dbVersion != 10)
 					throw new Exception("Project database version for \"" + projectName + "\" was " + dbVersion + " after performing migration from 9 to 10.");
 			}
+
+			if (dbVersion == 10)
+			{
+				// Migrate the project database to version 11
+				db._ExecuteNonQuery(SQL(Properties.Resources.ProjectSetup_11_1).Replace("%PR", projectName));
+
+				dbVersion = db._ExecuteScalar<int>("SELECT CurrentVersion FROM " + projectName + ".DbVersion LIMIT 1;");
+				if (dbVersion != 11)
+					throw new Exception("Project database version for \"" + projectName + "\" was " + dbVersion + " after performing migration from 10 to 11.");
+			}
+
+			if (dbVersion == 11)
+			{
+				// Migrate the project database to version 12.  This rewrites the Tag table, which can take far longer
+				// than the usual command timeout on a large project, so the timeout is extended for this command.
+				Logger.Info("Project \"" + projectName + "\": widening Tag.TagId to 64 bits (DB version 12). This can take a long time for a large project.");
+				db._ExecuteNonQuery(SQL(Properties.Resources.ProjectSetup_12_1).Replace("%PR", projectName), LongMigrationTimeoutSeconds);
+
+				dbVersion = db._ExecuteScalar<int>("SELECT CurrentVersion FROM " + projectName + ".DbVersion LIMIT 1;");
+				if (dbVersion != 12)
+					throw new Exception("Project database version for \"" + projectName + "\" was " + dbVersion + " after performing migration from 11 to 12.");
+				Logger.Info("Project \"" + projectName + "\": DB version 12 migration completed.");
+			}
 		}
+		/// <summary>
+		/// Command timeout, in seconds, for migrations which rewrite large tables.
+		/// </summary>
+		private const int LongMigrationTimeoutSeconds = 24 * 60 * 60;
 		#endregion
 	}
 }

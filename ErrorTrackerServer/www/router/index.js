@@ -11,6 +11,7 @@ import ClientLayout from 'appRoot/vues/client/ClientLayout.vue';
 import ClientHome from 'appRoot/vues/client/ClientHome.vue';
 import ClientFiltersHome from 'appRoot/vues/client/filters/ClientFiltersHome.vue';
 import ChangePassword from 'appRoot/vues/client/ChangePassword.vue';
+import ApiTokens from 'appRoot/vues/client/ApiTokens.vue';
 import AdvancedSearchHome from 'appRoot/vues/client/search/AdvancedSearchHome.vue';
 
 import AdminLayout from 'appRoot/vues/admin/AdminLayout.vue';
@@ -19,6 +20,7 @@ import AdminSettings from 'appRoot/vues/admin/AdminSettings.vue';
 import AdminUsers from 'appRoot/vues/admin/AdminUsers.vue';
 import AdminProjects from 'appRoot/vues/admin/AdminProjects.vue';
 import UserLoginHistory from 'appRoot/vues/admin/UserLoginHistory.vue';
+import AdminMcp from 'appRoot/vues/admin/AdminMcp.vue';
 
 Vue.use(VueRouter);
 
@@ -137,6 +139,9 @@ export default function CreateRouter(store, basePath)
 					},
 					{
 						path: 'changePassword', component: ChangePassword, name: 'changePassword', meta: { title: "Change Password" }
+					},
+					{
+						path: 'apiTokens', component: ApiTokens, name: 'apiTokens', meta: { title: "API Tokens" }
 					}
 				]
 			},
@@ -148,6 +153,7 @@ export default function CreateRouter(store, basePath)
 					{ path: 'settings', component: AdminSettings, name: 'adminSettings', meta: { title: "Settings" } },
 					{ path: 'users', component: AdminUsers, name: 'adminUsers', meta: { title: "Users" } },
 					{ path: 'projects', component: AdminProjects, name: 'adminProjects', meta: { title: "Projects" } },
+					{ path: 'mcp', component: AdminMcp, name: 'adminMcp', meta: { title: "MCP" } },
 					{
 						path: 'userLoginHistory/:userName', component: UserLoginHistory, name: 'adminUserLoginHistory', meta: { title: "User Login History" }, props: (route) =>
 						{

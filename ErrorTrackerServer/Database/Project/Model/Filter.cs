@@ -32,6 +32,14 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// Integer for sorting for listing and executing the filters in a particular order (ascending).
 		/// </summary>
 		public int MyOrder { get; set; }
+		/// <summary>
+		/// Describes who last created or changed this filter, e.g. "admin" or "admin (via token \"Claude\")".  Null if unknown.
+		/// </summary>
+		public string UpdatedBy { get; set; }
+		/// <summary>
+		/// When the filter was last created or changed, in milliseconds since the unix epoch.  Null if unknown.
+		/// </summary>
+		public long? UpdatedDate { get; set; }
 	}
 	public enum ConditionHandling : byte
 	{

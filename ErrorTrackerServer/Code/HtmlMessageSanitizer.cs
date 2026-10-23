@@ -355,6 +355,14 @@ namespace ErrorTrackerServer
 			RegexOptions.Singleline | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 		private static readonly Regex whitespaceRun = new Regex(@"\s+",
 			RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		private static readonly Regex lineBreakingTag = new Regex(@"<(?:br|hr)\b[^>]*>|</?(?:p|div|pre|tr|li|ul|ol|table|blockquote|h[1-6]|dt|dd|dl|section|article|header|footer)\b[^>]*>",
+			RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		private static readonly Regex horizontalWhitespaceRun = new Regex(@"[^\S\n]+",
+			RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		private static readonly Regex spaceAroundNewline = new Regex(@" ?\n ?",
+			RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		private static readonly Regex excessNewlines = new Regex(@"\n{3,}",
+			RegexOptions.CultureInvariant | RegexOptions.Compiled);
 		/// <summary>
 		/// Amount of an HTML message that is examined when producing plain text.  Plain text is only used for short
 		/// previews and window titles, and this method runs once per event in a list which can hold thousands of
@@ -372,13 +380,49 @@ namespace ErrorTrackerServer
 		/// <returns>Plain text.  Returns null if [html] is null.</returns>
 		public static string ToPlainText(string html)
 		{
+			return ToPlainText(html, plainTextInputLimit);
+		}
+
+		private static readonly Regex astralNumericCharacterReference = new Regex(@"&#(?:[xX](?<hex>[0-9a-fA-F]{5,8})|(?<dec>[0-9]{5,10}));",
+			RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		/// <summary>
+		/// <para>Produces an approximate plain-text rendition of an HTML event message, examining at most <paramref name="inputLimit"/> characters of it.  See <see cref="ToPlainText(string)"/>.</para>
+		/// </summary>
+		/// <param name="html">HTML event message.</param>
+		/// <param name="inputLimit">Maximum number of characters of the message to examine.  Use int.MaxValue to convert the whole message.</param>
+		/// <param name="preserveLineBreaks">If true, line breaks are kept: block-level elements and &lt;br&gt; become line breaks, and so do the line breaks inside the message source (which matter in &lt;pre&gt; blocks such as stack traces).  If false, all whitespace collapses to single spaces, for one-line previews.</param>
+		/// <returns>Plain text.  Returns null if [html] is null.</returns>
+		public static string ToPlainText(string html, int inputLimit, bool preserveLineBreaks = false)
+		{
 			if (html == null)
 				return null;
-			string str = html.Length > plainTextInputLimit ? html.Substring(0, plainTextInputLimit) : html;
+			string str = html.Length > inputLimit ? html.Substring(0, inputLimit) : html;
 			str = scriptOrStyleBlock.Replace(str, " ");
+			if (preserveLineBreaks)
+				str = lineBreakingTag.Replace(str, "\n");
 			str = htmlTag.Replace(str, " ");
+			// Numeric character references above U+FFFF (e.g. "&#128512;") are decoded here, explicitly, into surrogate
+			// pairs.  Some HTML decoders mangle them because they don't fit in a single UTF-16 char.
+			str = astralNumericCharacterReference.Replace(str, m =>
+			{
+				long codePoint;
+				bool ok = m.Groups["hex"].Success
+					? long.TryParse(m.Groups["hex"].Value, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out codePoint)
+					: long.TryParse(m.Groups["dec"].Value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out codePoint);
+				if (ok && codePoint > 0xFFFF && codePoint <= 0x10FFFF)
+					return char.ConvertFromUtf32((int)codePoint);
+				return m.Value;
+			});
 			str = WebUtility.HtmlDecode(str);
-			str = whitespaceRun.Replace(str, " ").Trim();
+			if (preserveLineBreaks)
+			{
+				str = str.Replace("\r\n", "\n").Replace('\r', '\n');
+				str = horizontalWhitespaceRun.Replace(str, " ");
+				str = spaceAroundNewline.Replace(str, "\n");
+				str = excessNewlines.Replace(str, "\n\n").Trim();
+			}
+			else
+				str = whitespaceRun.Replace(str, " ").Trim();
 			if (str.Length == 0)
 				return "[HTML message]";
 			return str;

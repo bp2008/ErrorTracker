@@ -56,11 +56,11 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// </summary>
 		StopExecution = 3,
 		/// <summary>
-		/// When processing multiple filters against an event, this filter action causes all remaining unexecuted filters to be canceled. 
+		/// This filter action marks the event as read for every user.
 		/// </summary>
 		MarkRead = 4,
 		/// <summary>
-		/// When processing multiple filters against an event, this filter action causes all remaining unexecuted filters to be canceled. 
+		/// This filter action marks the event as unread for every user.
 		/// </summary>
 		MarkUnread = 5,
 		/// <summary>

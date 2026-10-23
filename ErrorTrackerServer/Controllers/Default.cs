@@ -29,7 +29,8 @@ namespace ErrorTrackerServer.Controllers
 				loginStyle = Settings.data.loginStyle,
 				serverVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString(),
 				emailConfigured = Emailer.Enabled,
-				serviceWorkerEnabled = Settings.data.serviceWorkerEnabled
+				serviceWorkerEnabled = Settings.data.serviceWorkerEnabled,
+				mcpEnabled = Settings.data.mcpEnabled
 			};
 
 			ViewData.Set("AppContext", JsonConvert.SerializeObject(appContext));

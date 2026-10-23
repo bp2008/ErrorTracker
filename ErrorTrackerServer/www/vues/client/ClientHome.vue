@@ -25,7 +25,8 @@
 			</div>
 			<div class="heading">Manage User Account</div>
 			<div class="bodySection">
-				<router-link :to="{ name: 'changePassword' }">Change Password</router-link>
+				<div><router-link :to="{ name: 'changePassword' }">Change Password</router-link></div>
+				<div v-if="mcpEnabled"><router-link :to="{ name: 'apiTokens' }">API Tokens (for AI agents)</router-link></div>
 			</div>
 			<div class="heading">Tips</div>
 			<div class="bodySection">
@@ -80,7 +81,8 @@
 			return {
 				error: null,
 				loading: false,
-				projects: null
+				projects: null,
+				mcpEnabled: !!appContext.mcpEnabled
 			};
 		},
 		created()

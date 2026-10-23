@@ -57,6 +57,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TestMcp.cs" />
     <Compile Include="TestDB.cs" />
     <Compile Include="TestHtmlMessageSanitizer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -73,6 +74,10 @@
     <ProjectReference Include="..\ErrorTrackerServer\ErrorTrackerServer.csproj">
       <Project>{E63FF98F-8AC0-4866-AD15-470E569AD78C}</Project>
       <Name>ErrorTrackerServer</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PetaPoco\PetaPoco.csproj">
+      <Project>{0bdce7c7-16e6-4c23-8342-ad64a1a3f4cf}</Project>
+      <Name>PetaPoco</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />

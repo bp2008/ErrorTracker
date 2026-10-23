@@ -28,6 +28,24 @@ namespace ErrorTrackerServer.Database.Project.Model
 		/// </summary>
 		public long Date { get; set; }
 	}
+	/// <summary>
+	/// Aggregate FilterApplied data for one filter.
+	/// </summary>
+	public class FilterAppliedStats
+	{
+		/// <summary>
+		/// Identifier for the filter.
+		/// </summary>
+		public int FilterId { get; set; }
+		/// <summary>
+		/// Number of FilterApplied rows for the filter (the number of events it has acted on that still exist).
+		/// </summary>
+		public long TimesApplied { get; set; }
+		/// <summary>
+		/// The latest FilterApplied date for the filter, in milliseconds since the unix epoch.
+		/// </summary>
+		public long LastApplied { get; set; }
+	}
 	public class FilterAppliedRecord
 	{
 		/// <summary>

@@ -187,6 +187,42 @@ namespace ErrorTrackerServer
 		/// contact anything, so they can't reveal a viewer's IP address.  SVG is never allowed regardless.
 		/// </summary>
 		public bool htmlMessageAllowDataUriImages = true;
+		/// <summary>
+		/// If true, the "/mcp" endpoint (Model Context Protocol server for AI agents) is available and users may create API tokens.  If false, "/mcp" returns 404 and token management is hidden.
+		/// </summary>
+		public bool mcpEnabled = false;
+		/// <summary>
+		/// Base URL of the web interface as seen by users, e.g. "https://errors.example.com/".  Used to build "webUrl" deep links in MCP tool output.  If empty, "webUrl" is omitted.
+		/// </summary>
+		public string publicBaseUrl = "";
+		/// <summary>
+		/// Values of the HTTP "Origin" header which are accepted by the "/mcp" endpoint.  Requests carrying any other Origin are rejected with 403 (DNS rebinding defense).  Requests without an Origin header are not affected.
+		/// </summary>
+		public string[] mcpAllowedOrigins = new string[0];
+		/// <summary>
+		/// Statement timeout, in seconds, for database queries made by MCP tools.
+		/// </summary>
+		public int mcpQueryTimeoutSeconds = 30;
+		/// <summary>
+		/// Upper bound for the "maxMessageChars" and "maxTagChars" arguments of the MCP "get_events" tool.
+		/// </summary>
+		public int mcpMaxFieldChars = 100000;
+		/// <summary>
+		/// Maximum number of MCP "tools/call" requests which may be in progress at the same time for one API token.
+		/// </summary>
+		public int mcpMaxConcurrentCallsPerToken = 4;
+		/// <summary>
+		/// MCP audit log rows older than this many days are deleted automatically.  0 or less disables pruning.
+		/// </summary>
+		public int mcpAuditRetentionDays = 90;
+		/// <summary>
+		/// Tag keys (one per line, case-insensitive) which are omitted entirely from MCP output unless the API token has the "sensitive:read" scope.
+		/// </summary>
+		public string mcpHiddenTagKeys = "";
+		/// <summary>
+		/// Regular expression rules whose matches are replaced with "[REDACTED]" in MCP output unless the API token has the "sensitive:read" scope.
+		/// </summary>
+		public McpRedactionRule[] mcpRedactionRules = McpRedactionRule.GetDefaults();
 
 		public string GetWWWDirectoryBase()
 		{

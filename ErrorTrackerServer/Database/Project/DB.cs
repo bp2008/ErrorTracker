@@ -692,7 +692,7 @@ namespace ErrorTrackerServer
 		/// <param name="folderId">Folder ID.  Negative ID matches All Folders.</param>
 		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <param name="conditions">Array of filter conditions to evaluate. The FilterCondition.Enabled field is disregarded.</param>
-		/// <param name="matchAll">If true, only one of the conditions needs to match. If false, all conditions need to match.</param>
+		/// <param name="matchAll">If true, all conditions need to match. If false, only one of the conditions needs to match.</param>
 		/// <returns></returns>
 		public List<Event> AdvancedSearch(int folderId, string eventListCustomTagKey, FilterCondition[] conditions, bool matchAll)
 		{
@@ -1195,8 +1195,9 @@ namespace ErrorTrackerServer
 					{
 						FullFilter full = new FullFilter();
 						full.filter = f;
-						full.conditions = conditions.Where(c => c.FilterId == f.FilterId).ToArray();
-						full.actions = actions.Where(a => a.FilterId == f.FilterId).ToArray();
+						// Conditions and actions are ordered by ID, as in GetFilter.  Without the explicit ordering, the order would depend on where PostgreSQL happened to store each row, which changes when a row is updated.
+						full.conditions = conditions.Where(c => c.FilterId == f.FilterId).OrderBy(c => c.FilterConditionId).ToArray();
+						full.actions = actions.Where(a => a.FilterId == f.FilterId).OrderBy(a => a.FilterActionId).ToArray();
 						return full;
 					})
 					.OrderBy(f => f.filter.MyOrder)
@@ -1688,6 +1689,131 @@ namespace ErrorTrackerServer
 		public long GetFiltersAppliedCountByFilter(int filterId)
 		{
 			return ExecuteScalar<long>("SELECT COUNT(*) FROM " + ProjectNameLower + ".FilterApplied WHERE FilterId = " + filterId);
+		}
+		#endregion
+		#region Service Layer Helpers
+		/// <summary>
+		/// Runs the action in a transaction whose statements are each canceled by PostgreSQL if they run longer than the specified number of seconds.  A canceled statement throws an exception for which <see cref="IsStatementTimeout"/> returns true.
+		/// </summary>
+		/// <param name="timeoutSeconds">Statement timeout in seconds.  If less than 1, no timeout is set.</param>
+		/// <param name="action">Action to run.  All queries it makes through this DB instance are in the transaction.</param>
+		public void RunWithStatementTimeout(int timeoutSeconds, Action action)
+		{
+			RunInTransaction(() =>
+			{
+				if (timeoutSeconds > 0)
+					ExecuteNonQuery("SET LOCAL statement_timeout = " + (timeoutSeconds * 1000L));
+				action();
+			});
+		}
+		/// <summary>
+		/// Returns true if the exception (or one of its inner exceptions) indicates that PostgreSQL canceled a statement because of a statement timeout.
+		/// </summary>
+		/// <param name="ex">Exception</param>
+		/// <returns></returns>
+		public static bool IsStatementTimeout(Exception ex)
+		{
+			return GetPostgresSqlState(ex) == "57014";
+		}
+		/// <summary>
+		/// Returns the PostgreSQL SQLSTATE error code carried by the exception or one of its inner exceptions, or null.
+		/// </summary>
+		/// <param name="ex">Exception</param>
+		/// <returns></returns>
+		public static string GetPostgresSqlState(Exception ex)
+		{
+			for (Exception e = ex; e != null; e = e.InnerException)
+			{
+				if (e is Npgsql.PostgresException pe)
+					return pe.SqlState;
+			}
+			return null;
+		}
+		/// <summary>
+		/// Executes a query built by the service layer.  The query must refer to tables with the schema name (<see cref="ProjectNameLower"/>) and must pass every user-provided value as a parameter.
+		/// </summary>
+		/// <typeparam name="T">Row type.</typeparam>
+		/// <param name="sql">Query.</param>
+		/// <returns></returns>
+		public List<T> FetchSql<T>(PetaPoco.Sql sql)
+		{
+			return ExecuteQuery<T>(sql);
+		}
+		/// <summary>
+		/// Executes a query built by the service layer and returns the first column of the first row.  The query must refer to tables with the schema name (<see cref="ProjectNameLower"/>) and must pass every user-provided value as a parameter.
+		/// </summary>
+		/// <typeparam name="T">Value type.</typeparam>
+		/// <param name="sql">Query.</param>
+		/// <returns></returns>
+		public T ScalarSql<T>(PetaPoco.Sql sql)
+		{
+			return ExecuteScalar<T>(sql);
+		}
+		/// <summary>
+		/// Inserts a filter condition.  The caller is responsible for transactions and validation.
+		/// </summary>
+		/// <param name="condition">Condition to insert.  Its FilterConditionId is assigned.</param>
+		public void InsertFilterCondition(FilterCondition condition)
+		{
+			Insert(condition);
+		}
+		/// <summary>
+		/// Updates a filter condition.  The caller is responsible for transactions and validation.
+		/// </summary>
+		/// <param name="condition">Condition to update.</param>
+		public void UpdateFilterCondition(FilterCondition condition)
+		{
+			Update(condition);
+		}
+		/// <summary>
+		/// Inserts a filter action.  The caller is responsible for transactions and validation.
+		/// </summary>
+		/// <param name="action">Action to insert.  Its FilterActionId is assigned.</param>
+		public void InsertFilterAction(FilterAction action)
+		{
+			Insert(action);
+		}
+		/// <summary>
+		/// Updates a filter action.  The caller is responsible for transactions and validation.
+		/// </summary>
+		/// <param name="action">Action to update.</param>
+		public void UpdateFilterAction(FilterAction action)
+		{
+			Update(action);
+		}
+		/// <summary>
+		/// Inserts a filter.  The caller is responsible for transactions, validation, and setting MyOrder.
+		/// </summary>
+		/// <param name="filter">Filter to insert.  Its FilterId is assigned.</param>
+		public void InsertFilter(Filter filter)
+		{
+			Insert(filter);
+		}
+		/// <summary>
+		/// Updates a filter row (not its conditions or actions).  The caller is responsible for transactions and validation.
+		/// </summary>
+		/// <param name="filter">Filter to update.</param>
+		public void UpdateFilterRow(Filter filter)
+		{
+			Update(filter);
+		}
+		/// <summary>
+		/// Records who changed the filter and when (see <see cref="Filter.UpdatedBy"/>).
+		/// </summary>
+		/// <param name="filterId">ID of the filter.</param>
+		/// <param name="updatedBy">Description of who changed the filter.</param>
+		public void SetFilterUpdatedBy(int filterId, string updatedBy)
+		{
+			ExecuteNonQuery("UPDATE " + ProjectNameLower + ".Filter SET UpdatedBy = @by, UpdatedDate = @date WHERE FilterId = @id", new { by = updatedBy, date = TimeUtil.GetTimeInMsSinceEpoch(), id = filterId });
+		}
+		/// <summary>
+		/// Returns the number of FilterApplied rows and the latest FilterApplied date for every filter that has been applied at least once.
+		/// </summary>
+		/// <returns></returns>
+		public Dictionary<int, FilterAppliedStats> GetFilterAppliedStats()
+		{
+			return ExecuteQuery<FilterAppliedStats>("SELECT FilterId, COUNT(*) AS TimesApplied, MAX(Date) AS LastApplied FROM " + ProjectNameLower + ".FilterApplied GROUP BY FilterId")
+				.ToDictionary(s => s.FilterId);
 		}
 		#endregion
 		#region Unit Test Methods

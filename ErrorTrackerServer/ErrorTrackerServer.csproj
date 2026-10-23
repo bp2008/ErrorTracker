@@ -123,6 +123,26 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Mcp\Tools\TriageTools.cs" />
+    <Compile Include="Controllers\McpAdminData.cs" />
+    <Compile Include="Controllers\ApiTokenData.cs" />
+    <Compile Include="Controllers\Mcp.cs" />
+    <Compile Include="Mcp\Tools\WriteTools.cs" />
+    <Compile Include="Mcp\Tools\AnalysisTools.cs" />
+    <Compile Include="Mcp\Tools\ReadTools.cs" />
+    <Compile Include="Mcp\Tools\ToolHelpers.cs" />
+    <Compile Include="Mcp\McpServer.cs" />
+    <Compile Include="Mcp\McpTool.cs" />
+    <Compile Include="Mcp\JsonSchemaValidator.cs" />
+    <Compile Include="Mcp\McpOutput.cs" />
+    <Compile Include="Mcp\McpRedaction.cs" />
+    <Compile Include="Services\FilterRunService.cs" />
+    <Compile Include="Services\FilterService.cs" />
+    <Compile Include="Services\EventQueryService.cs" />
+    <Compile Include="Filtering\IFilterActionSink.cs" />
+    <Compile Include="Database\Global\Model\McpAuditRecord.cs" />
+    <Compile Include="Database\Global\Model\ApiToken.cs" />
+    <Compile Include="Authentication\ApiTokenManager.cs" />
     <Compile Include="API\ProjectRequestBase.cs" />
     <Compile Include="API\ApiRequestBase.cs" />
     <Compile Include="API\ApiResponseBase.cs" />
@@ -224,8 +244,15 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="www\vues\admin\AdminMcp.vue" />
+    <None Include="www\vues\client\ApiTokens.vue" />
     <None Include=".babelrc" />
     <None Include="app.config" />
+    <Content Include="Database\Project\SQL\12\ProjectSetup_12_1.sql" />
+    <Content Include="www\api\McpAdminData.js" />
+    <Content Include="www\api\ApiTokenData.js" />
+    <Content Include="Database\Project\SQL\11\ProjectSetup_11_1.sql" />
+    <Content Include="Database\Global\SQL\3\GlobalSetup_3.sql" />
     <Content Include="Database\Global\SQL\2\GlobalSetup_2.sql" />
     <Content Include="Database\Project\SQL\6\ProjectSetup_6_1_Tables.sql" />
     <Content Include="Database\Project\SQL\7\ProjectSetup_7_1.sql" />

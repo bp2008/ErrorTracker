@@ -182,7 +182,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				if (db.SetEventsColor(request.eventIds, request.color))
 					return Json(new ApiResponseBase(true));
-				return ApiError("Unable to delete all events with IDs " + string.Join(",", request.eventIds));
+				return ApiError("Unable to set the color of all events with IDs " + string.Join(",", request.eventIds));
 			}
 		}
 		/// <summary>

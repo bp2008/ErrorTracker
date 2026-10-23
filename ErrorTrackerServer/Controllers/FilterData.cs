@@ -54,6 +54,8 @@ namespace ErrorTrackerServer.Controllers
 			{
 				Filter newFilter = new Filter();
 				newFilter.Name = request.name;
+				newFilter.UpdatedBy = session.userName;
+				newFilter.UpdatedDate = TimeUtil.GetTimeInMsSinceEpoch();
 				if (Enum.IsDefined(typeof(ConditionHandling), request.conditionHandling))
 					newFilter.ConditionHandling = request.conditionHandling;
 				if (db.AddFilter(newFilter, request.conditions, out string errorMessage))
@@ -78,6 +80,8 @@ namespace ErrorTrackerServer.Controllers
 
 			using (DB db = new DB(p.Name))
 			{
+				request.filter.filter.UpdatedBy = session.userName;
+				request.filter.filter.UpdatedDate = TimeUtil.GetTimeInMsSinceEpoch();
 				if (db.EditFilter(request.filter, out string errorMessage))
 				{
 					Logger.Info("[" + p.Name + "] Filter " + request.filter.filter.FilterId + " (\"" + request.filter.filter.Name + "\") was edited by \"" + session.userName + "\"");
@@ -116,6 +120,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				if (db.AddFilterCondition(request.condition, out string errorMessage))
 				{
+					db.SetFilterUpdatedBy(request.condition.FilterId, session.userName);
 					Logger.Info("[" + p.Name + "] Filter condition " + request.condition.FilterConditionId + " was added by \"" + session.userName + "\"");
 					return Json(new ApiResponseBase(true));
 				}
@@ -134,6 +139,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				if (db.EditFilterCondition(request.condition, out string errorMessage))
 				{
+					db.SetFilterUpdatedBy(request.condition.FilterId, session.userName);
 					Logger.Info("[" + p.Name + "] Filter condition " + request.condition.FilterConditionId + " was edited by \"" + session.userName + "\"");
 					return Json(new ApiResponseBase(true));
 				}
@@ -152,6 +158,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				if (db.DeleteFilterCondition(request.condition.FilterConditionId))
 				{
+					db.SetFilterUpdatedBy(request.condition.FilterId, session.userName);
 					Logger.Info("[" + p.Name + "] Filter condition " + request.condition.FilterConditionId + " was deleted by \"" + session.userName + "\"");
 					return Json(new ApiResponseBase(true));
 				}
@@ -170,6 +177,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				if (db.AddFilterAction(request.action, out string errorMessage))
 				{
+					db.SetFilterUpdatedBy(request.action.FilterId, session.userName);
 					Logger.Info("[" + p.Name + "] Filter action " + request.action.FilterActionId + " was added by \"" + session.userName + "\"");
 					return Json(new ApiResponseBase(true));
 				}
@@ -188,6 +196,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				if (db.EditFilterAction(request.action, out string errorMessage))
 				{
+					db.SetFilterUpdatedBy(request.action.FilterId, session.userName);
 					Logger.Info("[" + p.Name + "] Filter action " + request.action.FilterActionId + " was edited by \"" + session.userName + "\"");
 					return Json(new ApiResponseBase(true));
 				}
@@ -206,6 +215,7 @@ namespace ErrorTrackerServer.Controllers
 			{
 				if (db.DeleteFilterAction(request.action.FilterActionId))
 				{
+					db.SetFilterUpdatedBy(request.action.FilterId, session.userName);
 					Logger.Info("[" + p.Name + "] Filter action " + request.action.FilterActionId + " was deleted by \"" + session.userName + "\"");
 					return Json(new ApiResponseBase(true));
 				}

@@ -12,6 +12,9 @@
 						<label class="inputLabel">Filter Properties</label>
 						<div><b>ID:</b> {{filter.filter.FilterId}}</div>
 						<div title="Since software version 2.3, this filter's actions have been run this many times."><b>Affected Event Count:</b> {{filter.eventCount}}</div>
+						<div v-if="filter.filter.UpdatedBy" :class="{ lastModified: true, viaToken: filter.filter.UpdatedBy.indexOf('(via token') > -1 }" title="Changes made by AI agents through the MCP endpoint are attributed to the API token they used.">
+							<b>Last Modified By:</b> {{filter.filter.UpdatedBy}}<span v-if="filter.filter.UpdatedDate"> at {{updatedDateStr}}</span>
+						</div>
 						<div>
 							<input type="text" v-model="filter.filter.Name" :class="{ primaryInput: true, filterName: true, searchMatched }" placeholder="Name" title="Name" /> <span class="hint">← Filter Name</span>
 						</div>
@@ -95,7 +98,7 @@
 <script>
 	import { GetFilter, EditFilter, DeleteFilter, AddCondition, EditCondition, DeleteCondition, AddAction, EditAction, DeleteAction, RunFilterAgainstAllEvents } from 'appRoot/api/FilterData';
 	import { TextInputDialog, ModalConfirmDialog } from 'appRoot/scripts/ModalDialog';
-	import { FilterMatch } from 'appRoot/scripts/Util';
+	import { FilterMatch, GetDateStr } from 'appRoot/scripts/Util';
 	import ControlBar from 'appRoot/vues/client/controls/ControlBar.vue';
 	import FilterCondition from 'appRoot/vues/client/filters/FilterCondition.vue';
 	import FilterAction from 'appRoot/vues/client/filters/FilterAction.vue';
@@ -137,6 +140,10 @@
 		},
 		computed:
 		{
+			updatedDateStr()
+			{
+				return this.filter && this.filter.filter.UpdatedDate ? GetDateStr(new Date(this.filter.filter.UpdatedDate)) : "";
+			},
 			filterJson()
 			{
 				return JSON.stringify(this.filter);
@@ -317,6 +324,11 @@
 </script>
 
 <style scoped>
+	.lastModified.viaToken
+	{
+		color: #7A3E9D;
+	}
+
 	.pageRoot
 	{
 		margin: 8px;

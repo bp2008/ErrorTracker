@@ -21,7 +21,41 @@ namespace ErrorTrackerServer.Filtering
 		public DB db { get; private set; }
 		private Lazy<FolderStructure> folderStructure;
 		private DeferredActionCollection deferredActions = new DeferredActionCollection();
-		public FilterEngine(string projectName)
+		/// <summary>
+		/// Receives the actions this engine decides to take.  Normally <see cref="deferredActions"/>; during a dry run, a recorder supplied by the caller.
+		/// </summary>
+		private IFilterActionSink sink;
+		/// <summary>
+		/// If true, this engine never changes the database: actions go to the caller's sink, and MoveTo never creates folders.
+		/// </summary>
+		public readonly bool DryRun;
+		/// <summary>
+		/// Maximum time one regular expression condition may spend matching one value.  A condition that times out makes its filter skip the event, as any other error in a condition does.
+		/// </summary>
+		public static readonly TimeSpan RegexMatchTimeout = TimeSpan.FromMilliseconds(250);
+		/// <summary>
+		/// Number of regular expression evaluations which timed out (see <see cref="RegexMatchTimeout"/>) since this engine was created.
+		/// </summary>
+		public int RegexTimeoutCount { get; private set; }
+		/// <summary>
+		/// Number of times a filter failed with an error (other than a regex timeout) while being evaluated against an event, since this engine was created.  Such a filter does not act on that event.
+		/// </summary>
+		public int FilterErrorCount { get; private set; }
+		/// <summary>
+		/// Folders which were resolved (and possibly created) via the database because they were not in <see cref="folderStructure"/>, keyed by the MoveTo argument.
+		/// </summary>
+		private Dictionary<string, FolderStructure> resolvedMoveTargets = new Dictionary<string, FolderStructure>();
+		/// <summary>
+		/// Counts what this engine's executed actions have done so far.  Always empty for a dry run (the caller's sink does the counting).
+		/// </summary>
+		public FilterRunEffects Effects { get { return deferredActions.Effects; } }
+		public FilterEngine(string projectName) : this(projectName, null) { }
+		/// <summary>
+		/// Creates a FilterEngine.
+		/// </summary>
+		/// <param name="projectName">Project name.</param>
+		/// <param name="dryRunSink">If not null, the engine operates in dry-run mode: every action is sent to this sink instead of being executed, and no folders are created.</param>
+		public FilterEngine(string projectName, IFilterActionSink dryRunSink)
 		{
 			ProjectName = projectName;
 			db = new DB(projectName);
@@ -30,6 +64,15 @@ namespace ErrorTrackerServer.Filtering
 				using (DB tmpDb = new DB(projectName))
 					return tmpDb.GetFolderStructure();
 			}, false);
+			DryRun = dryRunSink != null;
+			sink = DryRun ? dryRunSink : deferredActions;
+		}
+		/// <summary>
+		/// Gets the folder structure as it was when this engine first needed it.  Folders created during a run are not included.
+		/// </summary>
+		public FolderStructure GetFolderStructure()
+		{
+			return folderStructure.Value;
 		}
 		/// <summary>
 		/// Runs a filter on all events in the specified folder.
@@ -142,7 +185,7 @@ namespace ErrorTrackerServer.Filtering
 		/// Runs all enabled filters against the specified event.
 		/// </summary>
 		/// <param name="eventId">ID of the event to run filters against.</param>
-		public void RunEnabledFiltersAgainstEvent(int eventId)
+		public void RunEnabledFiltersAgainstEvent(long eventId)
 		{
 			Event e = db.GetEvent(eventId);
 			if (e == null)
@@ -269,6 +312,39 @@ namespace ErrorTrackerServer.Filtering
 		}
 
 		/// <summary>
+		/// <para>Runs the given filters, in order, against the event, exactly as incoming events are filtered: processing of the event stops after a Delete or StopExecution action.  Disabled filters in the list are run too, so pass only the filters you want to run.</para>
+		/// <para>Returns true if any filter's conditions were met.</para>
+		/// <para>Unless this is a dry run, AFTER CALLING THIS METHOD ONE OR MORE TIMES, CALL <see cref="ExecuteDeferredActions"/>.</para>
+		/// </summary>
+		/// <param name="filters">Filters to run, in execution order.</param>
+		/// <param name="e">An event with the Tags field populated.</param>
+		/// <returns></returns>
+		public bool DeferredRunFiltersAgainstEvent(IList<FullFilter> filters, Event e)
+		{
+			bool anyMatched = false;
+			foreach (FullFilter full in filters)
+			{
+				FilterEvalOutcome outcome = EvaluateFilterAgainstEvent(full, e, false);
+				if (outcome.Matched)
+					anyMatched = true;
+				if (outcome.StopProcessing)
+					break;
+			}
+			return anyMatched;
+		}
+
+		/// <summary>
+		/// Executes the actions scheduled by <see cref="DeferredRunFiltersAgainstEvent"/>.  Returns true if all scheduled actions executed successfully.  Does nothing during a dry run.
+		/// </summary>
+		/// <returns></returns>
+		public bool ExecuteDeferredActions()
+		{
+			if (DryRun)
+				return true;
+			return deferredActions.ExecuteDeferredActions(db);
+		}
+
+		/// <summary>
 		/// <para>Runs the filter against the event (whether the filter is enabled or not).  Returns true if filter execution against this event should cease immediately.  This method logs exceptions and does not rethrow them.</para>
 		/// <para>AFTER CALLING THIS METHOD ONE OR MORE TIMES, CALL deferredActions.ExecuteDeferredActions()</para>
 		/// </summary>
@@ -278,6 +354,21 @@ namespace ErrorTrackerServer.Filtering
 		/// <returns></returns>
 		private bool DeferredRunFilterAgainstEvent(FullFilter full, Event e, bool isEventSubmission)
 		{
+			return EvaluateFilterAgainstEvent(full, e, isEventSubmission).StopProcessing;
+		}
+
+		/// <summary>
+		/// <para>Runs the filter against the event (whether the filter is enabled or not), sending any actions to this engine's sink.  This method logs exceptions and does not rethrow them.</para>
+		/// <para>This is the one place where filter conditions and actions are evaluated, for incoming events, filter runs and dry runs alike, so that a dry run predicts exactly what a real run does.</para>
+		/// <para>Unless this is a dry run, AFTER CALLING THIS METHOD ONE OR MORE TIMES, CALL deferredActions.ExecuteDeferredActions()</para>
+		/// </summary>
+		/// <param name="full">A filter to run against the event.</param>
+		/// <param name="e">An event with the Tags field populated.  Its FolderId and Color are updated in memory by MoveTo and SetColor actions so that later filters see the new values.</param>
+		/// <param name="isEventSubmission">Pass true if the current operation is an event submission and this is the automatic filtering run. Additional logging may be performed for debugging purposes.</param>
+		/// <returns></returns>
+		public FilterEvalOutcome EvaluateFilterAgainstEvent(FullFilter full, Event e, bool isEventSubmission)
+		{
+			FilterEvalOutcome outcome = new FilterEvalOutcome();
 			try
 			{
 				// Evaluate Conditions
@@ -329,6 +420,7 @@ namespace ErrorTrackerServer.Filtering
 				// Execute Actions if Conditions were sufficiently met.
 				if (conditionsMet)
 				{
+					outcome.Matched = true;
 					if (full.actions.Length > 0)
 					{
 						// Remember that this filter applied actions to the event.
@@ -340,21 +432,33 @@ namespace ErrorTrackerServer.Filtering
 							try
 							{
 								if (DeferredExecAction(action, e, isEventSubmission))
-									return true;
+								{
+									outcome.StopProcessing = true;
+									return outcome;
+								}
 							}
 							catch (Exception ex)
 							{
+								FilterErrorCount++;
 								Logger.Debug(ex);
 							}
 						}
 					}
 				}
 			}
+			catch (RegexMatchTimeoutException)
+			{
+				// Not logged, because one slow pattern could otherwise write a log entry for every event in a large run.
+				RegexTimeoutCount++;
+				outcome.Errored = true;
+			}
 			catch (Exception ex)
 			{
+				FilterErrorCount++;
+				outcome.Errored = true;
 				Logger.Debug(ex);
 			}
-			return false;
+			return outcome;
 		}
 		/// <summary>
 		/// Evaluates the specified filter condition against the event, returning true if the condition is met.
@@ -435,7 +539,7 @@ namespace ErrorTrackerServer.Filtering
 				if (!pattern.EndsWith("$"))
 					pattern = pattern + "$";
 			}
-			return Regex.IsMatch(valueToTest, pattern, RegexOptions.Singleline | RegexOptions.IgnoreCase);
+			return Regex.IsMatch(valueToTest, pattern, RegexOptions.Singleline | RegexOptions.IgnoreCase, RegexMatchTimeout);
 		}
 
 		private bool DoPlaintextOperation(FilterCondition condition, string valueToTest)
@@ -467,9 +571,33 @@ namespace ErrorTrackerServer.Filtering
 			{
 				if (action.Operator == FilterActionType.MoveTo)
 				{
-					FolderStructure targetFolder = folderStructure.Value.ResolvePath(action.Argument.Trim(), null);
+					string path = action.Argument.Trim();
+					FolderStructure targetFolder = folderStructure.Value.ResolvePath(path, null);
 					if (targetFolder == null)
-						targetFolder = db.FolderResolvePath(action.Argument.Trim());
+					{
+						if (DryRun)
+						{
+							// The folder doesn't exist.  A real run would create it; a dry run must not.
+							sink.MoveEventTo(e, -1, GetAbsolutePathForMissingFolder(path));
+							// A real run moves the event to the new folder, which isn't in the cached folder structure, so later
+							// "Folder" conditions see no path at all.  FolderId -1 reproduces that.
+							e.FolderId = -1;
+							return false;
+						}
+						if (!resolvedMoveTargets.TryGetValue(path, out targetFolder))
+						{
+							bool existedBefore;
+							using (DB tmpDb = new DB(ProjectName))
+								existedBefore = tmpDb.GetFolderStructure().ResolvePath(path, null) != null;
+							targetFolder = db.FolderResolvePath(path);
+							if (targetFolder != null)
+							{
+								resolvedMoveTargets[path] = targetFolder;
+								if (!existedBefore)
+									deferredActions.Effects.FoldersCreated.Add(targetFolder.AbsolutePath);
+							}
+						}
+					}
 					if (targetFolder != null)
 					{
 						if (isEventSubmission && Settings.data.verboseSubmitLogging)
@@ -480,7 +608,7 @@ namespace ErrorTrackerServer.Filtering
 							Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + action.FilterId + " Action " + action.FilterActionId + " (MoveTo) deferred move from folder " + e.FolderId + currentFolderPathLabel + " to folder " + targetFolder.FolderId + " (" + targetFolder.AbsolutePath + ")");
 						}
 
-						deferredActions.MoveEventTo(e, targetFolder.FolderId);
+						sink.MoveEventTo(e, targetFolder.FolderId, targetFolder.AbsolutePath);
 						// Make change in memory so that later filters during this filtering operation can see and act upon the new value.
 						e.FolderId = targetFolder.FolderId;
 					}
@@ -498,7 +626,7 @@ namespace ErrorTrackerServer.Filtering
 					if (isEventSubmission && Settings.data.verboseSubmitLogging)
 						Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + action.FilterId + " Action " + action.FilterActionId + " (Delete) deferred");
 
-					deferredActions.DeleteEvent(e);
+					sink.DeleteEvent(e);
 					return true;
 				}
 				else if (action.Operator == FilterActionType.SetColor)
@@ -523,7 +651,7 @@ namespace ErrorTrackerServer.Filtering
 
 						return false;
 					}
-					deferredActions.SetEventColor(e, color);
+					sink.SetEventColor(e, color);
 					// Make change in memory so that later filters during this filtering operation can see and act upon the new value.
 					e.Color = color;
 					return false;
@@ -539,7 +667,7 @@ namespace ErrorTrackerServer.Filtering
 					if (isEventSubmission && Settings.data.verboseSubmitLogging)
 						Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + action.FilterId + " Action " + action.FilterActionId + " (MarkRead) deferred");
 
-					deferredActions.SetReadState(e, true);
+					sink.SetReadState(e, true);
 					return false;
 				}
 				else if (action.Operator == FilterActionType.MarkUnread)
@@ -547,18 +675,46 @@ namespace ErrorTrackerServer.Filtering
 					if (isEventSubmission && Settings.data.verboseSubmitLogging)
 						Util.SubmitLog(ProjectName, "Event " + e.EventId + " Filter " + action.FilterId + " Action " + action.FilterActionId + " (MarkUnread) deferred");
 
-					deferredActions.SetReadState(e, false);
+					sink.SetReadState(e, false);
 					return false;
 				}
 				else if (action.Operator == FilterActionType.RememberFilterApplied)
 				{
-					deferredActions.RememberFilterApplied(e, action.FilterId, TimeUtil.GetTimeInMsSinceEpoch());
+					sink.RememberFilterApplied(e, action.FilterId, TimeUtil.GetTimeInMsSinceEpoch());
 					return false;
 				}
 				else
 					throw new Exception("Unsupported filter action operator: " + action.Operator);
 			}
 			return false;
+		}
+
+		/// <summary>
+		/// Returns the absolute path that a MoveTo argument refers to when the destination folder does not exist yet, as <see cref="FolderStructure.ResolvePath"/> would create it relative to the root.
+		/// </summary>
+		/// <param name="path">MoveTo argument (trimmed).</param>
+		/// <returns></returns>
+		private string GetAbsolutePathForMissingFolder(string path)
+		{
+			// Resolve the longest existing prefix so that ".." and the existing folders' capitalization are handled like ResolvePath does.
+			List<string> parts = path.Split('/').ToList();
+			if (parts.Count > 0 && parts[0] == "")
+				parts.RemoveAt(0);
+			FolderStructure current = folderStructure.Value;
+			int i = 0;
+			for (; i < parts.Count; i++)
+			{
+				string part = parts[i];
+				if (part == "" && i == parts.Count - 1)
+					break; // trailing slash
+				FolderStructure next = part == ".." ? (current.Parent ?? current) : current.GetChild(part);
+				if (next == null)
+					break;
+				current = next;
+			}
+			string prefix = current.AbsolutePath.TrimEnd('/');
+			string rest = string.Join("/", parts.Skip(i).Where(p => p != ""));
+			return prefix + "/" + rest;
 		}
 
 		#region Search Feature
@@ -615,7 +771,7 @@ namespace ErrorTrackerServer.Filtering
 		/// Uses clientside matching, so this is slow.
 		/// </summary>
 		/// <param name="conditions">Array of filter conditions to evaluate. Disabled conditions are disregarded.</param>
-		/// <param name="matchAll">If true, only one of the conditions needs to match. If false, all conditions need to match.</param>
+		/// <param name="matchAll">If true, all conditions need to match. If false, only one of the conditions needs to match.</param>
 		/// <param name="folderId">Folder ID to search.  If -1, all events are searched.</param>
 		/// <param name="eventListCustomTagKey">Custom tag key which a user may have set to include in event summaries.</param>
 		/// <returns></returns>
@@ -698,5 +854,23 @@ namespace ErrorTrackerServer.Filtering
 			GC.SuppressFinalize(this);
 		}
 		#endregion
+	}
+	/// <summary>
+	/// The result of evaluating one filter against one event.
+	/// </summary>
+	public class FilterEvalOutcome
+	{
+		/// <summary>
+		/// True if the filter's conditions were met (its actions were then taken, if it has any).
+		/// </summary>
+		public bool Matched;
+		/// <summary>
+		/// True if a Delete or StopExecution action ended processing of the event, so no later filters run on it.
+		/// </summary>
+		public bool StopProcessing;
+		/// <summary>
+		/// True if evaluating the filter's conditions failed (for example, a regular expression that is invalid or timed out).  The filter takes no action on the event in that case.
+		/// </summary>
+		public bool Errored;
 	}
 }

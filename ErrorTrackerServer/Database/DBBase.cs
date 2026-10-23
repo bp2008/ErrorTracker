@@ -268,6 +268,28 @@ namespace ErrorTrackerServer
 			}
 		}
 		/// <summary>
+		/// Executes a SQL statement using ExecuteNonQuery, with a command timeout which overrides the configured one for this command only.
+		/// </summary>
+		/// <param name="sql">The command text to be used.</param>
+		/// <param name="commandTimeoutSeconds">Command timeout in seconds (greater than 0).</param>
+		/// <returns></returns>
+		protected int ExecuteNonQueryWithTimeout(string sql, int commandTimeoutSeconds)
+		{
+			try
+			{
+				db.OneTimeCommandTimeout = commandTimeoutSeconds;
+				return db.Execute(sql);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
+			finally
+			{
+				db.OneTimeCommandTimeout = 0;
+			}
+		}
+		/// <summary>
 		/// Executes a SQL statement using ExecuteQuery.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
@@ -351,6 +373,23 @@ namespace ErrorTrackerServer
 			try
 			{
 				return db.ExecuteScalar<T>(sql, param);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Last SQL Command:" + Environment.NewLine + db.LastCommand, ex);
+			}
+		}
+		/// <summary>
+		/// Executes a SQL statement using ExecuteScalar. Returns the value in the first column of the first row.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="sql">The command to be used.</param>
+		/// <returns></returns>
+		protected T ExecuteScalar<T>(Sql sql)
+		{
+			try
+			{
+				return db.ExecuteScalar<T>(sql);
 			}
 			catch (Exception ex)
 			{

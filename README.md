@@ -141,6 +141,74 @@ Tips:
 * CTRL + Z to undo an operation where you manually moved something.
 * CTRL + SHIFT + Z or CTRL + Y to redo an operation you undid.
 
+## AI Agents (MCP)
+
+ErrorTracker has a built-in [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server, so AI agents such as Claude Code, OpenAI Codex, VS Code Copilot, Cursor and Gemini CLI can search and summarize events, and read, preview, create and run filters.  There is nothing to install: agents connect to `https://your-server/mcp` with a personal API token.
+
+### Enabling it
+
+1. Admin > Settings: check `mcpEnabled`, set `publicBaseUrl` to the address people use for the web interface (so agents can give you clickable links to events), and save.
+2. Admin > MCP: review the **redaction** rules.  Event data is sent to the AI provider.  By default, values of `Cookie`, `Set-Cookie`, `Authorization` and API-key headers (in both `Name: value` and IIS `HTTP_NAME:value` form), password/secret/token fields, and bearer tokens are replaced with `[REDACTED]`.  You can also list **hidden tag keys**, which are never sent at all.  The Admin > MCP page also lists every token and has an audit log of every tool call.
+3. Each user creates their own token on the client home page: **API Tokens (for AI agents)**.  The token is shown once, along with ready-to-paste configuration for the clients below.
+
+Tokens act as their user and can never do more than that user can do right now.  They can also be limited to some projects, and they have **scopes**:
+
+| Scope | Allows |
+|---|---|
+| `events:read` (default) | Listing projects and folders, searching events, event details, statistics, reading and previewing filters, and marking events read/unread for the token's own user. |
+| `events:write` | Moving events to other folders and changing their color, which every user sees (needs write access to the project). |
+| `filters:write` | Creating, changing and deleting filters (needs write access to the project). |
+| `filters:run` | Running filters against existing events (needs write access).  Filters with a `Delete` action only run if the agent passes `allowDelete`. |
+| `sensitive:read` | Bypasses redaction.  Only an administrator can grant it. |
+
+The endpoint only accepts HTTPS, except from the server itself (loopback).  Agents see these tools: `list_projects`, `list_folders`, `search_events`, `get_events`, `event_stats`, `set_read_state`, `move_events`, `set_events_color`, `list_filters`, `get_filter`, `preview_filter`, `create_filter`, `update_filter`, `delete_filter`, `run_filters` and `get_job`, minus any that the token's scopes don't allow.  `preview_filter` can evaluate a filter on its own, or in "pipeline" mode, run all enabled filters with and without it and report what would change.  Agents cannot delete events except by running a filter with a `Delete` action.  Filters created or changed by an agent show "Last Modified By: *user* (via token "*name*")" in the filter editor.
+
+### Client setup
+
+Replace `https://errors.example.com/` with your server's address and `etk_…` with your token.
+
+**Claude Code**
+```
+claude mcp add --transport http errortracker https://errors.example.com/mcp --header "Authorization: Bearer etk_…"
+```
+
+**VS Code (Copilot)**, in `.vscode/mcp.json` (VS Code asks for the token and stores it securely):
+```json
+{
+  "servers": { "errortracker": { "type": "http", "url": "https://errors.example.com/mcp", "headers": { "Authorization": "Bearer ${input:et-token}" } } },
+  "inputs": [ { "type": "promptString", "id": "et-token", "description": "ErrorTracker token", "password": true } ]
+}
+```
+
+**Cursor**, in `~/.cursor/mcp.json`:
+```json
+{ "mcpServers": { "errortracker": { "url": "https://errors.example.com/mcp", "headers": { "Authorization": "Bearer etk_…" } } } }
+```
+
+**OpenAI Codex CLI**, in `~/.codex/config.toml`, with the token in the `ERRORTRACKER_TOKEN` environment variable:
+```toml
+[mcp_servers.errortracker]
+url = "https://errors.example.com/mcp"
+bearer_token_env_var = "ERRORTRACKER_TOKEN"
+```
+
+**Gemini CLI**, in `~/.gemini/settings.json`:
+```json
+{ "mcpServers": { "errortracker": { "httpUrl": "https://errors.example.com/mcp", "headers": { "Authorization": "Bearer etk_…" } } } }
+```
+
+**Clients that only support stdio** can use a generic bridge:
+```
+npx mcp-remote https://errors.example.com/mcp --header "Authorization: Bearer etk_…"
+```
+
+To try the endpoint by hand, run the MCP Inspector (`npx @modelcontextprotocol/inspector`), choose the "Streamable HTTP" transport, enter the `/mcp` URL, and add an `Authorization` header with value `Bearer etk_…`.
+
+Notes:
+* Assistants configured on a website (for example connectors on claude.ai or chatgpt.com) connect **from the vendor's cloud**, so your server would have to be reachable from the internet, and they generally expect OAuth sign-in, which ErrorTracker does not support yet.  Use a locally running client instead.
+* The endpoint implements MCP protocol revision 2026-07-28 and the earlier revisions 2025-11-25, 2025-06-18 and 2025-03-26.  It is stateless: no sessions, no server-sent events.
+* Event content comes from your applications and their users.  The server tells agents to treat it as untrusted data, but an agent can still be misled by text in an event, so keep tokens read-only unless you need more, and review what agents propose before letting them change filters.
+
 ## Building From Source
 
 This project was built with Visual Studio 2019 Community Edition and node.js v12.14.1.  You will also need to download my utility library, [bp2008/BPUtil](https://github.com/bp2008/BPUtil), and repair the dependency in the ErrorTrackerServer project.  BPUtil is updated separately and may sometimes be slightly incompatible. Sorry about that.
